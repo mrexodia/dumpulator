@@ -1,0 +1,1 @@
+Patched version, see: https://github.com/skelsec/minidump/pull/28
