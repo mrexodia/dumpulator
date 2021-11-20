@@ -1,7 +1,4 @@
 from dumpulator import Dumpulator
-import sys
-
-sys.stderr = sys.stdout
 
 dp = Dumpulator("test.dmp", trace=True)
 temp_addr = dp.allocate(256)
