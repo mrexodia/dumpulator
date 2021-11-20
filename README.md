@@ -26,7 +26,7 @@ There is a simple plugin for [x64dbg](https://github.com/x64dbg/x64dbg) availabl
 
 ## Installation
 
-From pip (latest [release](https://github.com/mrexodia/dumpulator/releases)):
+From [PyPI](https://pypi.org/project/dumpulator) (latest [release](https://github.com/mrexodia/dumpulator/releases)):
 
 ```
 python -m pip install dumpulator
