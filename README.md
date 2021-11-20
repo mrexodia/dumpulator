@@ -6,7 +6,7 @@ An easy-to-use library for emulating code in minidump files.
 
 ## Example
 
-The example below opens `test.dmp`, allocates some memory and calls the decryption function at `0x140001000` to decrypt the string at `0x140003000`:
+The example below opens `test.dmp` (download a copy [here](https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/test.dmp)), allocates some memory and calls the decryption function at `0x140001000` to decrypt the string at `0x140003000`:
 
 ```python
 from dumpulator import Dumpulator
@@ -18,6 +18,11 @@ decrypted = dp.read_str(temp_addr)
 print(f"decrypted: '{decrypted}'")
 ```
 
+The `test.dmp` is collected at the entry point of the `tests/StringEncryptionFun` example.
+
+## Collecting the dump
+
+There is a simple plugin for [x64dbg](https://github.com/x64dbg/x64dbg) available in the `MiniDumpPlugin` folder (you can also download a precompiled binary in the [releases](https://github.com/mrexodia/dumpulator/releases)). To use it you pause execution and execute the command `MiniDump my.dmp`.
 
 ## Installation
 
@@ -36,7 +41,7 @@ python setup.py install
 Install for a development environment:
 
 ```
-python setup.py install
+python setup.py develop
 ```
 
 ## Credits
