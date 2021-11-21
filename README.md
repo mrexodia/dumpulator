@@ -6,23 +6,23 @@ An easy-to-use library for emulating code in minidump files.
 
 ## Example
 
-The example below opens `test.dmp` (download a copy [here](https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/test.dmp)), allocates some memory and calls the decryption function at `0x140001000` to decrypt the string at `0x140003000`:
+The example below opens `StringEncryptionFun_x64.dmp` (download a copy [here](https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x64.dmp)), allocates some memory and calls the decryption function at `0x140001000` to decrypt the string at `0x140017000`:
 
 ```python
 from dumpulator import Dumpulator
 
-dp = Dumpulator("test.dmp", trace=True)
+dp = Dumpulator("StringEncryptionFun_x64.dmp")
 temp_addr = dp.allocate(256)
-dp.call(0x140001000, [temp_addr, 0x140003000])
+dp.call(0x140001000, [temp_addr, 0x140017000])
 decrypted = dp.read_str(temp_addr)
 print(f"decrypted: '{decrypted}'")
 ```
 
-The `test.dmp` is collected at the entry point of the `tests/StringEncryptionFun` example.
+The `test.dmp` is collected at the entry point of the `tests/StringEncryptionFun` example. You can get the compiled binaries for `StringEncryptionFun` [here](https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun.7z)
 
 ## Collecting the dump
 
-There is a simple plugin for [x64dbg](https://github.com/x64dbg/x64dbg) available in the `MiniDumpPlugin` folder (you can also download a precompiled binary in the [releases](https://github.com/mrexodia/dumpulator/releases)). To use it you pause execution and execute the command `MiniDump my.dmp`.
+There is a simple [x64dbg](https://github.com/x64dbg/x64dbg) plugin available called [MiniDumpPlugin](https://github.com/mrexodia/MiniDumpPlugin/releases). To create a dump, pause execution and execute the command `MiniDump my.dmp`.
 
 ## Installation
 
