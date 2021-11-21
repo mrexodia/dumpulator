@@ -1,4 +1,4 @@
 from dumpulator import Dumpulator
 
-dp = Dumpulator("test.dmp", trace=False)
+dp = Dumpulator("StringEncryptionFun_x64.dmp")
 dp.start(dp.regs.rip)

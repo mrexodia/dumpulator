@@ -75,7 +75,6 @@ class Registers:
             "edx": UC_X86_REG_EDX,
             "eflags": UC_X86_REG_EFLAGS,
             "eip": UC_X86_REG_EIP,
-            "eiz": UC_X86_REG_EIZ,
             "es": UC_X86_REG_ES,
             "esi": UC_X86_REG_ESI,
             "esp": UC_X86_REG_ESP,
