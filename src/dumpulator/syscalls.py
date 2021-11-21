@@ -20,7 +20,7 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          MemoryInformationLength: SIZE_T,
                          ReturnLength: P(SIZE_T)
                          ):
-    assert ProcessHandle == NtCurrentProcess()
+    assert ProcessHandle == dp.NtCurrentProcess()
     return STATUS_SUCCESS
 
 
@@ -33,7 +33,7 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
                             AllocationType: ULONG,
                             Protect: ULONG
                             ):
-    assert ProcessHandle == NtCurrentProcess()
+    assert ProcessHandle == dp.NtCurrentProcess()
     assert AllocationType == MEM_COMMIT
     assert Protect == PAGE_READWRITE
     base = dp.read_ptr(BaseAddress.ptr)
@@ -94,7 +94,7 @@ def ZwSetEvent(dp: Dumpulator):
 def ZwTerminateProcess(dp: Dumpulator,
                        ProcessHandle: HANDLE,
                        ExitStatus: ULONG):
-    assert ProcessHandle == 0 or ProcessHandle == NtCurrentProcess()
+    assert ProcessHandle == 0 or ProcessHandle == dp.NtCurrentProcess()
     dp.stop(ExitStatus)
     return STATUS_SUCCESS
 
@@ -102,7 +102,7 @@ def ZwTerminateProcess(dp: Dumpulator,
 def ZwTerminateThread(dp: Dumpulator,
                       ThreadHandle: HANDLE,
                       ExitStatus: ULONG):
-    assert ThreadHandle == NtCurrentThread()
+    assert ThreadHandle == dp.NtCurrentThread()
     return STATUS_NOT_IMPLEMENTED
 
 @syscall
@@ -112,3 +112,20 @@ def ZwSetInformationThread(dp: Dumpulator):
 @syscall
 def ZwOpenKey(dp: Dumpulator):
     return STATUS_NOT_IMPLEMENTED
+
+@syscall
+def ZwWow64IsProcessorFeaturePresent(dp: Dumpulator,
+                                     ProcessorFeature: ULONG
+                                     ):
+    return 1
+
+@syscall
+def ZwQueryVolumeInformationFile(dp: Dumpulator,
+                                 FileHandle: HANDLE,
+                                 IoStatusBlock: P(IO_STATUS_BLOCK),
+                                 FsInformation: PVOID,
+                                 Length: ULONG,
+                                 FsInformationClass: FS_INFORMATION_CLASS
+                                 ):
+    # TODO: implement
+    return STATUS_SUCCESS

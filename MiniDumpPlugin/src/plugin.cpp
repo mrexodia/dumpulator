@@ -52,7 +52,11 @@ static bool cbMiniDump(int argc, char* argv[])
 	{
 		auto& exceptionRecord = *exceptionPointers.ExceptionRecord;
 		exceptionRecord.ExceptionCode = 0xFFFFFFFF;
+#ifdef _WIN64
 		exceptionRecord.ExceptionAddress = PVOID(context.Rip);
+#else
+		exceptionRecord.ExceptionAddress = PVOID(context.Eip);
+#endif // _WIN64
 	}
 
 	MINIDUMP_EXCEPTION_INFORMATION exceptionInfo = {};

@@ -11,6 +11,13 @@ STATUS_NOT_IMPLEMENTED = 0xC0000002
 
 class MEMORY_INFORMATION_CLASS(Enum):
     MemoryBasicInformation = 0
+    MemoryWorkingSetInformation = 1
+    MemoryMappedFilenameInformation = 2
+    MemoryRegionInformation = 3
+    MemoryWorkingSetExInformation = 4
+    MemorySharedCommitInformation = 5
+    MemoryImageInformation = 6
+    MemoryRegionInformationEx = 7
 make_global(MEMORY_INFORMATION_CLASS)
 
 class THREADINFOCLASS(Enum):
@@ -64,17 +71,25 @@ class THREADINFOCLASS(Enum):
     ThreadAttachContainer = 47
 make_global(THREADINFOCLASS)
 
+class FS_INFORMATION_CLASS(Enum):
+    FileFsVolumeInformation = 1
+    FileFsLabelInformation = 2
+    FileFsSizeInformation = 3
+    FileFsDeviceInformation = 4
+    FileFsAttributeInformation = 5
+    FileFsControlInformation = 6
+    FileFsFullSizeInformation = 7
+    FileFsObjectIdInformation = 8
+    FileFsDriverPathInformation = 9
+    FileFsVolumeFlagsInformation = 10
+    FileFsSectorSizeInformation = 11
+    FileFsDataCopyInformation = 12
+    FileFsMetadataSizeInformation = 13
+make_global(FS_INFORMATION_CLASS)
+
 MEM_COMMIT = 0x1000
 MEM_RESERVE = 0x2000
 PAGE_READWRITE = 0x4
-
-
-def NtCurrentProcess():
-    return 0xFFFFFFFFFFFFFFFF
-
-
-def NtCurrentThread():
-    return 0xFFFFFFFFFFFFFFFE
 
 
 class Int(int):
