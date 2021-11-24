@@ -6,6 +6,7 @@ from unicorn.x86_const import *
 from pefile import *
 import inspect
 from .native import *
+from capstone import *
 
 syscall_functions = {}
 
@@ -299,6 +300,7 @@ class Registers:
             "mxcsr": UC_X86_REG_MXCSR,
             "fs_base": UC_X86_REG_FS_BASE,
             "gs_base": UC_X86_REG_GS_BASE,
+            "rflags": UC_X86_REG_EFLAGS,
         }
         if self._x64:
             self._regmap.update({
@@ -384,18 +386,32 @@ class Dumpulator:
     def __init__(self, minidump_file, trace=False):
         self._minidump = MinidumpFile.parse(minidump_file)
         self._x64 = type(self._minidump.threads.threads[0].ContextObject) is not WOW64_CONTEXT
+
+        if trace:
+            self.trace = open(minidump_file + ".trace", "w")
+        else:
+            self.trace = None
+
+        self.last_module: Optional[MinidumpModule] = None
+
         mode = UC_MODE_64 if self._x64 else UC_MODE_32
         self._uc = Uc(UC_ARCH_X86, mode)
+
+        mode = CS_MODE_64 if self._x64 else CS_MODE_32
+        self.cs = Cs(CS_ARCH_X86, mode)
+        self.cs.detail = True
 
         self.regs = Registers(self._uc, self._x64)
         self.args = Arguments(self._uc, self.regs, self._x64)
         self._allocate_base = None
         self._allocate_size = 0x10000
         self._allocate_ptr = None
-        self._setup_emulator(trace)
+        self._setup_emulator()
         self.exit_code = None
         self.syscalls = []
         self._setup_syscalls()
+        self.exports = self._setup_exports()
+
 
     # Source: https://github.com/mandiant/speakeasy/blob/767edd2272510a5badbab89c5f35d43a94041378/speakeasy/windows/winemu.py#L533
     def _setup_gdt(self, teb_addr):
@@ -480,17 +496,18 @@ class Dumpulator:
             selector = _create_selector(15, GDT_FLAGS.Ring3)
             self.regs.gs = selector
 
-    def _setup_emulator(self, trace):
+    def _setup_emulator(self):
         # set up hooks
         self._uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED | UC_HOOK_MEM_FETCH_UNMAPPED | UC_HOOK_MEM_READ_PROT | UC_HOOK_MEM_WRITE_PROT | UC_HOOK_MEM_FETCH_PROT, _hook_mem, user_data=self)
         #self._uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, _hook_mem, user_data=self)
-        if trace:
+        if self.trace:
             self._uc.hook_add(UC_HOOK_CODE, _hook_code, user_data=self)
         #self._uc.hook_add(UC_HOOK_MEM_READ_INVALID, self._hook_mem, user_data=None)
         #self._uc.hook_add(UC_HOOK_MEM_WRITE_INVALID, self._hook_mem, user_data=None)
         self._uc.hook_add(UC_HOOK_INSN, _hook_syscall, user_data=self, arg1=UC_X86_INS_SYSCALL)
         self._uc.hook_add(UC_HOOK_INSN, _hook_syscall, user_data=self, arg1=UC_X86_INS_SYSENTER)
         self._uc.hook_add(UC_HOOK_INTR, _hook_interrupt, user_data=self)
+        self._uc.hook_add(UC_HOOK_INSN_INVALID, _hook_invalid, user_data=self)
 
         # map in codecave
         self._uc.mem_map(CAVE_ADDR, CAVE_SIZE)
@@ -562,6 +579,19 @@ class Dumpulator:
 
         self._setup_gdt(thread.Teb)
 
+    def _setup_exports(self):
+        exports = {}
+        for module in self._minidump.modules.modules:
+            module_name = module.name.split('\\')[-1].lower()
+            print(f"{module_name} 0x{module.baseaddress:x}[0x{module.size:x}]")
+            for export in self._parse_module_exports(module):
+                if export.name:
+                    name = export.name.decode("utf-8")
+                else:
+                    name = f"#{export.ordinal}"
+                exports[module.baseaddress + export.address] = f"{module_name}:{name}"
+        return exports
+
     def _find_module(self, name) -> MinidumpModule:
         module: MinidumpModule
         for module in self._minidump.modules.modules:
@@ -570,11 +600,20 @@ class Dumpulator:
                 return module
         raise Exception(f"Module '{name}' not found")
 
-    def _setup_syscalls(self):
-        # Load the ntdll module from memory
-        ntdll = self._find_module("ntdll.dll")
-        ntdll_data = self.read(ntdll.baseaddress, ntdll.size)
-        pe = PE(data=ntdll_data, fast_load=True)
+    def find_module_by_addr(self, address) -> Optional[MinidumpModule]:
+        module: MinidumpModule
+        for module in self._minidump.modules.modules:
+            if module.baseaddress <= address < module.baseaddress + module.size:
+                return module
+        return None
+
+    def _parse_module_exports(self, module):
+        try:
+            module_data = self.read(module.baseaddress, module.size)
+        except UcError:
+            print(f"Failed to read module data")
+            return []
+        pe = PE(data=module_data, fast_load=True)
         # Hack to adjust pefile to accept in-memory modules
         for section in pe.sections:
             # Potentially interesting members: Misc_PhysicalAddress, Misc_VirtualSize, SizeOfRawData
@@ -582,8 +621,13 @@ class Dumpulator:
             section.PointerToRawData_adj = section.VirtualAddress
         # Parser exports and find the syscall indices
         pe.parse_data_directories(directories=[DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]])
+        return pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(pe, "DIRECTORY_ENTRY_EXPORT") else []
+
+    def _setup_syscalls(self):
+        # Load the ntdll module from memory
+        ntdll = self._find_module("ntdll.dll")
         syscalls = []
-        for export in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+        for export in self._parse_module_exports(ntdll):
             if export.name and export.name.startswith(b"Zw"):
                 syscalls.append((export.address, export.name.decode("utf-8")))
             elif export.name == b"Wow64Transition":
@@ -698,9 +742,50 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         print(f"unmapped fetch of {address:0x}[{size:0x}] = {value:0x}, cip = {dp.regs.cip:0x}")
     return False
 
+def _get_regs(instr):
+    regs = set()
+    for op in instr.operands:
+        if op.type == CS_OP_REG:
+            regs.add(instr.reg_name(op.value.reg))
+        elif op.type == CS_OP_MEM:
+            if op.value.mem.base != 0:
+                regs.add(instr.reg_name(op.value.mem.base))
+            if op.value.mem.index != 0:
+                regs.add(instr.reg_name(op.value.mem.index))
+    for reg in instr.regs_read:
+        regs.add(instr.reg_name(reg))
+    for reg in instr.regs_write:
+        regs.add(instr.reg_name(reg))
+    return regs
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
-    print(f"instruction: {address:0x} {dp.read(address, size).hex()}")
+    code = dp.read(address, size)
+    instr = next(dp.cs.disasm(code, address, 1))
+    address_name = dp.exports.get(address, "")
+
+    module = ""
+    if dp.last_module and dp.last_module.baseaddress <= address < dp.last_module.baseaddress + dp.last_module.size:
+        # same module again
+        pass
+    else:
+        # new module
+        dp.last_module = dp.find_module_by_addr(address)
+        if dp.last_module:
+            module = dp.last_module.name.split("\\")[-1].lower()
+
+    if address_name:
+        address_name = " " + address_name
+    elif module:
+        address_name = " " + module
+
+    line = f"0x{address:x}{address_name}|{instr.mnemonic}"
+    if instr.op_str:
+        line += " "
+        line += instr.op_str
+    for reg in _get_regs(instr):
+        line += f"|{reg}=0x{dp.regs.__getattr__(reg):x}"
+    line += "\n"
+    dp.trace.write(line)
     return True
 
 
@@ -758,3 +843,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
     else:
         print(f"syscall index {index:0x} out of range")
         uc.emu_stop()
+
+def _hook_invalid(uc: Uc, address, dp: Dumpulator):
+    print(f"invalid instruction at {address:0x}")
+    return False
