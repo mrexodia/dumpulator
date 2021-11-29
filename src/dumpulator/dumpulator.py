@@ -703,9 +703,17 @@ class Dumpulator:
 
     def read_str(self, addr, encoding="utf-8"):
         data = self.read(addr, 512)
-        nullidx = data.find(b'\0')
+
+        # Note: this is awful
+        if "-16" in encoding:
+            nullidx = data.find(b'\0\0')
+            if nullidx != -1:
+                nullidx += 1
+        else:
+            nullidx = data.find(b'\0')
         if nullidx != -1:
             data = data[:nullidx]
+
         return data.decode(encoding)
 
     def allocate(self, size):
