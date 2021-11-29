@@ -387,6 +387,7 @@ class Dumpulator:
     def __init__(self, minidump_file, trace=False):
         self._minidump = MinidumpFile.parse(minidump_file)
         self._x64 = type(self._minidump.threads.threads[0].ContextObject) is not WOW64_CONTEXT
+        self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
 
         if trace:
             self.trace = open(minidump_file + ".trace", "w")
@@ -412,7 +413,6 @@ class Dumpulator:
         self.syscalls = []
         self._setup_syscalls()
         self.exports = self._setup_exports()
-
 
     # Source: https://github.com/mandiant/speakeasy/blob/767edd2272510a5badbab89c5f35d43a94041378/speakeasy/windows/winemu.py#L533
     def _setup_gdt(self, teb_addr):
@@ -516,20 +516,22 @@ class Dumpulator:
 
         info: MinidumpMemoryInfo
         for info in self._minidump.memory_info.infos:
+            emu_addr = info.BaseAddress & self.addr_mask
             if info.State == MemoryState.MEM_COMMIT:
-                print(f"mapped base: 0x{info.BaseAddress:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
-                self._uc.mem_map(info.BaseAddress, info.RegionSize, map_unicorn_perms(info.Protect))
-            elif info.State == MemoryState.MEM_FREE and info.BaseAddress > 0x10000 and info.RegionSize >= self._allocate_size:
-                self._allocate_base = info.BaseAddress
+                print(f"mapped base: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
+                self._uc.mem_map(emu_addr, info.RegionSize, map_unicorn_perms(info.Protect))
+            elif info.State == MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
+                self._allocate_base = emu_addr
 
         memory = self._minidump.get_reader().get_buffered_reader()
         seg: MinidumpMemorySegment
         for seg in self._minidump.memory_segments_64.memory_segments:
-            print(f"initialize base: 0x{seg.start_virtual_address:x}, size: 0x{seg.size:x}")
+            emu_addr = seg.start_virtual_address & self.addr_mask
+            print(f"initialize base: 0x{emu_addr:x}, size: 0x{seg.size:x}")
             memory.move(seg.start_virtual_address)
             assert memory.current_position == seg.start_virtual_address
             data = memory.read(seg.size)
-            self._uc.mem_write(seg.start_virtual_address, data)
+            self._uc.mem_write(emu_addr, data)
 
         thread = self._minidump.threads.threads[0]
         if self._x64:
