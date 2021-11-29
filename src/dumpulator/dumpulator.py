@@ -7,6 +7,7 @@ from pefile import *
 import inspect
 from .native import *
 from capstone import *
+from collections import OrderedDict
 
 syscall_functions = {}
 
@@ -743,19 +744,19 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     return False
 
 def _get_regs(instr):
-    regs = set()
+    regs = OrderedDict()
     for op in instr.operands:
         if op.type == CS_OP_REG:
-            regs.add(instr.reg_name(op.value.reg))
+            regs[instr.reg_name(op.value.reg)] = None
         elif op.type == CS_OP_MEM:
             if op.value.mem.base != 0:
-                regs.add(instr.reg_name(op.value.mem.base))
+                regs[instr.reg_name(op.value.mem.base)] = None
             if op.value.mem.index != 0:
-                regs.add(instr.reg_name(op.value.mem.index))
+                regs[instr.reg_name(op.value.mem.index)] = None
     for reg in instr.regs_read:
-        regs.add(instr.reg_name(reg))
+        regs[instr.reg_name(reg)] = None
     for reg in instr.regs_write:
-        regs.add(instr.reg_name(reg))
+        regs[instr.reg_name(reg)] = None
     return regs
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
