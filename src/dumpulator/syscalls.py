@@ -129,3 +129,7 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
                                  ):
     # TODO: implement
     return STATUS_SUCCESS
+
+@syscall
+def ZwQueryInformationToken(dp: Dumpulator):
+    return STATUS_NOT_IMPLEMENTED

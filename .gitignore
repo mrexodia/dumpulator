@@ -5,3 +5,7 @@ venv/
 .idea/
 __pycache__/
 *.pyc
+/tests/*.trace
+/tests/*.dd32
+/tests/*.dd64
+/tests/*.txt

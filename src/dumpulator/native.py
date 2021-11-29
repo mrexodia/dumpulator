@@ -8,6 +8,7 @@ def make_global(t):
 
 STATUS_SUCCESS = 0
 STATUS_NOT_IMPLEMENTED = 0xC0000002
+STATUS_ACCESS_DENIED = 0xC0000022
 
 class MEMORY_INFORMATION_CLASS(Enum):
     MemoryBasicInformation = 0
