@@ -578,7 +578,13 @@ class Dumpulator:
             self.regs.edi = context.Edi
             self.regs.eip = context.Eip
 
-        self._setup_gdt(thread.Teb)
+        # Remove the trap flag
+        self.regs.eflags &= ~0x100
+
+        # Set up TEB
+        teb = thread.Teb & 0xFFFFFFFFFFFFF000
+        self._setup_gdt(teb)
+        self.regs.gs_base = teb
 
     def _setup_exports(self):
         exports = {}
