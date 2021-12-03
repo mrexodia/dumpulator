@@ -7,7 +7,10 @@ from .native import *
 
 
 def syscall(func):
-    syscall_functions[func.__name__] = func
+    name: str = func.__name__
+    if name.startswith("Nt"):
+        name = "Zw" + name[2:]
+    syscall_functions[name] = func
     return func
 
 

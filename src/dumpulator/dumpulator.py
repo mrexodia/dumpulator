@@ -1,3 +1,4 @@
+import traceback
 from enum import Enum
 
 from minidump.minidumpfile import *
@@ -815,9 +816,15 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
 
                 print(f"    {_arg_type_string(argvalue)} {argname} = {_arg_to_string(argvalue)}{comma}")
             print(")")
-            status = cb(dp, *args)
-            print(f"status = {status:x}")
-            dp.regs.cax = status
+            try:
+                status = cb(dp, *args)
+                print(f"status = {status:x}")
+                dp.regs.cax = status
+            except Exception as exc:
+                sys.stderr = sys.stdout
+                traceback.print_exception(type(exc), exc, exc.__traceback__)
+                print(f"Exception thrown during syscall implementation, stopping emulation!")
+                uc.emu_stop()
         else:
             print(f"syscall index: {index:0x} -> {name} not implemented!")
             uc.emu_stop()
