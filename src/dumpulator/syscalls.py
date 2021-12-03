@@ -136,3 +136,10 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
 @syscall
 def ZwQueryInformationToken(dp: Dumpulator):
     return STATUS_NOT_IMPLEMENTED
+
+@syscall
+def ZwDisplayString(dp: Dumpulator,
+                    String: P(UNICODE_STRING)
+                    ):
+    print("debug: " + String.read_unicode_str())
+    return STATUS_PRIVILEGE_NOT_HELD
