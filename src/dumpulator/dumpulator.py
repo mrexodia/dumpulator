@@ -383,10 +383,10 @@ class Arguments:
             raise Exception("not implemented!")
 
 
-class Dumpulator:
+class Dumpulator(Architecture):
     def __init__(self, minidump_file, trace=False):
         self._minidump = MinidumpFile.parse(minidump_file)
-        self._x64 = type(self._minidump.threads.threads[0].ContextObject) is not WOW64_CONTEXT
+        super().__init__(type(self._minidump.threads.threads[0].ContextObject) is not WOW64_CONTEXT)
         self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
 
         if trace:
@@ -657,9 +657,6 @@ class Dumpulator:
                 argcount = len(argspec.args) - 1
             self.syscalls.append((name, cb, argcount))
 
-    def ptr_size(self):
-        return 8 if self._x64 else 4
-
     def push(self, value):
         csp = self.regs.csp - self.ptr_size()
         self.write_ptr(csp, value)
@@ -670,24 +667,6 @@ class Dumpulator:
 
     def write(self, addr, data):
         return self._uc.mem_write(addr, data)
-
-    def read_ptr(self, addr):
-        return struct.unpack("<Q" if self._x64 else "<I", self.read(addr, self.ptr_size()))[0]
-
-    def read_ulong(self, addr):
-        return struct.unpack("<I", self.read(addr, 4))[0]
-
-    def read_long(self, addr):
-        return struct.unpack("<i", self.read(addr, 4))[0]
-
-    def write_ulong(self, addr, value):
-        return self._uc.mem_write(addr, struct.pack("<I", value))
-
-    def write_long(self, addr, value):
-        return self._uc.mem_write(addr, struct.pack("<i", value))
-
-    def write_ptr(self, addr, value):
-        return self._uc.mem_write(addr, struct.pack("<Q" if self._x64 else "<I", value))
 
     def call(self, addr, args, count=0):
         # set up arguments
@@ -702,21 +681,6 @@ class Dumpulator:
         # start emulation
         self.start(addr, end=CAVE_ADDR, count=count)
         return self.regs.cax
-
-    def read_str(self, addr, encoding="utf-8"):
-        data = self.read(addr, 512)
-
-        # Note: this is awful
-        if "-16" in encoding:
-            nullidx = data.find(b'\0\0')
-            if nullidx != -1:
-                nullidx += 1
-        else:
-            nullidx = data.find(b'\0')
-        if nullidx != -1:
-            data = data[:nullidx]
-
-        return data.decode(encoding)
 
     def allocate(self, size):
         if not self._allocate_ptr:
@@ -840,7 +804,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
                 if issubclass(argtype, PVOID):
-                    argvalue = argtype(dp.args[i], dp.read)
+                    argvalue = argtype(dp.args[i], dp)
                 else:
                     argvalue = argtype(dp.args[i])
                 args.append(argvalue)
