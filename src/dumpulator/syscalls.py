@@ -143,3 +143,19 @@ def ZwDisplayString(dp: Dumpulator,
                     ):
     print("debug: " + String.read_unicode_str())
     return STATUS_PRIVILEGE_NOT_HELD
+
+@syscall
+def ZwProtectVirtualMemory(dp: Dumpulator,
+                           ProcessHandle: HANDLE,
+                           BaseAddress: P(PVOID),
+                           RegionSize: P(ULONG),
+                           NewProtect: ULONG,
+                           OldProtect: P(ULONG)
+                           ):
+    base = BaseAddress[0] & 0xFFFFFFFFFFFFF000
+    size = round_to_pages(RegionSize[0])
+
+    print(f"protect {base:x}[{size:x}] = {NewProtect:x}")
+    dp.protect(base, size, NewProtect)
+    # TODO: OldProtect is not implemented
+    return STATUS_SUCCESS

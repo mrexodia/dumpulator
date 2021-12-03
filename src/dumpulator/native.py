@@ -214,3 +214,6 @@ class LARGE_INTEGER:
 
 class UNICODE_STRING:
     pass
+
+def round_to_pages(size):
+    return (size + 0xFFF) & 0xFFFFFFFFFFFFF000

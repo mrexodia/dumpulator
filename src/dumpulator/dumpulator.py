@@ -34,6 +34,8 @@ class GDT_FLAGS:
 
 
 def map_unicorn_perms(protect: AllocationProtect):
+    if isinstance(protect, int):
+        protect = AllocationProtect(protect)
     mapping = {
         AllocationProtect.PAGE_EXECUTE: UC_PROT_EXEC | UC_PROT_READ,
         AllocationProtect.PAGE_EXECUTE_READ: UC_PROT_EXEC | UC_PROT_READ,
@@ -667,7 +669,11 @@ class Dumpulator(Architecture):
         return self._uc.mem_read(addr, size)
 
     def write(self, addr, data):
-        return self._uc.mem_write(addr, data)
+        self._uc.mem_write(addr, data)
+
+    def protect(self, addr, size, protect):
+        perms = map_unicorn_perms(protect)
+        self._uc.mem_protect(addr, size, perms)
 
     def call(self, addr, args, count=0):
         # set up arguments
