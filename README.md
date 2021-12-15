@@ -18,7 +18,7 @@ decrypted = dp.read_str(temp_addr)
 print(f"decrypted: '{decrypted}'")
 ```
 
-The `test.dmp` is collected at the entry point of the `tests/StringEncryptionFun` example. You can get the compiled binaries for `StringEncryptionFun` [here](https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun.7z)
+The `StringEncryptionFun_x64.dmp` is collected at the entry point of the `tests/StringEncryptionFun` example. You can get the compiled binaries for `StringEncryptionFun` [here](https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun.7z)
 
 ## Collecting the dump
 
