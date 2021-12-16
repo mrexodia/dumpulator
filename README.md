@@ -44,6 +44,10 @@ Install for a development environment:
 python setup.py develop
 ```
 
+## Related work
+
+- [Dumpulator-IDA](https://github.com/michaeljgoodman/Dumpulator-IDA): This project is a small POC plugin for launching dumpulator emulation within IDA, passing it addresses from your IDA view using the context menu.
+
 ## Credits
 
 - [herrcore](https://twitter.com/herrcore) for inspiring me to make this
