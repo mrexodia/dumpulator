@@ -285,9 +285,35 @@ class Registers:
             "mxcsr": UC_X86_REG_MXCSR,
             "fs_base": UC_X86_REG_FS_BASE,
             "gs_base": UC_X86_REG_GS_BASE,
-            "flags": UC_X86_REG_FLAGS,
-            "rflags": UC_X86_REG_RFLAGS,
         }
+        if unicorn.__version__[0] < '2':
+            self._regmap.update({
+                "riz": UC_X86_REG_RIZ,
+                "cr5": UC_X86_REG_CR5,
+                "cr6": UC_X86_REG_CR6,
+                "cr7": UC_X86_REG_CR7,
+                "cr9": UC_X86_REG_CR9,
+                "cr10": UC_X86_REG_CR10,
+                "cr11": UC_X86_REG_CR11,
+                "cr12": UC_X86_REG_CR12,
+                "cr13": UC_X86_REG_CR13,
+                "cr14": UC_X86_REG_CR14,
+                "cr15": UC_X86_REG_CR15,
+                "dr8": UC_X86_REG_DR8,
+                "dr9": UC_X86_REG_DR9,
+                "dr10": UC_X86_REG_DR10,
+                "dr11": UC_X86_REG_DR11,
+                "dr12": UC_X86_REG_DR12,
+                "dr13": UC_X86_REG_DR13,
+                "dr14": UC_X86_REG_DR14,
+                "dr15": UC_X86_REG_DR15,
+                "rflags": UC_X86_REG_EFLAGS,
+            })
+        else:
+            self._regmap.update({
+                "flags": UC_X86_REG_FLAGS,
+                "rflags": UC_X86_REG_RFLAGS
+            })
         if self._x64:
             self._regmap.update({
                 "cax": UC_X86_REG_RAX,
