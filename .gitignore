@@ -9,3 +9,4 @@ __pycache__/
 /tests/*.dd32
 /tests/*.dd64
 /tests/*.txt
+/tests/*.dmp
