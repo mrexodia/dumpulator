@@ -4,6 +4,8 @@
 
 An easy-to-use library for emulating code in minidump files.
 
+There is an [introduction video](https://m.youtube.com/watch?v=4Pfu98Xx9Yo) with [OALabs](https://oalabs.openanalysis.net) available!
+
 ## Example
 
 The example below opens `StringEncryptionFun_x64.dmp` (download a copy [here](https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x64.dmp)), allocates some memory and calls the decryption function at `0x140001000` to decrypt the string at `0x140017000`:
