@@ -128,7 +128,7 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
                                  IoStatusBlock: P(IO_STATUS_BLOCK),
                                  FsInformation: PVOID,
                                  Length: ULONG,
-                                 FsInformationClass: FS_INFORMATION_CLASS
+                                 FsInformationClass: FSINFOCLASS
                                  ):
     # TODO: implement
     return STATUS_SUCCESS
@@ -159,3 +159,20 @@ def ZwProtectVirtualMemory(dp: Dumpulator,
     dp.protect(base, size, NewProtect)
     # TODO: OldProtect is not implemented
     return STATUS_SUCCESS
+
+@syscall
+def ZwQueryInformationProcess(dp: Dumpulator,
+                              ProcessHandle: HANDLE,
+                              ProcessInformationClass: PROCESSINFOCLASS,
+                              ProcessInformation: PVOID,
+                              ProcessInformationLength: ULONG,
+                              ReturnLength: P(ULONG)
+                              ):
+    assert(ProcessHandle == dp.NtCurrentProcess())
+    if ProcessInformationClass in [PROCESSINFOCLASS.ProcessDebugPort, PROCESSINFOCLASS.ProcessDebugObjectHandle]:
+        assert(ProcessInformationLength == 4)
+        dp.write_ulong(ProcessInformation.ptr, 0)
+        if ReturnLength != 0:
+            dp.write_ulong(ReturnLength.ptr, 4)
+        return STATUS_SUCCESS
+    raise NotImplementedError()

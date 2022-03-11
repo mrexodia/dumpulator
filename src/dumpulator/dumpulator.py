@@ -823,10 +823,11 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             for i in range(0, argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
+                argvalue = dp.args[i]
                 if issubclass(argtype, PVOID):
-                    argvalue = argtype(dp.args[i], dp)
+                    argvalue = argtype(argvalue, dp)
                 else:
-                    argvalue = argtype(dp.args[i])
+                    argvalue = argtype(argvalue)
                 args.append(argvalue)
 
                 comma = ","
