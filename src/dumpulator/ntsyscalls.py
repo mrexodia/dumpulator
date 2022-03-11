@@ -3561,6 +3561,11 @@ def ZwSetInformationThread(dp: Dumpulator,
                            ThreadInformation: PVOID,
                            ThreadInformationLength: ULONG
                            ):
+    if ThreadInformationClass == THREADINFOCLASS.ThreadHideFromDebugger:
+        assert ThreadInformation == 0
+        assert ThreadInformationLength == 0
+        assert ThreadHandle == dp.NtCurrentThread()
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall

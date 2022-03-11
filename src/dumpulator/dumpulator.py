@@ -831,6 +831,11 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 argvalue = syscall_arg(i)
                 if issubclass(argtype, PVOID):
                     argvalue = argtype(argvalue, dp)
+                elif issubclass(argtype, Enum):
+                    try:
+                        argvalue = argtype(dp.args[i])
+                    except KeyError as x:
+                        raise Exception(f"Unknown enum value {dp.args[i]} for {type(argtype)}")
                 else:
                     argvalue = argtype(argvalue)
                 args.append(argvalue)
