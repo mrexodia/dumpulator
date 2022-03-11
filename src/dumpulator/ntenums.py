@@ -2330,6 +2330,15 @@ class KTMOBJECT_TYPE(Enum):
     KTMOBJECT_INVALID = 4
 make_global(KTMOBJECT_TYPE)
 
+class DEVICE_POWER_STATE(Enum):
+    PowerDeviceUnspecified = 0
+    PowerDeviceD0 = 1
+    PowerDeviceD1 = 2
+    PowerDeviceD2 = 3
+    PowerDeviceD3 = 4
+    PowerDeviceMaximum = 5
+make_global(DEVICE_POWER_STATE)
+
 class SYSTEM_POWER_STATE(Enum):
     PowerSystemUnspecified = 0
     PowerSystemWorking = 1

@@ -101,9 +101,16 @@ class Int(int):
         return f"0x{self:X}"
 
 # Actual primitives
-class BYTE(Int):
+class UCHAR(Int):
     def __new__(cls, value):
         return Int.__new__(cls, value & 0xFF)
+
+class CHAR(Int):
+    def __new__(cls, value):
+        value = value & 0xFF
+        if value & 0x80 != 0:
+            value = -((~value) & 0xFF)
+        return Int.__new__(cls, value)
 
 class USHORT(Int):
     def __new__(cls, value):
@@ -129,7 +136,17 @@ class SIZE_T(Int):
 class HANDLE(Int):
     pass
 
+# TODO: how does this work in 32 bit?
+class ULONG64(Int):
+    pass
+
 # Alias types
+class ULONGLONG(ULONG64):
+    pass
+
+class BYTE(UCHAR):
+    pass
+
 class RTL_ATOM(USHORT):
     pass
 
@@ -171,6 +188,12 @@ class LOGICAL(ULONG):
     pass
 
 class LCID(ULONG):
+    pass
+
+class PSID(PVOID):
+    pass
+
+class PWSTR(PVOID):
     pass
 
 def make_global(t):

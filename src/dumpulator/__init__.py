@@ -1,2 +1,2 @@
 from .dumpulator import Dumpulator
-from .syscalls import syscall
+from .ntsyscalls import syscall

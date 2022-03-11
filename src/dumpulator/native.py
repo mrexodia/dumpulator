@@ -2,6 +2,7 @@ import struct
 from typing import Optional
 from .ntenums import *
 from .ntprimitives import *
+from .ntstructs import *
 
 STATUS_SUCCESS = 0
 STATUS_NOT_IMPLEMENTED = 0xC0000002

@@ -2,6 +2,7 @@
 import sys
 from typing import *
 from clang.cindex import *
+from collections import OrderedDict
 
 # Resources:
 # https://gregoryszorc.com/blog/2012/05/14/python-bindings-updates-in-clang-3.1/
@@ -86,7 +87,7 @@ def main():
     cursor: Cursor = tu.cursor
     phnt_nodes = list(filter_by_folder(cursor.get_children(), phnt_dir))
     e: Cursor
-    system_enums = {}
+    system_enums = OrderedDict()
 
     # This is bad, these CursorKind.XXX are added in cindex.py, no autocomplete possible :(
     for e in filter_by_kind(cursor.get_children(), [CursorKind.ENUM_DECL]):
@@ -99,7 +100,7 @@ def main():
                 if len(et.values) > 0:
                     system_enums[et.name] = et
 
-    phnt_enums = {}
+    phnt_enums = OrderedDict()
     for e in filter_by_kind(phnt_nodes, [CursorKind.ENUM_DECL]):
         if e.spelling:
             et = EnumType(e.spelling)
@@ -108,6 +109,38 @@ def main():
                 et.values.append((v.spelling, v.enum_value))
             if len(et.values) > 0:
                 phnt_enums[et.name] = et
+
+    primitive_types = {
+        "PVOID",
+        "UCHAR",
+        "CHAR",
+        "USHORT",
+        "ULONG",
+        "LONG",
+        "ULONG_PTR",
+        "SIZE_T",
+        "HANDLE",
+        "ULONG64",
+        "ULONGLONG",  # ULONG64
+        "BYTE",  # UCHAR
+        "RTL_ATOM",  # USHORT
+        "NTSTATUS",  # ULONG
+        "LANGID",  # USHORT
+        "ALPC_HANDLE",  # HANDLE
+        "NOTIFICATION_MASK",  # ULONG
+        "SECURITY_INFORMATION",  # ULONG
+        "EXECUTION_STATE",  # ULONG
+        "SE_SIGNING_LEVEL",  # BYTE
+        "ACCESS_MASK",  # ULONG
+        "WNF_CHANGE_STAMP",  # ULONG
+        "KAFFINITY",  # ULONG_PTR
+        "BOOLEAN",  # bool
+        "LOGICAL",  # ULONG
+        "LCID",  # ULONG
+        "LATENCY_TIME",  # Unnamed enum, hacked in by hand
+        "PSID",  # PVOID
+        "PWSTR",  # PVOID
+    }
 
     f: Cursor
     functions = []
@@ -121,7 +154,7 @@ def main():
                     .replace("volatile ", "") \
                     .replace("const ", "")
 
-                if at.typename != "PVOID" and at.typename.startswith("P"):
+                if at.typename.startswith("P") and at.typename not in phnt_enums and at.typename not in primitive_types:
                     at.is_ptr = True
                     at.typename = at.typename[1:]
 
@@ -153,32 +186,8 @@ def main():
                 ft.arguments.append(at)
             functions.append(ft)
 
-    primitive_types = {
-        "PVOID",
-        "BYTE",
-        "USHORT",
-        "ULONG",
-        "LONG",
-        "ULONG_PTR",
-        "SIZE_T",
-        "HANDLE",
-        "RTL_ATOM",  # USHORT
-        "NTSTATUS",  # ULONG
-        "LANGID",  # USHORT
-        "ALPC_HANDLE",  # HANDLE
-        "NOTIFICATION_MASK",  # ULONG
-        "SECURITY_INFORMATION",  # ULONG
-        "EXECUTION_STATE",  # ULONG
-        "SE_SIGNING_LEVEL",  # BYTE
-        "ACCESS_MASK",  # ULONG
-        "WNF_CHANGE_STAMP",  # ULONG
-        "KAFFINITY",  # ULONG_PTR
-        "BOOLEAN",  # bool
-        "LOGICAL",  # ULONG
-        "LCID",  # ULONG
-        "LATENCY_TIME",  # Unnamed enum, hacked in by hand
-    }
     unknown_types = set()
+    struct_types = set()
     ft: FunctionType
     for ft in functions:
         at: FunctionArgument
@@ -189,6 +198,12 @@ def main():
                     phnt_enums[at.typename] = system_enums[at.typename]
                 elif at.typename not in primitive_types:
                     unknown_types.add(at.typename)
+            elif at.is_ptr and at.typename not in primitive_types and at.typename not in phnt_enums:
+                if at.typename in system_enums:
+                    print(f"Merge system enum {at.typename} into phnt_enums")
+                    phnt_enums[at.typename] = system_enums[at.typename]
+                else:
+                    struct_types.add(at.typename)
     print(f"Found {len(unknown_types)} unknown primitive types:")
     for t in unknown_types:
         print("  " + t + ";")
@@ -210,6 +225,16 @@ from .ntprimitives import make_global
             f.write(e.format_python())
             f.write("\n")
 
+    with open("ntstructs.py", "w") as f:
+        header = """
+# Automatically generated with parse_phnt.py, do not edit
+        """
+        f.write(header.strip() + "\n\n")
+
+        for t in sorted(struct_types):
+            f.write(f"class {t}:\n")
+            f.write("    pass\n")
+            f.write("\n")
 
 if __name__ == '__main__':
     main()
