@@ -418,7 +418,7 @@ class Dumpulator(Architecture):
         self.regs = Registers(self._uc, self._x64)
         self.args = Arguments(self._uc, self.regs, self._x64)
         self._allocate_base = None
-        self._allocate_size = 0x10000
+        self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
         self._setup_emulator()
         self.exit_code = None
@@ -819,11 +819,16 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             argspec = inspect.getfullargspec(cb)
             args = []
 
+            def syscall_arg(index):
+                if index == 0 and dp.ptr_size() == 8:
+                    return dp.regs.r10
+                return dp.args[index]
+
             print(f"syscall: {name}(")
             for i in range(0, argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
-                argvalue = dp.args[i]
+                argvalue = syscall_arg(i)
                 if issubclass(argtype, PVOID):
                     argvalue = argtype(argvalue, dp)
                 else:
@@ -840,6 +845,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 status = cb(dp, *args)
                 print(f"status = {status:x}")
                 dp.regs.cax = status
+                dp.regs.ccx = dp.regs.cip + 2
             except Exception as exc:
                 sys.stderr = sys.stdout
                 traceback.print_exception(type(exc), exc, exc.__traceback__)
