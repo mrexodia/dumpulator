@@ -1,4 +1,5 @@
 # pip install libclang
+import json
 import sys
 from typing import *
 from clang.cindex import *
@@ -208,33 +209,47 @@ def main():
     for t in unknown_types:
         print("  " + t + ";")
 
-    with open("ntsyscalls.py", "w") as f:
+    if len(sys.argv) > 2 and sys.argv[2] == "json":
+        data = {}
         for fn in functions:
-            f.write(fn.format_python())
-            f.write("\n")
+            args = []
+            arg: FunctionArgument
+            for arg in fn.arguments:
+                args.append({
+                    'name': arg.name,
+                    'type': arg.typename + ("*" if arg.is_ptr else "")
+                })
+            data[fn.name] = args
+        with open("ntsyscalls.json", "w") as f:
+            f.write(json.dumps(data, indent=2))
+    else:
+        with open("ntsyscalls.py", "w") as f:
+            for fn in functions:
+                f.write(fn.format_python())
+                f.write("\n")
 
-    with open("ntenums.py", "w") as f:
-        header = """
+        with open("ntenums.py", "w") as f:
+            header = """
 # Automatically generated with parse_phnt.py, do not edit
 from enum import Enum
 from .ntprimitives import make_global
-        """
-        f.write(header.strip() + "\n\n")
+            """
+            f.write(header.strip() + "\n\n")
 
-        for e in phnt_enums.values():
-            f.write(e.format_python())
-            f.write("\n")
+            for e in phnt_enums.values():
+                f.write(e.format_python())
+                f.write("\n")
 
-    with open("ntstructs.py", "w") as f:
-        header = """
+        with open("ntstructs.py", "w") as f:
+            header = """
 # Automatically generated with parse_phnt.py, do not edit
-        """
-        f.write(header.strip() + "\n\n")
+            """
+            f.write(header.strip() + "\n\n")
 
-        for t in sorted(struct_types):
-            f.write(f"class {t}:\n")
-            f.write("    pass\n")
-            f.write("\n")
+            for t in sorted(struct_types):
+                f.write(f"class {t}:\n")
+                f.write("    pass\n")
+                f.write("\n")
 
 if __name__ == '__main__':
     main()
