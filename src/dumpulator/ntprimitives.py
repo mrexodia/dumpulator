@@ -67,7 +67,11 @@ class PVOID:
         self.arch.write(self.ptr, data)
 
     def __getitem__(self, index):
-        return self.arch.read_ptr(self.ptr)
+        if self.type is None:
+            return self.arch.read_ptr(self.ptr + index * self.arch.ptr_size())
+        else:
+            assert index == 0  # TODO: sizeof() not yet implemented
+            return self.type(self)
 
     def __int__(self):
         return self.ptr
@@ -89,12 +93,49 @@ class PVOID:
         ptr = self.arch.read_ptr(self.ptr + self.arch.ptr_size())
         return self.arch.read(ptr, length).decode("utf-16")
 
+    def read_ptr(self):
+        return self.arch.read_ptr(self.ptr)
+
+    def deref(self):
+        assert self.type is not None
+        return self.type(self)
+
 def P(t):
     class P(PVOID):
         def __init__(self, ptr, mem_read):
             super().__init__(ptr, mem_read)
             self.type = t
     return P
+
+# Note: this is very WIP
+class ArchStream:
+    def __init__(self, ptr: PVOID):
+        self.ptr = ptr
+        self.pos = 0
+
+    @property
+    def x64(self):
+        return self.ptr.arch.ptr_size() == 8
+
+    def skip(self, size):
+        self.pos += size
+
+    def read(self, size):
+        data = self.ptr.arch.read(self.ptr.ptr + self.pos, size)
+        self.pos += size
+        return data
+
+    def read_ushort(self):
+        return struct.unpack("<H", self.read(2))[0]
+
+    def read_ulong(self):
+        return struct.unpack("<I", self.read(4))[0]
+
+    def read_ptr(self, ptrtype=None):
+        ptr = struct.unpack("<Q" if self.x64 else "<I", self.read(self.ptr.arch.ptr_size()))[0]
+        m = PVOID(ptr, self.ptr.arch)
+        m.type = ptrtype
+        return m
 
 class Int(int):
     def __str__(self):

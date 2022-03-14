@@ -1,4 +1,7 @@
 # Automatically generated with parse_phnt.py, do not edit
+import struct
+
+from .ntprimitives import PVOID, ArchStream
 
 class ALPC_CONTEXT_ATTR:
     pass
@@ -103,7 +106,18 @@ class MEM_EXTENDED_PARAMETER:
     pass
 
 class OBJECT_ATTRIBUTES:
-    pass
+    def __init__(self, ptr: PVOID):
+        s = ArchStream(ptr)
+        self.Length = s.read_ulong()
+        if s.x64:
+            s.skip(4)
+        self.RootDirectory = s.read_ptr()
+        self.ObjectName = s.read_ptr(UNICODE_STRING)
+        self.Attributes = s.read_ulong()
+        if s.x64:
+            s.skip(4)
+        self.SecurityDescriptor = s.read_ptr()
+        self.SecurityQualityOfService = s.read_ptr()
 
 class OBJECT_TYPE_LIST:
     pass
@@ -193,7 +207,16 @@ class ULARGE_INTEGER:
     pass
 
 class UNICODE_STRING:
-    pass
+    def __init__(self, ptr: PVOID):
+        s = ArchStream(ptr)
+        self.Length = s.read_ushort()
+        self.MaximumLength = s.read_ushort()
+        if s.x64:
+            s.skip(4)
+        self.Buffer = s.read_ptr()
+
+    def read_str(self):
+        return self.Buffer.read(self.Length).decode("utf-16")
 
 class WNF_DELIVERY_DESCRIPTOR:
     pass
