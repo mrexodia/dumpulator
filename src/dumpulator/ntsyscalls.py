@@ -1362,6 +1362,29 @@ def ZwDeviceIoControlFile(dp: Dumpulator,
                           OutputBuffer: PVOID,
                           OutputBufferLength: ULONG
                           ):
+    if FileHandle == dp.console_handle:
+        assert IoControlCode == 0x500016
+        data = InputBuffer.read(InputBufferLength)
+        print(f"InputBuffer: {data.hex()}")
+
+        # TODO: this is totally wrong, but seems to work?
+        if dp.ptr_size() == 4:
+            buf = InputBuffer.ptr
+            params = struct.unpack("<IIII", dp.read(buf, 4 * 4))
+            for i, p in enumerate(params):
+                print(f"params[{i}] = {p}")
+
+            length = dp.read_ptr(buf + 4 * 4)
+            buffer = dp.read_ptr(buf + 4 * 4 + dp.ptr_size())
+
+            ptr1 = dp.read_ptr(buf + 0x18)
+            ptr2 = dp.read_ptr(buf + 0x28)
+            print(f"ptr1: {ptr1:x}, ptr2: {ptr2:x}")
+            dp.write_ptr(ptr2, 0xffffffff)
+            print(f"{dp.read_ptr(ptr1):x}")
+
+            print(f"Length: {length}, Buffer: 0x{buffer:x}")
+            return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -2240,7 +2263,7 @@ def ZwOpenSection(dp: Dumpulator,
                   DesiredAccess: ACCESS_MASK,
                   ObjectAttributes: P(OBJECT_ATTRIBUTES)
                   ):
-    raise NotImplementedError()
+    return STATUS_NOT_IMPLEMENTED
 
 @syscall
 def ZwOpenSemaphore(dp: Dumpulator,
@@ -2950,7 +2973,7 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          MemoryInformationLength: SIZE_T,
                          ReturnLength: P(SIZE_T)
                          ):
-    raise NotImplementedError()
+    return STATUS_NOT_IMPLEMENTED
 
 @syscall
 def ZwQueryVolumeInformationFile(dp: Dumpulator,
@@ -3035,6 +3058,19 @@ def ZwReadFile(dp: Dumpulator,
                ByteOffset: P(LARGE_INTEGER),
                Key: P(ULONG)
                ):
+    if FileHandle == dp.stdin_handle:
+        result = b"some console input"
+
+        assert Buffer != 0
+        assert len(result) <= Length
+
+        Buffer.write(result)
+
+        # https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_io_status_block
+        dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
+        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
+
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -3451,7 +3487,7 @@ def ZwSetEvent(dp: Dumpulator,
                EventHandle: HANDLE,
                PreviousState: P(LONG)
                ):
-    raise NotImplementedError()
+    return STATUS_NOT_IMPLEMENTED
 
 @syscall
 def ZwSetEventBoostPriority(dp: Dumpulator,
@@ -4145,9 +4181,11 @@ def ZwWriteFile(dp: Dumpulator,
                 ByteOffset: P(LARGE_INTEGER),
                 Key: P(ULONG)
                 ):
-    data = Buffer.read_str(Length)
-    print(data)
-    return STATUS_SUCCESS
+    if FileHandle in [dp.stdout_handle, dp.stdin_handle]:
+        data = Buffer.read_str(Length)
+        print(data)
+        return STATUS_SUCCESS
+    raise NotImplementedError()
 
 @syscall
 def ZwWriteFileGather(dp: Dumpulator,
