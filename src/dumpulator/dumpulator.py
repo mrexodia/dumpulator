@@ -596,9 +596,38 @@ class Dumpulator(Architecture):
         self.regs.eflags &= ~0x100
 
         # Set up TEB
-        teb = thread.Teb & 0xFFFFFFFFFFFFF000
-        self._setup_gdt(teb)
-        self.regs.gs_base = teb
+        self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
+        self._setup_gdt(self.teb)
+        self.regs.gs_base = self.teb
+
+        # https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+        # Handle PEB
+        # Retrieve console handle
+        if self._x64:
+            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_TEB
+            self.peb = self.read_ptr(self.teb + 0x60)
+            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_PEB
+            process_parameters = self.read_ptr(self.peb + 0x20)
+            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_RTL_USER_PROCESS_PARAMETERS
+            self.console_handle = self.read_ptr(process_parameters + 0x10)
+            self.stdin_handle = self.read_ptr(process_parameters + 0x20)
+            self.stdout_handle = self.read_ptr(process_parameters + 0x28)
+            self.stderr_handle = self.read_ptr(process_parameters + 0x30)
+        else:
+            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_TEB
+            self.peb = self.read_ptr(self.teb + 0x30)
+            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_PEB
+            process_parameters = self.read_ptr(self.peb + 0x10)
+            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_RTL_USER_PROCESS_PARAMETERS
+            self.console_handle = self.read_ptr(process_parameters + 0x10)
+            self.stdin_handle = self.read_ptr(process_parameters + 0x18)
+            self.stdout_handle = self.read_ptr(process_parameters + 0x1c)
+            self.stderr_handle = self.read_ptr(process_parameters + 0x20)
+        print(f"TEB: 0x{self.teb:x}, PEB: 0x{self.peb:x}")
+        print(f"  ConsoleHandle: 0x{self.console_handle:x}")
+        print(f"  StandardInput: 0x{self.stdin_handle:x}")
+        print(f"  StandardOutput: 0x{self.stdout_handle:x}")
+        print(f"  StandardError: 0x{self.stderr_handle:x}")
 
     def _setup_exports(self):
         exports = {}
