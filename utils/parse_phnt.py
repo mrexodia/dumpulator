@@ -210,17 +210,29 @@ def main():
         print("  " + t + ";")
 
     if len(sys.argv) > 2 and sys.argv[2] == "json":
-        data = {}
-        for fn in functions:
-            args = []
-            arg: FunctionArgument
-            for arg in fn.arguments:
-                args.append({
-                    'name': arg.name,
-                    'type': arg.typename + ("*" if arg.is_ptr else "")
-                })
-            data[fn.name] = args
         with open("ntsyscalls.json", "w") as f:
+            data = {}
+            for fn in functions:
+                args = []
+                arg: FunctionArgument
+                for arg in fn.arguments:
+                    args.append({
+                        'name': arg.name,
+                        'type': arg.typename + ("*" if arg.is_ptr else "")
+                    })
+                data[fn.name] = args
+            f.write(json.dumps(data, indent=2))
+        with open("ntenums.json", "w") as f:
+            data = {}
+            e: EnumType
+            for e in phnt_enums.values():
+                values = []
+                for name, value in e.values:
+                    values.append({
+                        'name': name,
+                        'value': value
+                    })
+                data[e.name] = values
             f.write(json.dumps(data, indent=2))
     else:
         with open("ntsyscalls.py", "w") as f:
