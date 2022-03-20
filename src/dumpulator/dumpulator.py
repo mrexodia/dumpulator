@@ -349,6 +349,14 @@ class Registers:
         else:
             self._uc.reg_write(self._regmap[name], value)
 
+    # value = dp.regs[myname]
+    def __getitem__(self, name: str):
+        return self.__getattr__(name)
+
+    # dp.regs[myname] = value
+    def __setitem__(self, name: str, value):
+        return self.__setattr__(name, value)
+
 
 class Arguments:
     def __init__(self, uc: Uc, regs: Registers, x64):
