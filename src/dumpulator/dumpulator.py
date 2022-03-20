@@ -404,7 +404,8 @@ class Arguments:
 
 
 class Dumpulator(Architecture):
-    def __init__(self, minidump_file, trace=False):
+    def __init__(self, minidump_file, *, trace=False, quiet=False):
+        self._quiet = quiet
         self._minidump = MinidumpFile.parse(minidump_file)
         super().__init__(type(self._minidump.threads.threads[0].ContextObject) is not WOW64_CONTEXT)
         self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
@@ -433,6 +434,13 @@ class Dumpulator(Architecture):
         self.syscalls = []
         self._setup_syscalls()
         self.exports = self._setup_exports()
+
+    def info(self, message: str):
+        if not self._quiet:
+            print(message)
+
+    def error(self, message: str):
+        print(message)
 
     # Source: https://github.com/mandiant/speakeasy/blob/767edd2272510a5badbab89c5f35d43a94041378/speakeasy/windows/winemu.py#L533
     def _setup_gdt(self, teb_addr):
@@ -538,7 +546,7 @@ class Dumpulator(Architecture):
         for info in self._minidump.memory_info.infos:
             emu_addr = info.BaseAddress & self.addr_mask
             if info.State == MemoryState.MEM_COMMIT:
-                print(f"mapped base: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
+                self.info(f"mapped base: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
                 self._uc.mem_map(emu_addr, info.RegionSize, map_unicorn_perms(info.Protect))
             elif info.State == MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
                 self._allocate_base = emu_addr
@@ -547,7 +555,7 @@ class Dumpulator(Architecture):
         seg: MinidumpMemorySegment
         for seg in self._minidump.memory_segments_64.memory_segments:
             emu_addr = seg.start_virtual_address & self.addr_mask
-            print(f"initialize base: 0x{emu_addr:x}, size: 0x{seg.size:x}")
+            self.info(f"initialize base: 0x{emu_addr:x}, size: 0x{seg.size:x}")
             memory.move(seg.start_virtual_address)
             assert memory.current_position == seg.start_virtual_address
             data = memory.read(seg.size)
@@ -631,17 +639,17 @@ class Dumpulator(Architecture):
             self.stdin_handle = self.read_ptr(process_parameters + 0x18)
             self.stdout_handle = self.read_ptr(process_parameters + 0x1c)
             self.stderr_handle = self.read_ptr(process_parameters + 0x20)
-        print(f"TEB: 0x{self.teb:x}, PEB: 0x{self.peb:x}")
-        print(f"  ConsoleHandle: 0x{self.console_handle:x}")
-        print(f"  StandardInput: 0x{self.stdin_handle:x}")
-        print(f"  StandardOutput: 0x{self.stdout_handle:x}")
-        print(f"  StandardError: 0x{self.stderr_handle:x}")
+        self.info(f"TEB: 0x{self.teb:x}, PEB: 0x{self.peb:x}")
+        self.info(f"  ConsoleHandle: 0x{self.console_handle:x}")
+        self.info(f"  StandardInput: 0x{self.stdin_handle:x}")
+        self.info(f"  StandardOutput: 0x{self.stdout_handle:x}")
+        self.info(f"  StandardError: 0x{self.stderr_handle:x}")
 
     def _setup_exports(self):
         exports = {}
         for module in self._minidump.modules.modules:
             module_name = module.name.split('\\')[-1].lower()
-            print(f"{module_name} 0x{module.baseaddress:x}[0x{module.size:x}]")
+            self.info(f"{module_name} 0x{module.baseaddress:x}[0x{module.size:x}]")
             for export in self._parse_module_exports(module):
                 if export.name:
                     name = export.name.decode("utf-8")
@@ -669,7 +677,7 @@ class Dumpulator(Architecture):
         try:
             module_data = self.read(module.baseaddress, module.size)
         except UcError:
-            print(f"Failed to read module data")
+            self.error(f"Failed to read module data")
             return []
         pe = PE(data=module_data, fast_load=True)
         # Hack to adjust pefile to accept in-memory modules
@@ -691,7 +699,7 @@ class Dumpulator(Architecture):
             elif export.name == b"Wow64Transition":
                 addr = ntdll.baseaddress + export.address
                 patch_addr = self.read_ptr(addr)
-                print(f"Patching Wow64Transition: {addr:0x} -> {patch_addr:0x}")
+                self.info(f"Patching Wow64Transition: {addr:0x} -> {patch_addr:0x}")
                 # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
                 # mov edx, esp; sysenter; ret
                 KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
@@ -753,11 +761,11 @@ class Dumpulator(Architecture):
     def start(self, begin, end=0xffffffffffffffff, count=0):
         try:
             self._uc.emu_start(begin, until=end, count=count)
-            print(f'emulation finished, cip = {self.regs.cip:0x}')
+            self.info(f'emulation finished, cip = {self.regs.cip:0x}')
             if self.exit_code is not None:
-                print(f"exit code: {self.exit_code}")
+                self.info(f"exit code: {self.exit_code}")
         except UcError as err:
-            print(f'error: {err}, cip = {self.regs.cip:0x}')
+            self.error(f'error: {err}, cip = {self.regs.cip:0x}')
 
     def stop(self, exit_code=None):
         self.exit_code = int(exit_code)
@@ -772,12 +780,12 @@ class Dumpulator(Architecture):
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     if access == UC_MEM_READ_UNMAPPED:
-        print(f"unmapped read from {address:0x}[{size:0x}], cip = {dp.regs.cip:0x}")
+        dp.error(f"unmapped read from {address:0x}[{size:0x}], cip = {dp.regs.cip:0x}")
     elif access == UC_MEM_WRITE_UNMAPPED:
-        print(f"unmapped write to {address:0x}[{size:0x}] = {value:0x}, cip = {dp.regs.cip:0x}")
+        dp.error(f"unmapped write to {address:0x}[{size:0x}] = {value:0x}, cip = {dp.regs.cip:0x}")
 
     elif access == UC_MEM_FETCH_UNMAPPED:
-        print(f"unmapped fetch of {address:0x}[{size:0x}] = {value:0x}, cip = {dp.regs.cip:0x}")
+        dp.error(f"unmapped fetch of {address:0x}[{size:0x}] = {value:0x}, cip = {dp.regs.cip:0x}")
     return False
 
 def _get_regs(instr):
@@ -844,7 +852,7 @@ def _arg_type_string(arg):
 
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
-    print(f"interrupt {number}, cip = {dp.regs.cip:0x}")
+    dp.error(f"interrupt {number}, cip = {dp.regs.cip:0x}")
     uc.emu_stop()
 
 
@@ -861,7 +869,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     return dp.regs.r10
                 return dp.args[index]
 
-            print(f"syscall: {name}(")
+            dp.info(f"syscall: {name}(")
             for i in range(0, argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
@@ -881,25 +889,25 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 if i + 1 == argcount:
                     comma = ""
 
-                print(f"    {_arg_type_string(argvalue)} {argname} = {_arg_to_string(argvalue)}{comma}")
-            print(")")
+                dp.info(f"    {_arg_type_string(argvalue)} {argname} = {_arg_to_string(argvalue)}{comma}")
+            dp.info(")")
             try:
                 status = cb(dp, *args)
-                print(f"status = {status:x}")
+                dp.info(f"status = {status:x}")
                 dp.regs.cax = status
                 dp.regs.ccx = dp.regs.cip + 2
             except Exception as exc:
                 sys.stderr = sys.stdout
                 traceback.print_exception(type(exc), exc, exc.__traceback__)
-                print(f"Exception thrown during syscall implementation, stopping emulation!")
+                dp.error(f"Exception thrown during syscall implementation, stopping emulation!")
                 uc.emu_stop()
         else:
-            print(f"syscall index: {index:0x} -> {name} not implemented!")
+            dp.error(f"syscall index: {index:0x} -> {name} not implemented!")
             uc.emu_stop()
     else:
-        print(f"syscall index {index:0x} out of range")
+        dp.error(f"syscall index {index:0x} out of range")
         uc.emu_stop()
 
 def _hook_invalid(uc: Uc, address, dp: Dumpulator):
-    print(f"invalid instruction at {address:0x}")
+    dp.error(f"invalid instruction at {address:0x}")
     return False
