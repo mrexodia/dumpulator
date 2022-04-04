@@ -2446,8 +2446,8 @@ def ZwProtectVirtualMemory(dp: Dumpulator,
                            NewProtect: ULONG,
                            OldProtect: P(ULONG)
                            ):
-    base = BaseAddress[0] & 0xFFFFFFFFFFFFF000
-    size = round_to_pages(RegionSize[0])
+    base = BaseAddress.read_ptr() & 0xFFFFFFFFFFFFF000
+    size = round_to_pages(RegionSize.read_ptr())
 
     print(f"protect {base:x}[{size:x}] = {NewProtect:x}")
     dp.protect(base, size, NewProtect)

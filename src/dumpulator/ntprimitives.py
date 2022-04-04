@@ -71,7 +71,12 @@ class PVOID:
             return self.arch.read_ptr(self.ptr + index * self.arch.ptr_size())
         else:
             assert index == 0  # TODO: sizeof() not yet implemented
-            return self.type(self)
+            sizeof = self.arch.ptr_size()
+            ptr = self.ptr + index * sizeof
+            if issubclass(self.type, PVOID):
+                return self.type(self.arch.read_ptr(ptr), self.arch)
+            else:
+                return self.type(PVOID(ptr, self.arch))
 
     def __int__(self):
         return self.ptr
@@ -98,7 +103,7 @@ class PVOID:
 
     def deref(self):
         assert self.type is not None
-        return self.type(self)
+        return self[0]
 
 def P(t):
     class P(PVOID):
