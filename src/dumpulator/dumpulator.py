@@ -404,10 +404,19 @@ class Arguments:
 
 
 class Dumpulator(Architecture):
-    def __init__(self, minidump_file, *, trace=False, quiet=False):
+    def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
         self._quiet = quiet
+
+        # Load the minidump
         self._minidump = MinidumpFile.parse(minidump_file)
-        super().__init__(type(self._minidump.threads.threads[0].ContextObject) is not WOW64_CONTEXT)
+        if thread_id is None and self._minidump.exception is not None:
+            thread_id = self._minidump.exception.exception_records[0].ThreadId
+        if thread_id is None:
+            thread = self._minidump.threads.threads[0]
+        else:
+            thread = self._find_thread(thread_id)
+
+        super().__init__(type(thread.ContextObject) is not WOW64_CONTEXT)
         self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
 
         if trace:
@@ -429,11 +438,18 @@ class Dumpulator(Architecture):
         self._allocate_base = None
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
-        self._setup_emulator()
+        self._setup_emulator(thread)
         self.exit_code = None
         self.syscalls = []
         self._setup_syscalls()
         self.exports = self._setup_exports()
+
+    def _find_thread(self, thread_id):
+        for i in range(0, len(self._minidump.threads.threads)):
+            thread = self._minidump.threads.threads[i]
+            if thread.ThreadId == thread_id:
+                return thread
+        raise Exception(f"Thread 0x{thread_id:x} ({thread_id}) not found!")
 
     def info(self, message: str):
         if not self._quiet:
@@ -525,7 +541,7 @@ class Dumpulator(Architecture):
             selector = _create_selector(15, GDT_FLAGS.Ring3)
             self.regs.gs = selector
 
-    def _setup_emulator(self):
+    def _setup_emulator(self, thread):
         # set up hooks
         self._uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED | UC_HOOK_MEM_FETCH_UNMAPPED | UC_HOOK_MEM_READ_PROT | UC_HOOK_MEM_WRITE_PROT | UC_HOOK_MEM_FETCH_PROT, _hook_mem, user_data=self)
         #self._uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, _hook_mem, user_data=self)
@@ -561,7 +577,6 @@ class Dumpulator(Architecture):
             data = memory.read(seg.size)
             self._uc.mem_write(emu_addr, data)
 
-        thread = self._minidump.threads.threads[0]
         if self._x64:
             context: CONTEXT = thread.ContextObject
             self.regs.mxcsr = context.MxCsr
