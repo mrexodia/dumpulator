@@ -340,14 +340,22 @@ class Registers:
                 "cip": UC_X86_REG_EIP,
             })
 
+    def _resolve_reg(self, regname):
+        uc_reg = self._regmap.get(regname, None)
+        if uc_reg is None:
+            raise Exception(f"Unknown register '{regname}'")
+        if not self._x64 and regname.startswith("r"):
+            raise Exception(f"Register {regname} is not available in 32-bit mode")
+        return uc_reg
+
     def __getattr__(self, name: str):
-        return self._uc.reg_read(self._regmap[name])
+        return self._uc.reg_read(self._resolve_reg(name))
 
     def __setattr__(self, name: str, value):
         if name.startswith("_"):
             object.__setattr__(self, name, value)
         else:
-            self._uc.reg_write(self._regmap[name], value)
+            self._uc.reg_write(self._resolve_reg(name), value)
 
     # value = dp.regs[myname]
     def __getitem__(self, name: str):
