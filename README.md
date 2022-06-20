@@ -1,6 +1,6 @@
 # dumpulator
 
-**Note: This is a work-in-progress prototype, please treat it as such.**
+**Note: This is a work-in-progress prototype, please treat it as such. Pull requests are welcome! You can get your feet wet with [good first issues](https://github.com/mrexodia/dumpulator/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)**
 
 An easy-to-use library for emulating code in minidump files.
 
@@ -76,6 +76,27 @@ print(f"rsp: {hex(dp.regs.rsp)}")
 ```
 
 The `quiet` flag suppresses the logs about DLLs loaded and memory regions set up (for use in scripts where you want to reduce log spam).
+
+### Custom syscall implementation
+
+**Note**: This part of dumpulator still needs a lot of work.
+
+```python
+from dumpulator import Dumpulator, syscall
+from dumpulator.native import *
+
+@syscall
+def ZwQueryVolumeInformationFile(dp: Dumpulator,
+                                 FileHandle: HANDLE,
+                                 IoStatusBlock: P(IO_STATUS_BLOCK),
+                                 FsInformation: PVOID,
+                                 Length: ULONG,
+                                 FsInformationClass: FSINFOCLASS
+                                 ):
+    return STATUS_NOT_IMPLEMENTED
+```
+
+You can get the syscall parameters from [ntsyscalls.py](https://github.com/mrexodia/dumpulator/blob/main/src/dumpulator/ntsyscalls.py). There are also a lot of examples there on how to use the API.
 
 ## Collecting the dump
 
