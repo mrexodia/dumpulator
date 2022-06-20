@@ -744,7 +744,7 @@ class Dumpulator(Architecture):
         perms = map_unicorn_perms(protect)
         self._uc.mem_protect(addr, size, perms)
 
-    def call(self, addr, args: List[int]=[], regs: dict={}, count=0):
+    def call(self, addr, args: List[int] = [], regs: dict = {}, count=0):
         # allow passing custom registers
         for name, value in regs.items():
             self.regs.__setattr__(name, value)

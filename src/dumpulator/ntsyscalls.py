@@ -630,7 +630,7 @@ def ZwClearEvent(dp: Dumpulator,
 def ZwClose(dp: Dumpulator,
             Handle: HANDLE
             ):
-    raise NotImplementedError()
+    return STATUS_SUCCESS
 
 @syscall
 def ZwCloseObjectAuditAlarm(dp: Dumpulator,
@@ -815,6 +815,51 @@ def ZwCreateFile(dp: Dumpulator,
                  EaBuffer: PVOID,
                  EaLength: ULONG
                  ):
+    assert ObjectAttributes.ptr != 0
+    file_name = ObjectAttributes[0].ObjectName[0].read_str()
+    print(f"create/open {file_name}")
+    assert FileHandle.ptr != 0
+    assert IoStatusBlock.ptr != 0
+    #assert EaBuffer.ptr == 0
+    #assert EaLength == 0
+    if file_name == "\\Device\\ConDrv\\Server":
+        assert DesiredAccess == 0x12019f
+        assert AllocationSize.ptr == 0x0
+        assert FileAttributes == 0x0
+        assert ShareAccess == 0x7
+        assert CreateDisposition == 0x2
+        assert CreateOptions == 0
+        handle = dp.console_handle
+        if handle == 0:
+            handle = 0x13  # TODO: handle manager
+            dp.console_handle = handle
+        FileHandle.write_ptr(handle)
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+        return STATUS_SUCCESS
+    elif file_name == "\\Reference":
+        FileHandle.write_ptr(0x15)  # TODO: handle manager
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+        return STATUS_SUCCESS
+    elif file_name == "\\Connect":
+        FileHandle.write_ptr(0x17)  # TODO: handle manager
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+        return STATUS_SUCCESS
+    elif file_name == "\\Input":
+        handle = dp.console_handle
+        if handle == 0:
+            handle = 0x19  # TODO: handle manager
+            dp.stdin_handle = handle
+        FileHandle.write_ptr(handle)
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+        return STATUS_SUCCESS
+    elif file_name == "\\Output":
+        handle = dp.console_handle
+        if handle == 0:
+            handle = 0x1A  # TODO: handle manager
+            dp.stdout_handle = handle
+        FileHandle.write_ptr(handle)
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -1283,7 +1328,7 @@ def ZwDelayExecution(dp: Dumpulator,
                      Alertable: BOOLEAN,
                      DelayInterval: P(LARGE_INTEGER)
                      ):
-    raise NotImplementedError()
+    return STATUS_SUCCESS
 
 @syscall
 def ZwDeleteAtom(dp: Dumpulator,
@@ -1363,28 +1408,31 @@ def ZwDeviceIoControlFile(dp: Dumpulator,
                           OutputBufferLength: ULONG
                           ):
     if FileHandle == dp.console_handle:
-        assert IoControlCode == 0x500016
-        data = InputBuffer.read(InputBufferLength)
-        print(f"InputBuffer: {data.hex()}")
+        if IoControlCode == 0x500016:
+            data = InputBuffer.read(InputBufferLength)
+            print(f"InputBuffer: {data.hex()}")
 
-        # TODO: this is totally wrong, but seems to work?
-        if dp.ptr_size() == 4:
-            buf = InputBuffer.ptr
-            params = struct.unpack("<IIII", dp.read(buf, 4 * 4))
-            for i, p in enumerate(params):
-                print(f"params[{i}] = {p}")
+            # TODO: this is totally wrong, but seems to work?
+            if dp.ptr_size() == 4:
+                buf = InputBuffer.ptr
+                params = struct.unpack("<IIII", dp.read(buf, 4 * 4))
+                for i, p in enumerate(params):
+                    print(f"params[{i}] = {p}")
 
-            length = dp.read_ptr(buf + 4 * 4)
-            buffer = dp.read_ptr(buf + 4 * 4 + dp.ptr_size())
+                length = dp.read_ptr(buf + 4 * 4)
+                buffer = dp.read_ptr(buf + 4 * 4 + dp.ptr_size())
 
-            ptr1 = dp.read_ptr(buf + 0x18)
-            ptr2 = dp.read_ptr(buf + 0x28)
-            print(f"ptr1: {ptr1:x}, ptr2: {ptr2:x}")
-            dp.write_ptr(ptr2, 0xffffffff)
-            print(f"{dp.read_ptr(ptr1):x}")
+                ptr1 = dp.read_ptr(buf + 0x18)
+                ptr2 = dp.read_ptr(buf + 0x28)
+                print(f"ptr1: {ptr1:x}, ptr2: {ptr2:x}")
+                dp.write_ptr(ptr2, 0xffffffff)
+                print(f"{dp.read_ptr(ptr1):x}")
 
-            print(f"Length: {length}, Buffer: 0x{buffer:x}")
+                print(f"Length: {length}, Buffer: 0x{buffer:x}")
+                return STATUS_SUCCESS
+        elif IoControlCode == 0x500037:  # ConsoleLaunchServerProcess (AllocConsole)
             return STATUS_SUCCESS
+    return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -1415,7 +1463,10 @@ def ZwDuplicateObject(dp: Dumpulator,
                       HandleAttributes: ULONG,
                       Options: ULONG
                       ):
-    raise NotImplementedError()
+    assert SourceProcessHandle == dp.NtCurrentProcess()
+    assert TargetProcessHandle == dp.NtCurrentProcess()
+    TargetHandle.write_ptr(SourceHandle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwDuplicateToken(dp: Dumpulator,
@@ -2117,6 +2168,14 @@ def ZwOpenFile(dp: Dumpulator,
                ShareAccess: ULONG,
                OpenOptions: ULONG
                ):
+    assert FileHandle.ptr != 0
+    assert ObjectAttributes.ptr != 0
+    file_name = ObjectAttributes[0].ObjectName[0].read_str()
+    print(f"open: {file_name}")
+    if "auth_key.bin" in file_name:
+        FileHandle.write_ptr(0x1C)  # TODO: handle manager
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -2621,6 +2680,21 @@ def ZwQueryInformationFile(dp: Dumpulator,
                            Length: ULONG,
                            FileInformationClass: FILE_INFORMATION_CLASS
                            ):
+    if FileInformationClass == FILE_INFORMATION_CLASS.FileAttributeTagInformation:
+        assert Length == 8
+        assert FileInformation.ptr != 0
+        assert IoStatusBlock.ptr != 0
+        assert dp.ptr_size() == 8  # TODO: implement 32-bit
+
+        # Return file attributes
+        FileAttributes = 0x80  # FILE_ATTRIBUTE_NORMAL
+        ReparseTag = 0
+        info = struct.pack("<II", FileAttributes, ReparseTag)
+        FileInformation.write(info)
+
+        # Put the number of bytes written in the status block
+        IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, len(info)))
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -2797,6 +2871,10 @@ def ZwQueryObject(dp: Dumpulator,
                   ObjectInformationLength: ULONG,
                   ReturnLength: P(ULONG)
                   ):
+    if ObjectInformationClass == OBJECT_INFORMATION_CLASS.ObjectHandleFlagInformation:
+        assert ObjectInformationLength == 2
+        ObjectInformation.write(b'\0\0')
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -3534,6 +3612,18 @@ def ZwSetInformationFile(dp: Dumpulator,
                          Length: ULONG,
                          FileInformationClass: FILE_INFORMATION_CLASS
                          ):
+    if FileInformationClass == FILE_INFORMATION_CLASS.FileDispositionInformationEx:
+        print(f"Delete file {hex(FileHandle)}")
+        assert IoStatusBlock.ptr != 0
+        assert FileInformation.ptr != 0
+        assert Length == 4
+        return STATUS_SUCCESS
+    elif FileInformationClass == FILE_INFORMATION_CLASS.FileDispositionInformation:
+        print(f"Delete file {hex(FileHandle)}")
+        assert IoStatusBlock.ptr != 0
+        assert FileInformation.ptr != 0
+        assert Length == 1
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -3570,6 +3660,8 @@ def ZwSetInformationProcess(dp: Dumpulator,
                             ProcessInformation: PVOID,
                             ProcessInformationLength: ULONG
                             ):
+    if ProcessInformationClass == PROCESSINFOCLASS.ProcessConsoleHostProcess:
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall

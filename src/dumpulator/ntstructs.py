@@ -82,7 +82,22 @@ class IO_APC_ROUTINE:
     pass
 
 class IO_STATUS_BLOCK:
-    pass
+    def __init__(self, ptr: PVOID):
+        self.ptr = ptr
+        s = ArchStream(ptr)
+        self.Status = s.read_ulong()
+        if s.x64:
+            self.PointerHi = s.read_ulong()
+        self.Information = s.read_ptr()
+
+    @staticmethod
+    def write(ptr: PVOID, Status: int, Information: int):
+        pointer_data = ptr.read_ptr()
+        pointer_data &= 0xFFFFFFFF00000000
+        pointer_data |= Status
+        ptr.write_ptr(pointer_data)
+        ptr.arch.write_ptr(ptr.ptr + ptr.arch.ptr_size(), Information)
+
 
 class JOB_SET_ARRAY:
     pass

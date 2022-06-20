@@ -39,7 +39,7 @@ class Architecture(object):
     def write_ptr(self, addr, value):
         self.write(addr, struct.pack("<Q" if self._x64 else "<I", value))
 
-    def read_str(self, addr, encoding="utf-8", ):
+    def read_str(self, addr, encoding="utf-8"):
         data = self.read(addr, 512)
 
         # Note: this is awful
@@ -100,6 +100,9 @@ class PVOID:
 
     def read_ptr(self):
         return self.arch.read_ptr(self.ptr)
+
+    def write_ptr(self, value: int):
+        return self.arch.write_ptr(self.ptr, value)
 
     def deref(self):
         assert self.type is not None
