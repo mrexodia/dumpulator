@@ -3061,7 +3061,17 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
                                  Length: ULONG,
                                  FsInformationClass: FSINFOCLASS
                                  ):
-    raise NotImplementedError()
+    assert FsInformationClass == FSINFOCLASS.FileFsDeviceInformation
+    assert Length == 8
+    assert FileHandle in [dp.stdout_handle, dp.stdin_handle, dp.stderr_handle]
+    # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/616b66d5-b335-4e1c-8f87-b4a55e8d3e4a
+    # FILE_DEVICE_DISK, FILE_CHARACTERISTIC_TS_DEVICE
+    result = struct.pack('<II', 0x7, 0x1000)
+    FsInformation.write(result)
+    # https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_io_status_block
+    dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
+    dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
+    return STATUS_SUCCESS
 
 @syscall
 def ZwQueryWnfStateData(dp: Dumpulator,

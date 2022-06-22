@@ -4,16 +4,6 @@ from dumpulator.native import *
 # Dummy syscall implementations
 
 @syscall
-def ZwQueryVolumeInformationFile(dp: Dumpulator,
-                                 FileHandle: HANDLE,
-                                 IoStatusBlock: P(IO_STATUS_BLOCK),
-                                 FsInformation: PVOID,
-                                 Length: ULONG,
-                                 FsInformationClass: FSINFOCLASS
-                                 ):
-    return STATUS_SUCCESS
-
-@syscall
 def ZwOpenKey(dp: Dumpulator,
               KeyHandle: P(HANDLE),
               DesiredAccess: ACCESS_MASK,
