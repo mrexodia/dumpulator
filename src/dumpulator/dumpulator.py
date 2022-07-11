@@ -570,10 +570,13 @@ class Dumpulator(Architecture):
         for info in self._minidump.memory_info.infos:
             emu_addr = info.BaseAddress & self.addr_mask
             if info.State == MemoryState.MEM_COMMIT:
-                self.info(f"mapped base: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
+                self.info(f"committed: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
                 self._uc.mem_map(emu_addr, info.RegionSize, map_unicorn_perms(info.Protect))
             elif info.State == MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
                 self._allocate_base = emu_addr
+            elif info.State == MemoryState.MEM_RESERVE:
+                self.info(f"reserved: {hex(emu_addr)}, size: {hex(info.RegionSize)}")
+                self._uc.mem_map(emu_addr, info.RegionSize, UC_PROT_NONE)
 
         memory = self._minidump.get_reader().get_buffered_reader()
         seg: MinidumpMemorySegment

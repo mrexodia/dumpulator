@@ -298,12 +298,25 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
                             AllocationType: ULONG,
                             Protect: ULONG
                             ):
+    assert ZeroBits == 0
     assert ProcessHandle == dp.NtCurrentProcess()
-    assert AllocationType == MEM_COMMIT
     assert Protect == PAGE_READWRITE
     base = dp.read_ptr(BaseAddress.ptr)
     size = dp.read_ptr(RegionSize.ptr)
-    dp._uc.mem_map(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
+    if AllocationType == MEM_COMMIT:
+        assert base != 0
+        dp._uc.mem_protect(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
+        print(f"allocate({hex(base)}[{hex(size)}])")
+    elif AllocationType == MEM_RESERVE:
+        if base == 0:
+            base = dp.allocate(size)
+            dp._uc.mem_protect(base, size, unicorn.UC_PROT_NONE)
+            BaseAddress.write_ptr(base)
+        else:
+            dp._uc.mem_map(base, size, unicorn.UC_PROT_NONE)
+        print(f"reserve({hex(base)}[{hex(size)}])")
+    else:
+        assert False
     return STATUS_SUCCESS
 
 @syscall
