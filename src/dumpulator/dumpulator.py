@@ -1,3 +1,4 @@
+import sys
 import traceback
 from enum import Enum
 from typing import List, Union
@@ -412,6 +413,28 @@ class Arguments:
         else:
             raise Exception("not implemented!")
 
+class ExceptionType(Enum):
+    NoException = 0
+    Memory = 1
+
+class ExceptionInfo:
+    def __init__(self):
+        self.type = ExceptionType.NoException
+        self.memory_access = 0
+        self.memory_address = 0
+        self.memory_size = 0
+        self.memory_value = 0
+        self.code_hook_h: Optional[int] = None  # TODO: should be unicorn.uc_hook_h, but type error
+        self.context: Optional[unicorn.UcContext] = None
+        self.tb_start = 0
+        self.tb_size = 0
+        self.tb_icount = 0
+        self.step_count = 0
+        self.final = False
+        self.handling = False
+
+    def __str__(self):
+        return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
 
 class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
@@ -454,6 +477,7 @@ class Dumpulator(Architecture):
         self._setup_syscalls()
         self.exports = self._setup_exports()
         self.handles = HandleManager()
+        self.exception = ExceptionInfo()
 
     def _find_thread(self, thread_id):
         for i in range(0, len(self._minidump.threads.threads)):
@@ -522,7 +546,7 @@ class Dumpulator(Architecture):
         access = (GDT_ACCESS_BITS.Code | GDT_ACCESS_BITS.CodeReadable |
                   GDT_ACCESS_BITS.Ring3)
         _make_entry(6, 0, access, flags=0x4 | 0x2)
-        # print(f"wow64: {_create_selector(6, GDT_FLAGS.Ring3):0x}")
+        # print(f"wow64: {_create_selector(6, GDT_FLAGS.Ring3):x}")
 
         self.regs.gdtr = (0, gdt_addr, num_gdt_entries * ENTRY_SIZE - 1, 0x0)
         selector = _create_selector(16, GDT_FLAGS.Ring3)
@@ -728,7 +752,7 @@ class Dumpulator(Architecture):
             elif export.name == b"Wow64Transition":
                 addr = ntdll.baseaddress + export.address
                 patch_addr = self.read_ptr(addr)
-                self.info(f"Patching Wow64Transition: {addr:0x} -> {patch_addr:0x}")
+                self.info(f"Patching Wow64Transition: {addr:x} -> {patch_addr:x}")
                 # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
                 # mov edx, esp; sysenter; ret
                 KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
@@ -787,14 +811,50 @@ class Dumpulator(Architecture):
         self._allocate_ptr = ptr
         return ptr
 
+    def handle_exception(self):
+        self.info(f"handling exception...")
+        assert not self.exception.handling
+        self.exception.handling = True
+        # TODO: properly implement
+        return 0
+
     def start(self, begin, end=0xffffffffffffffff, count=0):
-        try:
-            self._uc.emu_start(begin, until=end, count=count)
-            self.info(f'emulation finished, cip = {self.regs.cip:0x}')
-            if self.exit_code is not None:
-                self.info(f"exit code: {self.exit_code}")
-        except UcError as err:
-            self.error(f'error: {err}, cip = {self.regs.cip:0x}')
+        emu_begin = begin
+        emu_until = end
+        emu_count = count
+        while True:
+            try:
+                self.info(f"emu_start({emu_begin:x}, {emu_until:x}, {emu_count})")
+                self._uc.emu_start(emu_begin, until=emu_until, count=emu_count)
+                self.info(f'emulation finished, cip = {self.regs.cip:x}')
+                if self.exit_code is not None:
+                    self.info(f"exit code: {self.exit_code}")
+                break
+            except UcError as err:
+                if self.exception.type != ExceptionType.NoException:
+                    if self.exception.final:
+                        emu_begin = self.handle_exception()
+                        continue
+                    else:
+                        # If this happens there was an error restarting simulation
+                        assert self.exception.step_count == 0
+
+                        # Hook should be installed at this point
+                        assert self.exception.code_hook_h is not None
+
+                        # Restore the context (TODO: check if necessary)
+                        assert self.exception.context is not None
+                        self._uc.context_restore(self.exception.context)
+
+                        # Restart emulation
+                        self.info(f"restarting emulation to handle exception...")
+                        emu_begin = self.regs.cip
+                        emu_until = 0xffffffffffffffff
+                        emu_count = self.exception.tb_icount + 1
+                        continue
+                else:
+                    self.error(f'error: {err}, cip = {self.regs.cip:x}')
+                break
 
     def stop(self, exit_code=None):
         self.exit_code = int(exit_code)
@@ -806,16 +866,90 @@ class Dumpulator(Architecture):
     def NtCurrentThread(self):
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
 
+def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
+    try:
+        dp.info(f"exception step: {address:x}[{size}]")
+        ex = dp.exception
+        ex.step_count += 1
+        if ex.step_count >= ex.tb_icount:
+            raise Exception("Stepped past the basic block without reaching exception")
+
+    except UcError as err:
+        dp.error(f"Exception during unicorn hook, please report this as a bug")
+        raise err
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
-    if access == UC_MEM_READ_UNMAPPED:
-        dp.error(f"unmapped read from {address:0x}[{size:0x}], cip = {dp.regs.cip:0x}")
-    elif access == UC_MEM_WRITE_UNMAPPED:
-        dp.error(f"unmapped write to {address:0x}[{size:0x}] = {value:0x}, cip = {dp.regs.cip:0x}")
+    # TODO: figure out why when you start executing at 0 this callback is triggered more than once
+    try:
+        # Extract exception information
+        exception = ExceptionInfo()
+        exception.type = ExceptionType.Memory
+        exception.memory_access = access
+        exception.memory_address = address
+        exception.memory_size = size
+        exception.memory_value = value
+        exception.context = uc.context_save()
+        tb = uc.ctl_request_cache(dp.regs.cip)
+        exception.tb_start = tb.pc
+        exception.tb_size = tb.size
+        exception.tb_icount = tb.icount
 
-    elif access == UC_MEM_FETCH_UNMAPPED:
-        dp.error(f"unmapped fetch of {address:0x}[{size:0x}] = {value:0x}, cip = {dp.regs.cip:0x}")
-    return False
+        # Print exception info
+        final = dp.trace or dp.exception.code_hook_h is not None
+        info = "final" if final else "initial"
+        if access == UC_MEM_READ_UNMAPPED:
+            dp.error(f"{info} unmapped read from {address:x}[{size:x}], cip = {dp.regs.cip:x}, exception: {exception}")
+        elif access == UC_MEM_WRITE_UNMAPPED:
+            dp.error(f"{info} unmapped write to {address:x}[{size:x}] = {value:x}, cip = {dp.regs.cip:x}")
+        elif access == UC_MEM_FETCH_UNMAPPED:
+            dp.error(f"{info} unmapped fetch of {address:x}[{size:x}], cip = {dp.regs.cip:x}")
+
+        if final:
+            # Make sure this is the same exception we expect
+            if not dp.trace:
+                assert access == dp.exception.memory_access
+                assert address == dp.exception.memory_address
+                assert size == dp.exception.memory_size
+                assert value == dp.exception.memory_value
+
+                # Delete the code hook
+                uc.hook_del(int(dp.exception.code_hook_h))
+                dp.exception.code_hook_h = None
+
+            # At this point we know for sure the context is correct so we can report the exception
+            dp.exception = exception
+            dp.exception.final = True
+
+            # Stop emulation (we resume it on KiUserExceptionDispatcher later)
+            dp.stop(exception.type)
+            return False
+
+        # TODO: support nested exceptions
+        assert dp.exception.type == ExceptionType.NoException
+
+        # Remove the translation block cache for this block
+        # Without doing this single stepping the block won't work
+        uc.ctl_remove_cache(exception.tb_start, exception.tb_start + exception.tb_size)
+
+        # Install the code hook to single step the basic block again.
+        # This will prevent translation block caching and give us the correct cip
+        exception.code_hook_h = uc.hook_add(UC_HOOK_CODE, _hook_code_exception, user_data=dp)
+
+        # Store the exception info
+        dp.exception = exception
+
+        # Stop emulation (we resume execution later)
+        dp.stop(exception.type)
+        return False
+    except AssertionError as err:
+        sys.stderr = sys.stdout
+        traceback.print_exception(err)
+        raise err
+    except UcError as err:
+        dp.error(f"Exception during unicorn hook, please report this as a bug")
+        raise err
+    except Exception as err:
+        raise err
 
 def _get_regs(instr):
     regs = OrderedDict()
@@ -861,7 +995,6 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
         line += f"|{reg}=0x{dp.regs.__getattr__(reg):x}"
     line += "\n"
     dp.trace.write(line)
-    return True
 
 
 def _arg_to_string(arg):
@@ -881,7 +1014,7 @@ def _arg_type_string(arg):
 
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
-    dp.error(f"interrupt {number}, cip = {dp.regs.cip:0x}")
+    dp.error(f"interrupt {number}, cip = {dp.regs.cip:x}")
     uc.emu_stop()
 
 
@@ -931,12 +1064,12 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 dp.error(f"Exception thrown during syscall implementation, stopping emulation!")
                 uc.emu_stop()
         else:
-            dp.error(f"syscall index: {index:0x} -> {name} not implemented!")
+            dp.error(f"syscall index: {index:x} -> {name} not implemented!")
             uc.emu_stop()
     else:
-        dp.error(f"syscall index {index:0x} out of range")
+        dp.error(f"syscall index {index:x} out of range")
         uc.emu_stop()
 
 def _hook_invalid(uc: Uc, address, dp: Dumpulator):
-    dp.error(f"invalid instruction at {address:0x}")
+    dp.error(f"invalid instruction at {address:x}")
     return False

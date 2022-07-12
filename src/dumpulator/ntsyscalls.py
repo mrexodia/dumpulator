@@ -304,7 +304,9 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
     assert ProcessHandle == dp.NtCurrentProcess()
     assert Protect == PAGE_READWRITE
     base = dp.read_ptr(BaseAddress.ptr)
+    assert base & 0xFFF == 0
     size = dp.read_ptr(RegionSize.ptr)
+    assert size != 0
     if AllocationType == MEM_COMMIT:
         assert base != 0
         dp._uc.mem_protect(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
