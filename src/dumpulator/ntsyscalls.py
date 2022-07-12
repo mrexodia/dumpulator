@@ -2803,10 +2803,10 @@ def ZwQueryInformationProcess(dp: Dumpulator,
                               ):
     assert (ProcessHandle == dp.NtCurrentProcess())
     if ProcessInformationClass in [PROCESSINFOCLASS.ProcessDebugPort, PROCESSINFOCLASS.ProcessDebugObjectHandle]:
-        assert (ProcessInformationLength == 4)
-        dp.write_ulong(ProcessInformation.ptr, 0)
+        assert (ProcessInformationLength == dp.ptr_size())
+        dp.write_ptr(ProcessInformation.ptr, 0)
         if ReturnLength != 0:
-            dp.write_ulong(ReturnLength.ptr, 4)
+            dp.write_ulong(ReturnLength.ptr, dp.ptr_size())
         return STATUS_SUCCESS
     raise NotImplementedError()
 

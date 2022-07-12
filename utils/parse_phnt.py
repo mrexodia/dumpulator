@@ -259,6 +259,8 @@ from .ntprimitives import make_global
             f.write(header.strip() + "\n\n")
 
             for t in sorted(struct_types):
+                if t == "CONTEXT":
+                    pass
                 f.write(f"class {t}:\n")
                 f.write("    pass\n")
                 f.write("\n")

@@ -27,9 +27,6 @@ class BOOT_OPTIONS:
 class CLIENT_ID:
     pass
 
-class CONTEXT:
-    pass
-
 class CRM_PROTOCOL_ID:
     pass
 

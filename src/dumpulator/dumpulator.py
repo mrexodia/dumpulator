@@ -368,6 +368,13 @@ class Registers:
     def __setitem__(self, name: str, value):
         return self.__setattr__(name, value)
 
+    def __contains__(self, name: str):
+        try:
+            self._resolve_reg(name)
+            return True
+        except Exception:
+            return False
+
 
 class Arguments:
     def __init__(self, uc: Uc, regs: Registers, x64):
@@ -757,6 +764,8 @@ class Dumpulator(Architecture):
                 # mov edx, esp; sysenter; ret
                 KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
                 self.write(patch_addr, KiFastSystemCall)
+            elif export.name == b"KiUserExceptionDispatcher":
+                self.KiUserExceptionDispatcher = ntdll.baseaddress + export.address
 
         syscalls.sort()
         for index, (rva, name) in enumerate(syscalls):
@@ -815,8 +824,38 @@ class Dumpulator(Architecture):
         self.info(f"handling exception...")
         assert not self.exception.handling
         self.exception.handling = True
-        # TODO: properly implement
-        return 0
+
+        assert self._x64  # TODO: implement 32-bit support
+
+        # Stack layout:
+        context = CONTEXT()  # 0x4f0 bytes (sizeof(CONTEXT) + 0x20 unused(?)
+        context.ContextFlags = 0x10005F  # This is what is observed in KiUserExceptionDispatcher
+        context.load_regs(self.regs)
+        record = EXCEPTION_RECORD64()  # 0x98 bytes
+        if self.exception.type == ExceptionType.Memory:
+            record.ExceptionCode = 0xC0000005
+            record.ExceptionFlags = 0
+            record.ExceptionAddress = self.regs.rip
+            record.NumberParameters = 2
+            types = {
+                UC_MEM_READ_UNMAPPED: EXCEPTION_READ_FAULT,
+                UC_MEM_WRITE_UNMAPPED: EXCEPTION_WRITE_FAULT,
+                UC_MEM_FETCH_UNMAPPED: EXCEPTION_READ_FAULT,
+                UC_MEM_READ_PROT: EXCEPTION_READ_FAULT,
+                UC_MEM_WRITE_PROT: EXCEPTION_WRITE_FAULT,
+                UC_MEM_FETCH_PROT: EXCEPTION_EXECUTE_FAULT,
+            }
+            record.ExceptionInformation[0] = types[self.exception.memory_access]
+            record.ExceptionInformation[1] = self.exception.memory_address
+        else:
+            assert False  # TODO: not implemented
+
+        rsp = self.regs.rsp - 0x710
+        self.info(f"old rsp: {self.regs.rsp:x}, new rsp: {rsp:x}")
+        self.write(rsp, bytes(context))
+        self.write(rsp + 0x4f0, bytes(record))
+        self.regs.rsp = rsp
+        return self.KiUserExceptionDispatcher
 
     def start(self, begin, end=0xffffffffffffffff, count=0):
         emu_begin = begin
@@ -834,6 +873,8 @@ class Dumpulator(Architecture):
                 if self.exception.type != ExceptionType.NoException:
                     if self.exception.final:
                         emu_begin = self.handle_exception()
+                        emu_until = end
+                        emu_count = 0
                         continue
                     else:
                         # If this happens there was an error restarting simulation
@@ -903,6 +944,8 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             dp.error(f"{info} unmapped write to {address:x}[{size:x}] = {value:x}, cip = {dp.regs.cip:x}")
         elif access == UC_MEM_FETCH_UNMAPPED:
             dp.error(f"{info} unmapped fetch of {address:x}[{size:x}], cip = {dp.regs.cip:x}")
+        else:
+            dp.error(f"{info} unknown access {access} of {address:x}[{size:x}] = {value:X}, cip = {dp.regs.cip:x}")
 
         if final:
             # Make sure this is the same exception we expect
@@ -1014,7 +1057,7 @@ def _arg_type_string(arg):
 
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
-    dp.error(f"interrupt {number}, cip = {dp.regs.cip:x}")
+    dp.error(f"interrupt {number}, cip = {dp.regs.cip:x}, rcx = {dp.regs.rcx:x}")
     uc.emu_stop()
 
 
