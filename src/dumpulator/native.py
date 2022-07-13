@@ -1,5 +1,6 @@
 import struct
 import ctypes
+import traceback
 from typing import Optional
 
 from .ntenums import *
@@ -176,39 +177,43 @@ class CONTEXT(ctypes.Structure):
 
     # Based on: https://github.com/MarioVilas/winappdbg/blob/master/winappdbg/win32/context_amd64.py#L424
     def load_regs(self, regs):
-        for key in CONTEXT._others:
-            if key != "VectorRegister":
-                try:
-                    setattr(self, key, regs[key.lower()])
-                except:
-                    pass
-            else:
-                # TODO: implement high xmm support
-                pass
+        setattr(self, "MxCsr", regs["mxcsr"])
+        # TODO: implement high xmm support
         ContextFlags = self.ContextFlags
         if (ContextFlags & CONTEXT_CONTROL) == CONTEXT_CONTROL:
             for key in CONTEXT._control:
                 try:
-                    setattr(self, key, regs[key.lower()])
-                except:
+                    dpname = key.lower()
+                    if key.startswith("Seg"):
+                        dpname = key[3:].lower()
+                    setattr(self, key, regs[dpname])
+                except Exception as x:
+                    traceback.print_exc()
                     pass
         if (ContextFlags & CONTEXT_INTEGER) == CONTEXT_INTEGER:
             for key in CONTEXT._integer:
                 try:
                     setattr(self, key, regs[key.lower()])
-                except:
+                except Exception as x:
+                    traceback.print_exc()
                     pass
         if (ContextFlags & CONTEXT_SEGMENTS) == CONTEXT_SEGMENTS:
             for key in CONTEXT._segments:
                 try:
-                    setattr(self, key, regs[key.lower()])
-                except:
+                    dpname = key.lower()
+                    if key.startswith("Seg"):
+                        dpname = key[3:].lower()
+                    setattr(self, key, regs[dpname])
+                except Exception as x:
+                    traceback.print_exc()
                     pass
         if (ContextFlags & CONTEXT_DEBUG_REGISTERS) == CONTEXT_DEBUG_REGISTERS:
             for key in CONTEXT._debug:
                 try:
-                    setattr(self, key, regs[key.lower()])
-                except:
+                    value = regs[key.lower()] if key.startswith("Dr") else 0
+                    setattr(self, key, value)
+                except Exception as x:
+                    traceback.print_exc()
                     pass
         if (ContextFlags & CONTEXT_MMX_REGISTERS) == CONTEXT_MMX_REGISTERS:
             xmm = self.FltSave.Xmm
@@ -219,7 +224,8 @@ class CONTEXT(ctypes.Structure):
                 y.Low = x - (x >> 64)
                 try:
                     setattr(xmm, key, y)
-                except:
+                except Exception as x:
+                    traceback.print_exc()
                     pass
 
 
@@ -236,3 +242,14 @@ class EXCEPTION_RECORD64(ctypes.Structure):
         ("ExceptionInformation", ctypes.c_uint64 * 15),
     ]
 assert ctypes.sizeof(EXCEPTION_RECORD64) == 0x98
+
+class EXTRA_CONTEXT_INFO(ctypes.Structure):
+    _fields_ = [
+        ("UnknownFeatures1", ctypes.c_uint32),
+        ("StackAllocationSize", ctypes.c_uint32),
+        ("UnknownFeatures2", ctypes.c_uint32),
+        ("ContextSize", ctypes.c_uint32),
+        ("Unknown3", ctypes.c_uint32),
+        ("Unknown4", ctypes.c_uint32),
+    ]
+assert ctypes.sizeof(EXTRA_CONTEXT_INFO) == 0x18

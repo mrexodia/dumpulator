@@ -1,3 +1,4 @@
+import ctypes
 import sys
 import traceback
 from enum import Enum
@@ -826,11 +827,29 @@ class Dumpulator(Architecture):
         self.exception.handling = True
 
         assert self._x64  # TODO: implement 32-bit support
+        allocation_size = 0x720
 
         # Stack layout:
-        context = CONTEXT()  # 0x4f0 bytes (sizeof(CONTEXT) + 0x20 unused(?)
+        # CONTEXT: 0x4d0 bytes (not all fields are overwritten)
+        # EXTRA_CONTEXT_INFO: 0x18 bytes (accessed by RtlpSanitizeContext)
+        # Alignment: 0x8 bytes (not overwritten by KiUserExceptionDispatcher)
+        # EXCEPTION_RECORD: 0x98 bytes
+        # Unknown: 0x198
+        # 0x4f0 bytes (sizeof(CONTEXT) + 0x20 unclear
+        rsp = self.regs.rsp - allocation_size
+        self.write(rsp, allocation_size * b"\x69")  # fill stuff with 0x69 for debugging
+        self.info(f"old rsp: {self.regs.rsp:x}, new rsp: {rsp:x}")
+        context_size = ctypes.sizeof(CONTEXT)
+        context = CONTEXT.from_buffer(self.read(rsp, context_size))
         context.ContextFlags = 0x10005F  # This is what is observed in KiUserExceptionDispatcher
         context.load_regs(self.regs)
+        extra_info = EXTRA_CONTEXT_INFO()
+        extra_info.UnknownFeatures1 = 0xFFFFFB30
+        extra_info.StackAllocationSize = allocation_size
+        extra_info.UnknownFeatures2 = 0xFFFFFB30
+        extra_info.ContextSize = ctypes.sizeof(CONTEXT)
+        extra_info.Unknown3 = 0xF0
+        extra_info.Unknown4 = 0x160
         record = EXCEPTION_RECORD64()  # 0x98 bytes
         if self.exception.type == ExceptionType.Memory:
             record.ExceptionCode = 0xC0000005
@@ -850,32 +869,36 @@ class Dumpulator(Architecture):
         else:
             assert False  # TODO: not implemented
 
-        rsp = self.regs.rsp - 0x710
-        self.info(f"old rsp: {self.regs.rsp:x}, new rsp: {rsp:x}")
-        self.write(rsp, bytes(context))
-        self.write(rsp + 0x4f0, bytes(record))
+        def write_stack(cur_ptr: int, data: bytes):
+            self.write(cur_ptr, data)
+            return cur_ptr + len(data)
+
+        ptr = write_stack(rsp, bytes(context))
+        ptr = write_stack(ptr, bytes(extra_info))
+        ptr += 8  # alignment TODO: check if aligned?
+        ptr = write_stack(ptr, bytes(record))
+        ptr += 8  # not set
+        ptr = write_stack(ptr, struct.pack("<Q", record.ExceptionAddress))
+        ptr += 16  # not set
+        ptr = write_stack(ptr, struct.pack("<Q", context.Rsp))
+        ptr += 16  # not set
+        ptr = write_stack(ptr, struct.pack("<QIIQQQQQQ", 0, 4, 8, 0, 0, 0, 0, 0, 0))
         self.regs.rsp = rsp
         return self.KiUserExceptionDispatcher
 
     def start(self, begin, end=0xffffffffffffffff, count=0):
+        # Clear exceptions before starting
+        self.exception = ExceptionInfo()
         emu_begin = begin
         emu_until = end
         emu_count = count
         while True:
             try:
-                self.info(f"emu_start({emu_begin:x}, {emu_until:x}, {emu_count})")
-                self._uc.emu_start(emu_begin, until=emu_until, count=emu_count)
-                self.info(f'emulation finished, cip = {self.regs.cip:x}')
-                if self.exit_code is not None:
-                    self.info(f"exit code: {self.exit_code}")
-                break
-            except UcError as err:
                 if self.exception.type != ExceptionType.NoException:
                     if self.exception.final:
                         emu_begin = self.handle_exception()
                         emu_until = end
                         emu_count = 0
-                        continue
                     else:
                         # If this happens there was an error restarting simulation
                         assert self.exception.step_count == 0
@@ -892,7 +915,17 @@ class Dumpulator(Architecture):
                         emu_begin = self.regs.cip
                         emu_until = 0xffffffffffffffff
                         emu_count = self.exception.tb_icount + 1
-                        continue
+
+                self.info(f"emu_start({emu_begin:x}, {emu_until:x}, {emu_count})")
+                self._uc.emu_start(emu_begin, until=emu_until, count=emu_count)
+                self.info(f'emulation finished, cip = {self.regs.cip:x}')
+                if self.exit_code is not None:
+                    self.info(f"exit code: {self.exit_code}")
+                break
+            except UcError as err:
+                if self.exception.type != ExceptionType.NoException:
+                    # Handle the exception outside of the except handler
+                    continue
                 else:
                     self.error(f'error: {err}, cip = {self.regs.cip:x}')
                 break
@@ -986,7 +1019,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         return False
     except AssertionError as err:
         sys.stderr = sys.stdout
-        traceback.print_exception(err)
+        traceback.print_exc()
         raise err
     except UcError as err:
         dp.error(f"Exception during unicorn hook, please report this as a bug")
