@@ -358,6 +358,7 @@ def open_x64dbg_trace(filename, tracef):
             reg_indexes[reg] = i
             reg_masks[reg] = 0xFFFFFFFFFFFFFFFF >> (64 - pointer_size * 8)
         reg_indexes["rflags"] = reg_indexes["eflags"]
+        reg_masks["rflags"] = reg_masks["eflags"]
 
         def add_reg(parent, child, mask):
             reg_indexes[child] = reg_indexes[parent]
@@ -507,7 +508,11 @@ def open_x64dbg_trace(filename, tracef):
                 line += " "
                 line += instr.op_str
             for reg in _get_regs(instr):
-                line += f"|{reg}=0x{get_reg(reg):x}"
+                if reg in reg_indexes:
+                    line += f"|{reg}=0x{get_reg(reg):x}"
+                else:
+                    line += f"|{reg}=???"
+
             line += "\n"
             tracef.write(line)
 
