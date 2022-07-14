@@ -243,13 +243,17 @@ class EXCEPTION_RECORD64(ctypes.Structure):
     ]
 assert ctypes.sizeof(EXCEPTION_RECORD64) == 0x98
 
-class EXTRA_CONTEXT_INFO(ctypes.Structure):
+# Reference: https://windows-internals.com/cet-on-windows/#7--context_ex--structure
+class CONTEXT_CHUNK(ctypes.Structure):
     _fields_ = [
-        ("UnknownFeatures1", ctypes.c_uint32),
-        ("StackAllocationSize", ctypes.c_uint32),
-        ("UnknownFeatures2", ctypes.c_uint32),
-        ("ContextSize", ctypes.c_uint32),
-        ("Unknown3", ctypes.c_uint32),
-        ("Unknown4", ctypes.c_uint32),
+        ("Offset", ctypes.c_int32),
+        ("Length", ctypes.c_uint32),
     ]
-assert ctypes.sizeof(EXTRA_CONTEXT_INFO) == 0x18
+
+class CONTEXT_EX(ctypes.Structure):
+    _fields_ = [
+        ("All", CONTEXT_CHUNK),
+        ("Legacy", CONTEXT_CHUNK),
+        ("XState", CONTEXT_CHUNK),
+    ]
+assert ctypes.sizeof(CONTEXT_EX) == 0x18
