@@ -7,17 +7,47 @@ from .ntenums import *
 from .ntprimitives import *
 from .ntstructs import *
 
+# NTSTATUS
 STATUS_SUCCESS = 0
 STATUS_NOT_IMPLEMENTED = 0xC0000002
 STATUS_INVALID_HANDLE = 0xC0000008
 STATUS_ACCESS_DENIED = 0xC0000022
 STATUS_PRIVILEGE_NOT_HELD = 0xC0000061
+STATUS_SET_CONTEXT_DENIED = 0xC000060A  # Return from NtContinue to int 29
 
+# Exceptions
 DBG_PRINTEXCEPTION_C = 0x40010006
 
+# Memory state
 MEM_COMMIT = 0x1000
+MEM_FREE = 0x10000
 MEM_RESERVE = 0x2000
+
+# Memory type
+MEM_IMAGE = 0x1000000
+MEM_MAPPED = 0x40000
+MEM_PRIVATE = 0x20000
+
+# Memory protection
+PAGE_EXECUTE = 0x10
+PAGE_EXECUTE_READ = 0x20
+PAGE_EXECUTE_READWRITE = 0x40
+PAGE_EXECUTE_WRITECOPY = 0x80
+PAGE_NOACCESS = 0x1
+PAGE_READONLY = 0x2
 PAGE_READWRITE = 0x4
+PAGE_WRITECOPY = 0x8
+PAGE_GUARD = 0x100
+PAGE_NOCACHE = 0x200
+PAGE_WRITECOMBINE = 0x400
+
+# Region flags
+REGION_PRIVATE = 1 << 0
+REGION_MAPPED_DATA = 1 << 1
+REGION_MAPPED_IMAGE = 1 << 2
+REGION_MAPPED_PAGEFILE = 1 << 3
+REGION_MAPPED_PHYSICAL = 1 << 4
+REGION_DIRECT_MAPPED = 1 << 5
 
 # ntioapi.h
 FILE_SUPERSEDED = 0x00000000
@@ -176,7 +206,7 @@ class CONTEXT(ctypes.Structure):
             "Xmm8", "Xmm9", "Xmm10", "Xmm11", "Xmm12", "Xmm13", "Xmm14", "Xmm15")
 
     # Based on: https://github.com/MarioVilas/winappdbg/blob/master/winappdbg/win32/context_amd64.py#L424
-    def load_regs(self, regs):
+    def from_regs(self, regs):
         setattr(self, "MxCsr", regs["mxcsr"])
         # TODO: implement high xmm support
         ContextFlags = self.ContextFlags
@@ -228,6 +258,62 @@ class CONTEXT(ctypes.Structure):
                     traceback.print_exc()
                     pass
 
+    def to_regs(self, regs):
+        setattr(self, "MxCsr", regs["mxcsr"])
+        # TODO: implement high xmm support
+        ContextFlags = self.ContextFlags
+        if (ContextFlags & CONTEXT_CONTROL) == CONTEXT_CONTROL:
+            for key in CONTEXT._control:
+                try:
+                    dpname = key.lower()
+                    if key.startswith("Seg"):
+                        dpname = key[3:].lower()
+                    setattr(regs, dpname, getattr(self, key))
+                except Exception as x:
+                    traceback.print_exc()
+                    pass
+        if (ContextFlags & CONTEXT_INTEGER) == CONTEXT_INTEGER:
+            for key in CONTEXT._integer:
+                try:
+                    setattr(regs, key.lower(), getattr(self, key))
+                except Exception as x:
+                    traceback.print_exc()
+                    pass
+        if (ContextFlags & CONTEXT_SEGMENTS) == CONTEXT_SEGMENTS:
+            for key in CONTEXT._segments:
+                try:
+                    dpname = key.lower()
+                    if key.startswith("Seg"):
+                        dpname = key[3:].lower()
+                    setattr(regs, dpname, getattr(self, key))
+                except Exception as x:
+                    traceback.print_exc()
+                    pass
+        if (ContextFlags & CONTEXT_DEBUG_REGISTERS) == CONTEXT_DEBUG_REGISTERS:
+            for key in CONTEXT._debug:
+                try:
+                    if key.startswith("Dr"):
+                        setattr(regs, key.lower(), getattr(self, key))
+                except Exception as x:
+                    traceback.print_exc()
+                    pass
+        if (ContextFlags & CONTEXT_MMX_REGISTERS) == CONTEXT_MMX_REGISTERS:
+            # TODO implement
+            pass
+            """
+            xmm = self.FltSave.Xmm
+            for key in CONTEXT._mmx:
+                x = regs[key.lower()]
+                y = M128A()
+                y.High = x >> 64
+                y.Low = x - (x >> 64)
+                try:
+                    setattr(xmm, key, y)
+                except Exception as x:
+                    traceback.print_exc()
+                    pass
+            """
+
 
 assert ctypes.sizeof(CONTEXT) == 0x4d0
 
@@ -257,3 +343,37 @@ class CONTEXT_EX(ctypes.Structure):
         ("XState", CONTEXT_CHUNK),
     ]
 assert ctypes.sizeof(CONTEXT_EX) == 0x18
+
+def MEMORY_BASIC_INFORMATION(arch: Architecture):
+    class MEMORY_BASIC_INFORMATION(ctypes.Structure):
+        _alignment_ = arch.alignment()
+        _fields_ = [
+            ("BaseAddress", arch.ptr_type()),
+            ("AllocationBase", arch.ptr_type()),
+            ("AllocationProtect", ctypes.c_uint32),
+            ("PartitionId", ctypes.c_uint16),
+            ("RegionSize", arch.ptr_type()),
+            ("State", ctypes.c_uint32),
+            ("Protect", ctypes.c_uint32),
+            ("Type", ctypes.c_uint32),
+        ]
+    return MEMORY_BASIC_INFORMATION()
+
+def MEMORY_REGION_INFORMATION(arch: Architecture):
+    class MEMORY_REGION_INFORMATION(ctypes.Structure):
+        _alignment_ = arch.alignment()
+        _fields_ = [
+            ("AllocationBase", arch.ptr_type()),
+            ("AllocationProtect", ctypes.c_uint32),
+            ("Flags", ctypes.c_uint32),
+            ("RegionSize", arch.ptr_type()),
+            ("CommitSize", arch.ptr_type()),
+        ]
+    return MEMORY_REGION_INFORMATION()
+
+def P(t):
+    class P(PVOID):
+        def __init__(self, ptr, mem_read):
+            super().__init__(ptr, mem_read)
+            self.type = t
+    return P

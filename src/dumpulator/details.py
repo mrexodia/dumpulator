@@ -492,3 +492,39 @@ windows_kernel_segment = SegmentRegisters(0x10, 0x18, 0x2B, 0x2B, 0x53, 0x2B)
 windows_user_segment = SegmentRegisters(0x33, 0x2B, 0x2B, 0x2B, 0x53, 0x2B)
 windows_wow64_segment = SegmentRegisters(0x23, 0x2B, 0x2B, 0x2B, 0x53, 0x2B)
 
+# Reference: https://wiki.osdev.org/Exceptions
+interrupt_names = [
+    "#DE, Division by Zero",
+    "#DB, Debug",
+    "Non-maskable Interrupt",
+    "#BP, Breakpoint",
+    "#OF, Overflow",
+    "#BR, Bound Range Exceeded",
+    "#UD, Invalid Opcode",
+    "#NM, Device Not Available",
+    "#DF, Double Fault",
+    "Coprocessor Segment Overrun",
+    "#TS, Invalid TSS",
+    "#NP, Segment Not Present",
+    "#SS, Stack-Segment Fault",
+    "#GP, General Protection Fault",
+    "#PF, Page Fault",
+    "Reserved",
+    "#MF, x87 Floating-Point Exception",
+    "#AC, Alignment Check",
+    "#MC, Machine Check",
+    "SIMD Floating-Point Exception, #XM/#XF",
+    "#VE, Virtualization Exception",
+    "#CP, Control Protection Exception",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "#HV, Hypervisor Injection Exception",
+    "#VC, VMM Communication Exception",
+    "#SX, Security Exception",
+    "Reserved"
+]
+assert len(interrupt_names) == 32

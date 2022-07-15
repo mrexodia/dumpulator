@@ -3,7 +3,7 @@ import struct
 import sys
 import traceback
 from enum import Enum
-from typing import List, Union
+from typing import List, Union, NamedTuple
 import inspect
 from collections import OrderedDict
 
@@ -16,6 +16,7 @@ from .handles import HandleManager
 from .native import *
 from .details import *
 from capstone import *
+from capstone.x86_const import *
 
 syscall_functions = {}
 
@@ -30,6 +31,8 @@ GDT_BASE = TSS_BASE - 0x3000
 class ExceptionType(Enum):
     NoException = 0
     Memory = 1
+    Interrupt = 2
+    ContextSwitch = 3
 
 class ExceptionInfo:
     def __init__(self):
@@ -38,6 +41,7 @@ class ExceptionInfo:
         self.memory_address = 0
         self.memory_size = 0
         self.memory_value = 0
+        self.interrupt_number = 0
         self.code_hook_h: Optional[int] = None  # TODO: should be unicorn.uc_hook_h, but type error
         self.context: Optional[unicorn.UcContext] = None
         self.tb_start = 0
@@ -92,6 +96,7 @@ class Dumpulator(Architecture):
         self.exports = self._setup_exports()
         self.handles = HandleManager()
         self.exception = ExceptionInfo()
+        self.last_exception: Optional[ExceptionInfo] = None
 
     def _find_thread(self, thread_id):
         for i in range(0, len(self._minidump.threads.threads)):
@@ -391,10 +396,14 @@ class Dumpulator(Architecture):
         self.start(addr, end=USER_CAVE, count=count)
         return self.regs.cax
 
-    def allocate(self, size):
+    def allocate(self, size, page_align=False):
         if not self._allocate_ptr:
             self._uc.mem_map(self._allocate_base, self._allocate_size)
             self._allocate_ptr = self._allocate_base
+
+        if page_align:
+            self._allocate_ptr = round_to_pages(self._allocate_ptr)
+            size = round_to_pages(size)
 
         ptr = self._allocate_ptr + size
         if ptr > self._allocate_base + self._allocate_size:
@@ -408,6 +417,13 @@ class Dumpulator(Architecture):
         self.exception.handling = True
 
         assert self._x64  # TODO: implement 32-bit support
+
+        if self.exception.type == ExceptionType.ContextSwitch:
+            # Clear the pending exception
+            self.last_exception = self.exception
+            self.exception = ExceptionInfo()
+            return self.regs.cip
+
         allocation_size = 0x720
 
         # Stack layout:
@@ -423,7 +439,7 @@ class Dumpulator(Architecture):
         context_size = ctypes.sizeof(CONTEXT)
         context = CONTEXT.from_buffer(self.read(rsp, context_size))
         context.ContextFlags = 0x10005F  # This is what is observed in KiUserExceptionDispatcher
-        context.load_regs(self.regs)
+        context.from_regs(self.regs)
         context_ex = CONTEXT_EX()
         context_ex.All.Offset = 0xFFFFFB30
         context_ex.All.Length = allocation_size
@@ -447,8 +463,18 @@ class Dumpulator(Architecture):
             }
             record.ExceptionInformation[0] = types[self.exception.memory_access]
             record.ExceptionInformation[1] = self.exception.memory_address
+        elif self.exception.type == ExceptionType.Interrupt and self.exception.interrupt_number == 3:
+            context.Rip -= 1  # TODO: long int3 and prefixes
+            record.ExceptionCode = 0x80000003
+            record.ExceptionFlags = 0
+            record.ExceptionAddress = context.Rip
+            record.NumberParameters = 1
         else:
-            assert False  # TODO: not implemented
+            raise NotImplementedError(f"{self.exception}")  # TODO: implement
+
+        # Clear the pending exception
+        self.last_exception = self.exception
+        self.exception = ExceptionInfo()
 
         def write_stack(cur_ptr: int, data: bytes):
             self.write(cur_ptr, data)
@@ -478,6 +504,9 @@ class Dumpulator(Architecture):
             try:
                 if self.exception.type != ExceptionType.NoException:
                     if self.exception.final:
+                        # Restore the context (unicorn might mess with it before stopping)
+                        if self.exception.context is not None:
+                            self._uc.context_restore(self.exception.context)
                         emu_begin = self.handle_exception()
                         emu_until = end
                         emu_count = 0
@@ -488,7 +517,7 @@ class Dumpulator(Architecture):
                         # Hook should be installed at this point
                         assert self.exception.code_hook_h is not None
 
-                        # Restore the context (TODO: check if necessary)
+                        # Restore the context (unicorn might mess with it before stopping)
                         assert self.exception.context is not None
                         self._uc.context_restore(self.exception.context)
 
@@ -582,7 +611,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             dp.stop(exception.type)
             return False
 
-        # TODO: support nested exceptions
+        # There should not be an exception active
         assert dp.exception.type == ExceptionType.NoException
 
         # Remove the translation block cache for this block
@@ -600,7 +629,6 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         dp.stop(exception.type)
         return False
     except AssertionError as err:
-        sys.stderr = sys.stdout
         traceback.print_exc()
         raise err
     except UcError as err:
@@ -609,25 +637,34 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     except Exception as err:
         raise err
 
-def _get_regs(instr):
+def _get_regs(instr, include_write=False):
     regs = OrderedDict()
-    for op in instr.operands:
-        if op.type == CS_OP_REG:
-            regs[instr.reg_name(op.value.reg)] = None
-        elif op.type == CS_OP_MEM:
-            if op.value.mem.base != 0:
-                regs[instr.reg_name(op.value.mem.base)] = None
-            if op.value.mem.index != 0:
-                regs[instr.reg_name(op.value.mem.index)] = None
-    for reg in instr.regs_read:
-        regs[instr.reg_name(reg)] = None
-    for reg in instr.regs_write:
-        regs[instr.reg_name(reg)] = None
+    operands = instr.operands
+    if instr.id != X86_INS_NOP:
+        for i in range(0, len(operands)):
+            op = operands[i]
+            if op.type == CS_OP_REG:
+                is_write_op = (i == 0 and instr.id in [X86_INS_MOV, X86_INS_MOVZX, X86_INS_LEA])
+                if not is_write_op and not include_write:
+                    regs[instr.reg_name(op.value.reg)] = None
+            elif op.type == CS_OP_MEM:
+                if op.value.mem.base not in [0, X86_REG_RIP]:
+                    regs[instr.reg_name(op.value.mem.base)] = None
+                if op.value.mem.index not in [0, X86_REG_RIP]:
+                    regs[instr.reg_name(op.value.mem.index)] = None
+        for reg in instr.regs_read:
+            regs[instr.reg_name(reg)] = None
+        if include_write:
+            for reg in instr.regs_write:
+                regs[instr.reg_name(reg)] = None
     return regs
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     code = dp.read(address, size)
-    instr = next(dp.cs.disasm(code, address, 1))
+    try:
+        instr = next(dp.cs.disasm(code, address, 1))
+    except StopIteration:
+        instr = None  # Unsupported instruction
     address_name = dp.exports.get(address, "")
 
     module = ""
@@ -645,12 +682,16 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     elif module:
         address_name = " " + module
 
-    line = f"0x{address:x}{address_name}|{instr.mnemonic}"
-    if instr.op_str:
-        line += " "
-        line += instr.op_str
-    for reg in _get_regs(instr):
-        line += f"|{reg}=0x{dp.regs.__getattr__(reg):x}"
+    line = f"0x{address:x}{address_name}|"
+    if instr is not None:
+        line += instr.mnemonic
+        if instr.op_str:
+            line += " "
+            line += instr.op_str
+        for reg in _get_regs(instr):
+            line += f"|{reg}=0x{dp.regs.__getattr__(reg):x}"
+    else:
+        line += f"??? ({code.hex()})"
     line += "\n"
     dp.trace.write(line)
 
@@ -670,18 +711,49 @@ def _arg_type_string(arg):
         return arg.type.__name__ + "*"
     return type(arg).__name__
 
-
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
-    dp.error(f"interrupt {number}, cip = {dp.regs.cip:x}, rcx = {dp.regs.rcx:x}")
-    uc.emu_stop()
+    try:
+        # Extract exception information
+        exception = ExceptionInfo()
+        exception.type = ExceptionType.Interrupt
+        exception.interrupt_number = number
+        exception.context = uc.context_save()
+        tb = uc.ctl_request_cache(dp.regs.cip)
+        exception.tb_start = tb.pc
+        exception.tb_size = tb.size
+        exception.tb_icount = tb.icount
 
+        # Print exception info
+        if number < len(interrupt_names):
+            description = interrupt_names[number]
+        else:
+            description = f"IRQ {number - 32}"
+        dp.error(f"interrupt {number} ({description}), cip = {dp.regs.cip:x}, cs = {dp.regs.cs:x}")
+
+        # There should not be an exception active
+        assert dp.exception.type == ExceptionType.NoException
+
+        # At this point we know for sure the context is correct so we can report the exception
+        dp.exception = exception
+        dp.exception.final = True
+    except AssertionError as err:
+        traceback.print_exc()
+        raise err
+    except UcError as err:
+        dp.error(f"Exception during unicorn hook, please report this as a bug")
+        raise err
+    except Exception as err:
+        raise err
+
+    # Stop emulation (we resume it on KiUserExceptionDispatcher later)
+    raise UcError(UC_ERR_EXCEPTION)
 
 def _hook_syscall(uc: Uc, dp: Dumpulator):
     index = dp.regs.cax & 0xffff
     if index < len(dp.syscalls):
-        name, cb, argcount = dp.syscalls[index]
-        if cb:
-            argspec = inspect.getfullargspec(cb)
+        name, syscall_impl, argcount = dp.syscalls[index]
+        if syscall_impl:
+            argspec = inspect.getfullargspec(syscall_impl)
             args = []
 
             def syscall_arg(index):
@@ -712,13 +784,21 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 dp.info(f"    {_arg_type_string(argvalue)} {argname} = {_arg_to_string(argvalue)}{comma}")
             dp.info(")")
             try:
-                status = cb(dp, *args)
-                dp.info(f"status = {status:x}")
-                dp.regs.cax = status
-                dp.regs.ccx = dp.regs.cip + 2
+                status = syscall_impl(dp, *args)
+                if isinstance(status, ExceptionInfo):
+                    dp.exception = status
+                    uc.emu_stop()
+                    raise UcError(UC_ERR_EXCEPTION)
+                else:
+                    dp.info(f"status = {status:x}")
+                    dp.regs.cax = status
+                    if dp._x64:
+                        dp.regs.rcx = dp.regs.cip + 2
+                        dp.regs.r11 = dp.regs.eflags
+            except UcError as err:
+                raise err
             except Exception as exc:
-                sys.stderr = sys.stdout
-                traceback.print_exception(type(exc), exc, exc.__traceback__)
+                traceback.print_exc()
                 dp.error(f"Exception thrown during syscall implementation, stopping emulation!")
                 uc.emu_stop()
         else:

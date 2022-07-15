@@ -1,6 +1,7 @@
+import ctypes
 import struct
 import unicorn
-from .dumpulator import Dumpulator, syscall_functions
+from .dumpulator import Dumpulator, syscall_functions, ExceptionInfo, ExceptionType
 from .native import *
 from .handles import *
 from pathlib import Path
@@ -305,15 +306,16 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
     assert Protect == PAGE_READWRITE
     base = dp.read_ptr(BaseAddress.ptr)
     assert base & 0xFFF == 0
-    size = dp.read_ptr(RegionSize.ptr)
+    size = round_to_pages(dp.read_ptr(RegionSize.ptr))
     assert size != 0
     if AllocationType == MEM_COMMIT:
-        assert base != 0
+        if base == 0:
+            base = dp.allocate(size, True)
+        print(f"commit({hex(base)}[{hex(size)}])")
         dp._uc.mem_protect(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
-        print(f"allocate({hex(base)}[{hex(size)}])")
     elif AllocationType == MEM_RESERVE:
         if base == 0:
-            base = dp.allocate(size)
+            base = dp.allocate(size, True)
             dp._uc.mem_protect(base, size, unicorn.UC_PROT_NONE)
             BaseAddress.write_ptr(base)
         else:
@@ -740,7 +742,17 @@ def ZwContinue(dp: Dumpulator,
                ContextRecord: P(CONTEXT),
                TestAlert: BOOLEAN
                ):
-    raise NotImplementedError()
+    assert not TestAlert
+    exception = ExceptionInfo()
+    exception.type = ExceptionType.ContextSwitch
+    exception.final = True
+    context_size = ctypes.sizeof(CONTEXT)
+    data = dp.read(ContextRecord.ptr, context_size)
+    context = CONTEXT.from_buffer(data)
+    context.to_regs(dp.regs)
+    exception.context = dp._uc.context_save()
+    print(f"cip: {dp.regs.cip:x}")
+    return exception
 
 @syscall
 def ZwContinueEx(dp: Dumpulator,
@@ -2583,7 +2595,8 @@ def ZwQueryDebugFilterState(dp: Dumpulator,
                             ComponentId: ULONG,
                             Level: ULONG
                             ):
-    raise NotImplementedError()
+    # STATUS_SUCCESS will print debug messages with RaiseException
+    return STATUS_NOT_IMPLEMENTED
 
 @syscall
 def ZwQueryDefaultLocale(dp: Dumpulator,
@@ -2803,10 +2816,16 @@ def ZwQueryInformationProcess(dp: Dumpulator,
                               ):
     assert (ProcessHandle == dp.NtCurrentProcess())
     if ProcessInformationClass in [PROCESSINFOCLASS.ProcessDebugPort, PROCESSINFOCLASS.ProcessDebugObjectHandle]:
-        assert (ProcessInformationLength == dp.ptr_size())
+        assert ProcessInformationLength == dp.ptr_size()
         dp.write_ptr(ProcessInformation.ptr, 0)
         if ReturnLength != 0:
             dp.write_ulong(ReturnLength.ptr, dp.ptr_size())
+        return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessDefaultHardErrorMode:
+        assert ProcessInformationLength == 4
+        dp.write_ulong(ProcessInformation.ptr, 1)
+        if ReturnLength.ptr:
+            dp.write_ulong(ReturnLength.ptr, 4)
         return STATUS_SUCCESS
     raise NotImplementedError()
 
@@ -3127,6 +3146,49 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          MemoryInformationLength: SIZE_T,
                          ReturnLength: P(SIZE_T)
                          ):
+    assert ProcessHandle == dp.NtCurrentProcess()
+    if MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryBasicInformation:
+        assert BaseAddress in [0x140001050, 0x140001e00]
+        info = MEMORY_BASIC_INFORMATION(dp)
+        assert MemoryInformationLength == ctypes.sizeof(info)
+        info.BaseAddress = 0x140001000
+        info.AllocationBase = 0x140000000
+        info.AllocationProtect = PAGE_EXECUTE_WRITECOPY
+        info.ParitionId = 0
+        info.RegionSize = 0xD000
+        info.State = MEM_COMMIT
+        info.Type = MEM_IMAGE
+        MemoryInformation.write(bytes(info))
+        if ReturnLength.ptr:
+            ReturnLength.write_ulong(ctypes.sizeof(info))
+        return STATUS_SUCCESS
+    elif MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryRegionInformation:
+        assert BaseAddress in [0x140001050, 0x140001e00]
+        info = MEMORY_REGION_INFORMATION(dp)
+        assert MemoryInformationLength >= ctypes.sizeof(info)
+        info.AllocationBase = 0x140000000
+        info.AllocationProtect = PAGE_EXECUTE_WRITECOPY
+        info.Flags = REGION_MAPPED_IMAGE
+        info.RegionSize = 0x1c000  # ImageSize
+        info.CommitSize = info.RegionSize
+        MemoryInformation.write(bytes(info))
+        extra_size = MemoryInformationLength - ctypes.sizeof(info)
+        if extra_size > 0:
+            dp.write(MemoryInformation.ptr + ctypes.sizeof(info), b"\x69" * extra_size)
+        if ReturnLength.ptr:
+            ReturnLength.write_ulong(MemoryInformationLength)
+        return STATUS_SUCCESS
+    elif MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryMappedFilenameInformation:
+        # TODO: implement proper UNICODE_STRING type support
+        name = "\\Device\\HarddiskVolume8\\CodeBlocks\\dumpulator\\tests\\ExceptionTest\\x64\\Release\\ExceptionTest.exe"
+        ptr = MemoryInformation.ptr + 0x10
+        ustr = struct.pack("<HHIQ", len(name) * 2, len(name) * 2 + 1, 0, ptr)
+        data = ustr + name.encode("utf-16")
+        assert MemoryInformationLength >= len(data)
+        MemoryInformation.write(data)
+        if ReturnLength.ptr:
+            ReturnLength.write_ulong(len(data))
+        return STATUS_SUCCESS
     return STATUS_NOT_IMPLEMENTED
 
 @syscall
@@ -3784,9 +3846,13 @@ def ZwSetInformationProcess(dp: Dumpulator,
                             ProcessInformation: PVOID,
                             ProcessInformationLength: ULONG
                             ):
+    assert ProcessHandle == dp.NtCurrentProcess()
     if ProcessInformationClass == PROCESSINFOCLASS.ProcessConsoleHostProcess:
         return STATUS_SUCCESS
-    if ProcessInformationClass == PROCESSINFOCLASS.ProcessRaiseUMExceptionOnInvalidHandleClose:
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessRaiseUMExceptionOnInvalidHandleClose:
+        return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessFaultInformation:
+        assert ProcessInformationLength == 8
         return STATUS_SUCCESS
     raise NotImplementedError()
 
@@ -3967,6 +4033,8 @@ def ZwSetSystemInformation(dp: Dumpulator,
                            SystemInformation: PVOID,
                            SystemInformationLength: ULONG
                            ):
+    if SystemInformationClass == SYSTEM_INFORMATION_CLASS.SystemWin32WerStartCallout:
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall

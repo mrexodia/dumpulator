@@ -1,4 +1,5 @@
 import struct
+import ctypes
 from typing import Optional
 from enum import Enum
 
@@ -72,6 +73,12 @@ class Architecture(object):
 
         return data.decode(encoding)
 
+    def ptr_type(self, t=None):  # TODO: implement type
+        return ctypes.c_uint64 if self._x64 else ctypes.c_uint32
+
+    def alignment(self):
+        return 16 if self._x64 else 8
+
 class PVOID:
     def __init__(self, ptr: int, arch: Architecture):
         self.ptr = ptr
@@ -124,6 +131,12 @@ class PVOID:
 
     def write_ptr(self, value: int):
         return self.arch.write_ptr(self.ptr, value)
+
+    def write_ulong(self, value: int):
+        return self.arch.write_ulong(self.ptr, value)
+
+    def read_ulong(self):
+        return self.arch.read_ulong(self.ptr)
 
     def deref(self):
         assert self.type is not None
