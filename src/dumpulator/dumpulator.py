@@ -531,7 +531,7 @@ class Dumpulator(Architecture):
                 self._uc.emu_start(emu_begin, until=emu_until, count=emu_count)
                 self.info(f'emulation finished, cip = {self.regs.cip:x}')
                 if self.exit_code is not None:
-                    self.info(f"exit code: {self.exit_code}")
+                    self.info(f"exit code: {self.exit_code:x}")
                 break
             except UcError as err:
                 if self.exception.type != ExceptionType.NoException:

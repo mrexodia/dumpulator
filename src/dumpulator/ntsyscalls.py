@@ -3263,7 +3263,14 @@ def ZwRaiseException(dp: Dumpulator,
                      ContextRecord: P(CONTEXT),
                      FirstChance: BOOLEAN
                      ):
-    raise NotImplementedError()
+    if not FirstChance:
+        # Terminate process (RaiseFailFastException)
+        exception_code = ExceptionRecord.read_ulong()
+        dp.stop(exception_code)
+        return STATUS_SUCCESS
+    else:
+        # TODO: implement raising an exception
+        raise NotImplementedError()
 
 @syscall
 def ZwRaiseHardError(dp: Dumpulator,
