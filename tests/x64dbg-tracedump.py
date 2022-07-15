@@ -4,6 +4,7 @@
 import sys
 import json
 from capstone import *
+from capstone.x86_const import *
 from operator import attrgetter
 from collections import OrderedDict
 
@@ -298,20 +299,26 @@ X64_REGS = [
     "dr7",
 ]
 
-def _get_regs(instr):
+def _get_regs(instr, include_write=False):
     regs = OrderedDict()
-    for op in instr.operands:
-        if op.type == CS_OP_REG:
-            regs[instr.reg_name(op.value.reg)] = None
-        elif op.type == CS_OP_MEM:
-            if op.value.mem.base != 0:
-                regs[instr.reg_name(op.value.mem.base)] = None
-            if op.value.mem.index != 0:
-                regs[instr.reg_name(op.value.mem.index)] = None
-    for reg in instr.regs_read:
-        regs[instr.reg_name(reg)] = None
-    for reg in instr.regs_write:
-        regs[instr.reg_name(reg)] = None
+    operands = instr.operands
+    if instr.id != X86_INS_NOP:
+        for i in range(0, len(operands)):
+            op = operands[i]
+            if op.type == CS_OP_REG:
+                is_write_op = (i == 0 and instr.id in [X86_INS_MOV, X86_INS_MOVZX, X86_INS_LEA])
+                if not is_write_op and not include_write:
+                    regs[instr.reg_name(op.value.reg)] = None
+            elif op.type == CS_OP_MEM:
+                if op.value.mem.base not in [0, X86_REG_RIP]:
+                    regs[instr.reg_name(op.value.mem.base)] = None
+                if op.value.mem.index not in [0, X86_REG_RIP]:
+                    regs[instr.reg_name(op.value.mem.index)] = None
+        for reg in instr.regs_read:
+            regs[instr.reg_name(reg)] = None
+        if include_write:
+            for reg in instr.regs_write:
+                regs[instr.reg_name(reg)] = None
     return regs
 
 # TODO: this function uses a lot of ram, modify it do allow accessing the trace as a stream
@@ -371,29 +378,29 @@ def open_x64dbg_trace(filename, tracef):
             add_reg("r8", "r8d", 0xFFFFFFFF)
             add_reg("r9", "r9d", 0xFFFFFFFF)
             add_reg("r10", "r10d", 0xFFFFFFFF)
-            add_reg("r10", "r11d", 0xFFFFFFFF)
-            add_reg("r10", "r12d", 0xFFFFFFFF)
-            add_reg("r10", "r13d", 0xFFFFFFFF)
-            add_reg("r10", "r14d", 0xFFFFFFFF)
-            add_reg("r10", "r15d", 0xFFFFFFFF)
+            add_reg("r11", "r11d", 0xFFFFFFFF)
+            add_reg("r12", "r12d", 0xFFFFFFFF)
+            add_reg("r13", "r13d", 0xFFFFFFFF)
+            add_reg("r14", "r14d", 0xFFFFFFFF)
+            add_reg("r15", "r15d", 0xFFFFFFFF)
 
             add_reg("r8", "r8w", 0xFFFF)
             add_reg("r9", "r9w", 0xFFFF)
             add_reg("r10", "r10w", 0xFFFF)
-            add_reg("r10", "r11w", 0xFFFF)
-            add_reg("r10", "r12w", 0xFFFF)
-            add_reg("r10", "r13w", 0xFFFF)
-            add_reg("r10", "r14w", 0xFFFF)
-            add_reg("r10", "r15w", 0xFFFF)
+            add_reg("r11", "r11w", 0xFFFF)
+            add_reg("r12", "r12w", 0xFFFF)
+            add_reg("r13", "r13w", 0xFFFF)
+            add_reg("r14", "r14w", 0xFFFF)
+            add_reg("r15", "r15w", 0xFFFF)
 
             add_reg("r8", "r8b", 0xFF)
             add_reg("r9", "r9b", 0xFF)
             add_reg("r10", "r10b", 0xFF)
-            add_reg("r10", "r11b", 0xFF)
-            add_reg("r10", "r12b", 0xFF)
-            add_reg("r10", "r13b", 0xFF)
-            add_reg("r10", "r14b", 0xFF)
-            add_reg("r10", "r15b", 0xFF)
+            add_reg("r11", "r11b", 0xFF)
+            add_reg("r12", "r12b", 0xFF)
+            add_reg("r13", "r13b", 0xFF)
+            add_reg("r14", "r14b", 0xFF)
+            add_reg("r15", "r15b", 0xFF)
 
             add_reg("rsi", "sil", 0xFF)
             add_reg("rdi", "dil", 0xFF)
@@ -511,7 +518,7 @@ def open_x64dbg_trace(filename, tracef):
                 if reg in reg_indexes:
                     line += f"|{reg}=0x{get_reg(reg):x}"
                 else:
-                    line += f"|{reg}=???"
+                    line += f"|{reg}=0x???"  # TODO: add xmm support
 
             line += "\n"
             tracef.write(line)
