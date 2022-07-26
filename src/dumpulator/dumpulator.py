@@ -7,7 +7,7 @@ from typing import List, Union, NamedTuple
 import inspect
 from collections import OrderedDict
 
-from minidump.minidumpfile import *
+import minidump.minidumpfile as minidump
 from unicorn import *
 from unicorn.x86_const import *
 from pefile import *
@@ -59,7 +59,7 @@ class Dumpulator(Architecture):
         self._quiet = quiet
 
         # Load the minidump
-        self._minidump = MinidumpFile.parse(minidump_file)
+        self._minidump = minidump.MinidumpFile.parse(minidump_file)
         if thread_id is None and self._minidump.exception is not None:
             thread_id = self._minidump.exception.exception_records[0].ThreadId
         if thread_id is None:
@@ -67,7 +67,7 @@ class Dumpulator(Architecture):
         else:
             thread = self._find_thread(thread_id)
 
-        super().__init__(type(thread.ContextObject) is not WOW64_CONTEXT)
+        super().__init__(type(thread.ContextObject) is not minidump.WOW64_CONTEXT)
         self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
 
         if trace:
@@ -75,7 +75,7 @@ class Dumpulator(Architecture):
         else:
             self.trace = None
 
-        self.last_module: Optional[MinidumpModule] = None
+        self.last_module: Optional[minidump.MinidumpModule] = None
 
         self._uc = Uc(UC_ARCH_X86, UC_MODE_64)
 
@@ -144,20 +144,20 @@ class Dumpulator(Architecture):
         kernel_code[IRETD_OFFSET] = 0xCF
         self._uc.mem_write(KERNEL_CAVE, bytes(kernel_code))
 
-        info: MinidumpMemoryInfo
+        info: minidump.MinidumpMemoryInfo
         for info in self._minidump.memory_info.infos:
             emu_addr = info.BaseAddress & self.addr_mask
-            if info.State == MemoryState.MEM_COMMIT:
+            if info.State == minidump.MemoryState.MEM_COMMIT:
                 self.info(f"committed: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
                 self._uc.mem_map(emu_addr, info.RegionSize, map_unicorn_perms(info.Protect))
-            elif info.State == MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
+            elif info.State == minidump.MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
                 self._allocate_base = emu_addr
-            elif info.State == MemoryState.MEM_RESERVE:
+            elif info.State == minidump.MemoryState.MEM_RESERVE:
                 self.info(f"reserved: {hex(emu_addr)}, size: {hex(info.RegionSize)}")
                 self._uc.mem_map(emu_addr, info.RegionSize, UC_PROT_NONE)
 
         memory = self._minidump.get_reader().get_buffered_reader()
-        seg: MinidumpMemorySegment
+        seg: minidump.MinidumpMemorySegment
         for seg in self._minidump.memory_segments_64.memory_segments:
             emu_addr = seg.start_virtual_address & self.addr_mask
             self.info(f"initialize base: 0x{emu_addr:x}, size: 0x{seg.size:x}")
@@ -178,7 +178,7 @@ class Dumpulator(Architecture):
             self.regs.gs = windows_user_segment.gs
             self.regs.gs_base = self.teb
 
-            context: CONTEXT = thread.ContextObject
+            context: minidump.CONTEXT = thread.ContextObject
             self.regs.mxcsr = context.MxCsr
             self.regs.eflags = context.EFlags & ~0x100
             self.regs.dr0 = context.Dr0
@@ -229,7 +229,7 @@ class Dumpulator(Architecture):
             self.regs.fs_base = self.teb
             self.regs.gs_base = self.teb - 2 * PAGE_SIZE
 
-            context: WOW64_CONTEXT = thread.ContextObject
+            context: minidump.WOW64_CONTEXT = thread.ContextObject
             self.regs.eflags = context.EFlags & ~0x100
             self.regs.dr0 = context.Dr0
             self.regs.dr1 = context.Dr1
@@ -305,16 +305,16 @@ class Dumpulator(Architecture):
                 exports[module.baseaddress + export.address] = f"{module_name}:{name}"
         return exports
 
-    def _find_module(self, name) -> MinidumpModule:
-        module: MinidumpModule
+    def _find_module(self, name) -> minidump.MinidumpModule:
+        module: minidump.MinidumpModule
         for module in self._minidump.modules.modules:
             filename = module.name.split('\\')[-1].lower()
             if filename == name.lower():
                 return module
         raise Exception(f"Module '{name}' not found")
 
-    def find_module_by_addr(self, address) -> Optional[MinidumpModule]:
-        module: MinidumpModule
+    def find_module_by_addr(self, address) -> Optional[minidump.MinidumpModule]:
+        module: minidump.MinidumpModule
         for module in self._minidump.modules.modules:
             if module.baseaddress <= address < module.baseaddress + module.size:
                 return module
@@ -416,42 +416,56 @@ class Dumpulator(Architecture):
         assert not self.exception.handling
         self.exception.handling = True
 
-        assert self._x64  # TODO: implement 32-bit support
-
         if self.exception.type == ExceptionType.ContextSwitch:
             # Clear the pending exception
             self.last_exception = self.exception
             self.exception = ExceptionInfo()
             return self.regs.cip
 
-        allocation_size = 0x720
+        if self._x64:
+            # Stack layout (x64):
+            # CONTEXT: 0x4d0 bytes (not all fields are overwritten)
+            # CONTEXT_EX: 0x18 bytes (accessed by RtlpSanitizeContext)
+            # Alignment: 0x8 bytes (not overwritten by KiUserExceptionDispatcher)
+            # EXCEPTION_RECORD: 0x98 bytes
+            # Unknown: 0x198 bytes
+            # 0x4f0 bytes sizeof(CONTEXT) + 0x20 unclear
+            allocation_size = 0x720
+            context_flags = 0x10005F
+            record_type = EXCEPTION_RECORD64
+            context_type = CONTEXT
+        else:
+            # Stack layout (x86):
+            # EXCEPTION_RECORD*: 0x4 bytes
+            # CONTEXT*: 0x4 bytes
+            # EXCEPTION_RECORD: 0x50
+            # CONTEXT: 0x2cc
+            # CONTEXT_EX: 0x18
+            # Unknown: 0x17C bytes
+            allocation_size = 0x4b8
+            context_flags = 0x1007F
+            record_type = EXCEPTION_RECORD32
+            context_type = WOW64_CONTEXT
 
-        # Stack layout:
-        # CONTEXT: 0x4d0 bytes (not all fields are overwritten)
-        # EXTRA_CONTEXT_INFO: 0x18 bytes (accessed by RtlpSanitizeContext)
-        # Alignment: 0x8 bytes (not overwritten by KiUserExceptionDispatcher)
-        # EXCEPTION_RECORD: 0x98 bytes
-        # Unknown: 0x198
-        # 0x4f0 bytes (sizeof(CONTEXT) + 0x20 unclear
-        rsp = self.regs.rsp - allocation_size
-        self.write(rsp, allocation_size * b"\x69")  # fill stuff with 0x69 for debugging
-        self.info(f"old rsp: {self.regs.rsp:x}, new rsp: {rsp:x}")
-        context_size = ctypes.sizeof(CONTEXT)
-        context = CONTEXT.from_buffer(self.read(rsp, context_size))
-        context.ContextFlags = 0x10005F  # This is what is observed in KiUserExceptionDispatcher
+        csp = self.regs.csp - allocation_size
+        self.write(csp, allocation_size * b"\x69")  # fill stuff with 0x69 for debugging
+        self.info(f"old csp: {self.regs.csp:x}, new csp: {csp:x}")
+        context_size = ctypes.sizeof(context_type)
+        context = context_type.from_buffer(self.read(csp, context_size))
+        context.ContextFlags = context_flags
         context.from_regs(self.regs)
         context_ex = CONTEXT_EX()
-        context_ex.All.Offset = 0xFFFFFB30
-        context_ex.All.Length = allocation_size
-        context_ex.Legacy.Offset = 0xFFFFFB30
+        context_ex.All.Offset = -context_size & 0xFFFFFFFF
+        context_ex.All.Length = allocation_size if self._x64 else 0x42C  # TODO: why this value?
+        context_ex.Legacy.Offset = -context_size & 0xFFFFFFFF
         context_ex.Legacy.Length = context_size
-        context_ex.XState.Offset = 0xF0
-        context_ex.XState.Length = 0x160
-        record = EXCEPTION_RECORD64()  # 0x98 bytes
+        context_ex.XState.Offset = 0xF0 if self._x64 else 0x20
+        context_ex.XState.Length = 0x160 if self._x64 else 0x140
+        record = record_type()
         if self.exception.type == ExceptionType.Memory:
             record.ExceptionCode = 0xC0000005
             record.ExceptionFlags = 0
-            record.ExceptionAddress = self.regs.rip
+            record.ExceptionAddress = self.regs.cip
             record.NumberParameters = 2
             types = {
                 UC_MEM_READ_UNMAPPED: EXCEPTION_READ_FAULT,
@@ -464,11 +478,18 @@ class Dumpulator(Architecture):
             record.ExceptionInformation[0] = types[self.exception.memory_access]
             record.ExceptionInformation[1] = self.exception.memory_address
         elif self.exception.type == ExceptionType.Interrupt and self.exception.interrupt_number == 3:
-            context.Rip -= 1  # TODO: long int3 and prefixes
-            record.ExceptionCode = 0x80000003
-            record.ExceptionFlags = 0
-            record.ExceptionAddress = context.Rip
-            record.NumberParameters = 1
+            if self._x64:
+                context.Rip -= 1  # TODO: long int3 and prefixes
+                record.ExceptionCode = 0x80000003
+                record.ExceptionFlags = 0
+                record.ExceptionAddress = context.Rip
+                record.NumberParameters = 1
+            else:
+                context.Eip -= 1  # TODO: long int3 and prefixes
+                record.ExceptionCode = 0x80000003
+                record.ExceptionFlags = 0
+                record.ExceptionAddress = context.Eip
+                record.NumberParameters = 1
         else:
             raise NotImplementedError(f"{self.exception}")  # TODO: implement
 
@@ -480,18 +501,26 @@ class Dumpulator(Architecture):
             self.write(cur_ptr, data)
             return cur_ptr + len(data)
 
-        ptr = rsp
-        ptr = write_stack(ptr, bytes(context))
-        ptr = write_stack(ptr, bytes(context_ex))
-        ptr += 8  # alignment TODO: check if aligned?
-        ptr = write_stack(ptr, bytes(record))
-        ptr += 8  # not set
-        ptr = write_stack(ptr, struct.pack("<Q", record.ExceptionAddress))
-        ptr += 16  # not set
-        ptr = write_stack(ptr, struct.pack("<Q", context.Rsp))
-        ptr += 16  # not set
-        ptr = write_stack(ptr, struct.pack("<QIIQQQQQQ", 0, 4, 8, 0, 0, 0, 0, 0, 0))
-        self.regs.rsp = rsp
+        ptr = csp
+        if self._x64:
+            ptr = write_stack(ptr, bytes(context))
+            ptr = write_stack(ptr, bytes(context_ex))
+            ptr += 8  # alignment TODO: check if aligned?
+            ptr = write_stack(ptr, bytes(record))
+            ptr += 8  # not set
+            ptr = write_stack(ptr, struct.pack("<Q", record.ExceptionAddress))
+            ptr += 16  # not set
+            ptr = write_stack(ptr, struct.pack("<Q", context.Rsp))
+            ptr += 16  # not set
+            ptr = write_stack(ptr, struct.pack("<QIIQQQQQQ", 0, 4, 8, 0, 0, 0, 0, 0, 0))
+        else:
+            ptr += 4 * 2
+            self.write_ulong(csp, ptr)
+            ptr = write_stack(ptr, bytes(record))
+            self.write_ulong(csp, ptr)
+            ptr = write_stack(ptr, bytes(context))
+            ptr = write_stack(ptr, bytes(context_ex))
+        self.regs.csp = csp
         return self.KiUserExceptionDispatcher
 
     def start(self, begin, end=0xffffffffffffffff, count=0):

@@ -313,8 +313,6 @@ class CONTEXT(ctypes.Structure):
                     traceback.print_exc()
                     pass
             """
-
-
 assert ctypes.sizeof(CONTEXT) == 0x4d0
 
 class EXCEPTION_RECORD64(ctypes.Structure):
@@ -328,6 +326,115 @@ class EXCEPTION_RECORD64(ctypes.Structure):
         ("ExceptionInformation", ctypes.c_uint64 * 15),
     ]
 assert ctypes.sizeof(EXCEPTION_RECORD64) == 0x98
+
+class WOW64_FLOATING_SAVE_AREA(ctypes.Structure):
+    _pack_ = 8
+    _fields_ = [
+        ("ControlWord", ctypes.c_uint32),
+        ("StatusWord", ctypes.c_uint32),
+        ("TagWord", ctypes.c_uint32),
+        ("ErrorOffset", ctypes.c_uint32),
+        ("ErrorSelector", ctypes.c_uint32),
+        ("DataOffset", ctypes.c_uint32),
+        ("DataSelector", ctypes.c_uint32),
+        ("RegisterArea", ctypes.c_uint8 * 80),
+        ("Cr0NpxState", ctypes.c_uint32),
+    ]
+
+class WOW64_CONTEXT(ctypes.Structure):
+    _pack_ = 8
+    _fields_ = [
+        ("ControlWord", ctypes.c_uint32),
+        ("Dr0", ctypes.c_uint32),
+        ("Dr1", ctypes.c_uint32),
+        ("Dr2", ctypes.c_uint32),
+        ("Dr3", ctypes.c_uint32),
+        ("Dr6", ctypes.c_uint32),
+        ("Dr7", ctypes.c_uint32),
+        ("FloatSave", WOW64_FLOATING_SAVE_AREA),
+        ("SegGs", ctypes.c_uint32),
+        ("SegFs", ctypes.c_uint32),
+        ("SegEs", ctypes.c_uint32),
+        ("SegDs", ctypes.c_uint32),
+        ("Edi", ctypes.c_uint32),
+        ("Esi", ctypes.c_uint32),
+        ("Ebx", ctypes.c_uint32),
+        ("Edx", ctypes.c_uint32),
+        ("Ecx", ctypes.c_uint32),
+        ("Eax", ctypes.c_uint32),
+        ("Ebp", ctypes.c_uint32),
+        ("Eip", ctypes.c_uint32),
+        ("SegCs", ctypes.c_uint32),
+        ("EFlags", ctypes.c_uint32),
+        ("Esp", ctypes.c_uint32),
+        ("SegSs", ctypes.c_uint32),
+        ("ExtendedRegisters", ctypes.c_uint8 * 512),
+    ]
+
+    def from_regs(self, regs):
+        # TODO: implement properly
+        self.Dr0 = regs.dr0
+        self.Dr1 = regs.dr1
+        self.Dr2 = regs.dr2
+        self.Dr3 = regs.dr3
+        self.Dr6 = regs.dr6
+        self.Dr7 = regs.dr7
+        self.SegGs = regs.gs
+        self.SegFs = regs.fs
+        self.SegEs = regs.es
+        self.SegDs = regs.ds
+        self.Edi = regs.edi
+        self.Esi = regs.esi
+        self.Ebx = regs.ebx
+        self.Edx = regs.edx
+        self.Ecx = regs.ecx
+        self.Eax = regs.eax
+        self.Ebp = regs.ebp
+        self.Eip = regs.eip
+        self.SegCs = regs.cs
+        self.Eflags = regs.eflags
+        self.Esp = regs.esp
+        self.SegSs = regs.ss
+        # TODO: implement xmm
+
+    def to_regs(self, regs):
+        regs.dr0 = self.Dr0
+        regs.dr1 = self.Dr1
+        regs.dr2 = self.Dr2
+        regs.dr3 = self.Dr3
+        regs.dr6 = self.Dr6
+        regs.dr7 = self.Dr7
+        regs.gs = self.SegGs
+        regs.fs = self.SegFs
+        regs.es = self.SegEs
+        regs.ds = self.SegDs
+        regs.edi = self.Edi
+        regs.esi = self.Esi
+        regs.ebx = self.Ebx
+        regs.edx = self.Edx
+        regs.ecx = self.Ecx
+        regs.eax = self.Eax
+        regs.ebp = self.Ebp
+        regs.eip = self.Eip
+        regs.cs = self.SegCs
+        regs.eflags = self.Eflags
+        regs.esp = self.Esp
+        regs.ss = self.SegSs
+        # TODO: implement xmm
+
+assert ctypes.sizeof(WOW64_CONTEXT) == 0x2cc
+
+class EXCEPTION_RECORD32(ctypes.Structure):
+    _pack_ = 8
+    _fields_ = [
+        ("ExceptionCode", ctypes.c_int32),
+        ("ExceptionFlags", ctypes.c_uint32),
+        ("ExceptionRecord", ctypes.c_uint32),
+        ("ExceptionAddress", ctypes.c_uint32),
+        ("NumberParameters", ctypes.c_uint32),
+        ("ExceptionInformation", ctypes.c_uint32 * 15),
+    ]
+assert ctypes.sizeof(EXCEPTION_RECORD32) == 0x50
 
 # Reference: https://windows-internals.com/cet-on-windows/#7--context_ex--structure
 class CONTEXT_CHUNK(ctypes.Structure):
@@ -351,8 +458,7 @@ def MEMORY_BASIC_INFORMATION(arch: Architecture):
             ("BaseAddress", arch.ptr_type()),
             ("AllocationBase", arch.ptr_type()),
             ("AllocationProtect", ctypes.c_uint32),
-            ("PartitionId", ctypes.c_uint16),
-            ("RegionSize", arch.ptr_type()),
+            ("RegionSize", ctypes.c_uint32),
             ("State", ctypes.c_uint32),
             ("Protect", ctypes.c_uint32),
             ("Type", ctypes.c_uint32),

@@ -2827,6 +2827,12 @@ def ZwQueryInformationProcess(dp: Dumpulator,
         if ReturnLength.ptr:
             dp.write_ulong(ReturnLength.ptr, 4)
         return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessExecuteFlags:
+        assert ProcessInformationLength == 4
+        dp.write_ulong(ProcessInformation.ptr, 0xD)
+        if ReturnLength.ptr:
+            dp.write_ulong(ReturnLength.ptr, 4)
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall
@@ -3148,14 +3154,21 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          ):
     assert ProcessHandle == dp.NtCurrentProcess()
     if MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryBasicInformation:
-        assert BaseAddress in [0x140001050, 0x140001e00]
         info = MEMORY_BASIC_INFORMATION(dp)
         assert MemoryInformationLength == ctypes.sizeof(info)
-        info.BaseAddress = 0x140001000
-        info.AllocationBase = 0x140000000
+        # TODO: hardcoded for the example
+        if BaseAddress in [0x140001050, 0x140001e00]:
+            info.BaseAddress = 0x140001000
+            info.AllocationBase = 0x140000000
+            info.RegionSize = 0xD000
+        elif BaseAddress in [0x401aef]:
+            info.BaseAddress = 0x401000
+            info.AllocationBase = 0x400000
+            info.RegionSize = 0xC000
+        else:
+            raise NotImplementedError()
         info.AllocationProtect = PAGE_EXECUTE_WRITECOPY
         info.ParitionId = 0
-        info.RegionSize = 0xD000
         info.State = MEM_COMMIT
         info.Type = MEM_IMAGE
         MemoryInformation.write(bytes(info))
@@ -3163,13 +3176,20 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
             ReturnLength.write_ulong(ctypes.sizeof(info))
         return STATUS_SUCCESS
     elif MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryRegionInformation:
-        assert BaseAddress in [0x140001050, 0x140001e00]
         info = MEMORY_REGION_INFORMATION(dp)
         assert MemoryInformationLength >= ctypes.sizeof(info)
-        info.AllocationBase = 0x140000000
+        # TODO: hardcoded for the example
+        if BaseAddress in [0x140001050, 0x140001e00]:
+            info.AllocationBase = 0x140000000
+            info.RegionSize = 0x1c000  # ImageSize
+        elif BaseAddress in [0x401aef]:
+            info.AllocationBase = 0x400000
+            info.RegionSize = 0x16000  # ImageSize
+            pass
+        else:
+            raise NotImplementedError()
         info.AllocationProtect = PAGE_EXECUTE_WRITECOPY
         info.Flags = REGION_MAPPED_IMAGE
-        info.RegionSize = 0x1c000  # ImageSize
         info.CommitSize = info.RegionSize
         MemoryInformation.write(bytes(info))
         extra_size = MemoryInformationLength - ctypes.sizeof(info)
@@ -3180,7 +3200,10 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
         return STATUS_SUCCESS
     elif MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryMappedFilenameInformation:
         # TODO: implement proper UNICODE_STRING type support
-        name = "\\Device\\HarddiskVolume8\\CodeBlocks\\dumpulator\\tests\\ExceptionTest\\x64\\Release\\ExceptionTest.exe"
+        if dp.ptr_size() == 8:
+            name = "\\Device\\HarddiskVolume8\\CodeBlocks\\dumpulator\\tests\\ExceptionTest\\x64\\Release\\ExceptionTest.exe"
+        else:
+            name = "\\Device\\HarddiskVolume8\\CodeBlocks\\dumpulator\\tests\\ExceptionTest\\Release\\ExceptionTest.exe"
         ptr = MemoryInformation.ptr + 0x10
         ustr = struct.pack("<HHIQ", len(name) * 2, len(name) * 2 + 1, 0, ptr)
         data = ustr + name.encode("utf-16")

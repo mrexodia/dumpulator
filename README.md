@@ -128,6 +128,7 @@ python setup.py develop
 - [wtf](https://github.com/0vercl0k/wtf): Distributed, code-coverage guided, customizable, cross-platform snapshot-based fuzzer designed for attacking user and / or kernel-mode targets running on Microsoft Windows
 - [speakeasy](https://github.com/mandiant/speakeasy): Windows sandbox on top of unicorn.
 - [qiling](https://github.com/qilingframework/qiling): Binary emulation framework on top of unicorn.
+- [Simpleator](https://github.com/ionescu007/Simpleator): User-mode application emulator based on the Hyper-V Platform API.
 
 What sets dumpulator apart from sandboxes like speakeasy and qiling is that the full process memory is available. This improves performance because you can emulate large parts of malware without ever leaving unicorn. Additionally only syscalls have to be emulated to provide a realistic Windows environment (since everything actually _is_ a legitimate process environment).
 
