@@ -22,6 +22,7 @@ syscall_functions = {}
 
 PAGE_SIZE = 0x1000
 USER_CAVE = 0x5000
+FORCE_KILL_ADDR = USER_CAVE - 0x20
 TSS_BASE = 0xfffff8076d963000
 KERNEL_CAVE = TSS_BASE - 0x2000
 IRETQ_OFFSET = 0x100
@@ -90,6 +91,7 @@ class Dumpulator(Architecture):
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
         self._setup_emulator(thread)
+        self.kill_me = None
         self.exit_code = None
         self.syscalls = []
         self._setup_syscalls()
@@ -412,15 +414,17 @@ class Dumpulator(Architecture):
         return ptr
 
     def handle_exception(self):
-        self.info(f"handling exception...")
         assert not self.exception.handling
         self.exception.handling = True
 
         if self.exception.type == ExceptionType.ContextSwitch:
+            self.info(f"switching context, cip: {self.regs.cip}")
             # Clear the pending exception
             self.last_exception = self.exception
             self.exception = ExceptionInfo()
             return self.regs.cip
+
+        self.info(f"handling exception...")
 
         if self._x64:
             # Stack layout (x64):
@@ -517,7 +521,7 @@ class Dumpulator(Architecture):
             ptr += 4 * 2
             self.write_ulong(csp, ptr)
             ptr = write_stack(ptr, bytes(record))
-            self.write_ulong(csp, ptr)
+            self.write_ulong(csp + 4, ptr)
             ptr = write_stack(ptr, bytes(context))
             ptr = write_stack(ptr, bytes(context_ex))
         self.regs.csp = csp
@@ -536,7 +540,12 @@ class Dumpulator(Architecture):
                         # Restore the context (unicorn might mess with it before stopping)
                         if self.exception.context is not None:
                             self._uc.context_restore(self.exception.context)
-                        emu_begin = self.handle_exception()
+                        try:
+                            emu_begin = self.handle_exception()
+                        except:
+                            traceback.print_exc()
+                            self.error(f"exception during exception handling (stack overflow?)")
+                            break
                         emu_until = end
                         emu_count = 0
                     else:
@@ -557,12 +566,15 @@ class Dumpulator(Architecture):
                         emu_count = self.exception.tb_icount + 1
 
                 self.info(f"emu_start({emu_begin:x}, {emu_until:x}, {emu_count})")
+                self.kill_me = None
                 self._uc.emu_start(emu_begin, until=emu_until, count=emu_count)
                 self.info(f'emulation finished, cip = {self.regs.cip:x}')
                 if self.exit_code is not None:
                     self.info(f"exit code: {self.exit_code:x}")
                 break
             except UcError as err:
+                if self.kill_me is not None and type(self.kill_me) is not UcError:
+                    raise self.kill_me
                 if self.exception.type != ExceptionType.NoException:
                     # Handle the exception outside of the except handler
                     continue
@@ -571,8 +583,24 @@ class Dumpulator(Architecture):
                 break
 
     def stop(self, exit_code=None):
-        self.exit_code = int(exit_code)
+        try:
+            self.exit_code = None
+            if exit_code is not None:
+                self.exit_code = int(exit_code)
+        except:
+            traceback.print_exc()
+            self.error("Invalid type passed to exit_code!")
         self._uc.emu_stop()
+
+    def raise_kill(self, exc=None):
+        # HACK: You need to use this to exit from hooks (although it might not always work)
+        self.regs.cip = FORCE_KILL_ADDR
+        self.kill_me = exc
+        if exc is not None:
+            raise exc
+        else:
+            self.kill_me = True
+            self._uc.emu_stop()
 
     def NtCurrentProcess(self):
         return 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
@@ -593,6 +621,9 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
         raise err
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
+    if access == UC_MEM_FETCH_UNMAPPED and address >= FORCE_KILL_ADDR - 0x10 and address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
+        dp.error(f"forced exit memory operation {access} of {address:x}[{size:x}] = {value:X}")
+        return False
     # TODO: figure out why when you start executing at 0 this callback is triggered more than once
     try:
         # Extract exception information
@@ -637,7 +668,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             dp.exception.final = True
 
             # Stop emulation (we resume it on KiUserExceptionDispatcher later)
-            dp.stop(exception.type)
+            dp.stop()
             return False
 
         # There should not be an exception active
@@ -655,7 +686,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         dp.exception = exception
 
         # Stop emulation (we resume execution later)
-        dp.stop(exception.type)
+        dp.stop()
         return False
     except AssertionError as err:
         traceback.print_exc()
@@ -815,9 +846,9 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             try:
                 status = syscall_impl(dp, *args)
                 if isinstance(status, ExceptionInfo):
+                    print("context switch, stopping emulation")
                     dp.exception = status
-                    uc.emu_stop()
-                    raise UcError(UC_ERR_EXCEPTION)
+                    dp.raise_kill(UcError(UC_ERR_EXCEPTION))
                 else:
                     dp.info(f"status = {status:x}")
                     dp.regs.cax = status
@@ -829,14 +860,18 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             except Exception as exc:
                 traceback.print_exc()
                 dp.error(f"Exception thrown during syscall implementation, stopping emulation!")
-                uc.emu_stop()
+                dp.raise_kill(exc)
         else:
             dp.error(f"syscall index: {index:x} -> {name} not implemented!")
-            uc.emu_stop()
+            dp.raise_kill(NotImplementedError())
     else:
         dp.error(f"syscall index {index:x} out of range")
-        uc.emu_stop()
+        dp.raise_kill(IndexError())
 
 def _hook_invalid(uc: Uc, address, dp: Dumpulator):
+    # HACK: unicorn cannot gracefully exit in all contexts
+    if dp.kill_me:
+        dp.error(f"terminating emulation...")
+        return False
     dp.error(f"invalid instruction at {address:x}")
     return False

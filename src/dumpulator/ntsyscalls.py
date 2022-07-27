@@ -739,19 +739,19 @@ def ZwConnectPort(dp: Dumpulator,
 
 @syscall
 def ZwContinue(dp: Dumpulator,
-               ContextRecord: P(CONTEXT),
+               ContextRecord: PVOID,  # CONTEXT
                TestAlert: BOOLEAN
                ):
     assert not TestAlert
     exception = ExceptionInfo()
     exception.type = ExceptionType.ContextSwitch
     exception.final = True
-    context_size = ctypes.sizeof(CONTEXT)
+    context_type = CONTEXT if dp.ptr_size() == 8 else WOW64_CONTEXT
+    context_size = ctypes.sizeof(context_type)
     data = dp.read(ContextRecord.ptr, context_size)
-    context = CONTEXT.from_buffer(data)
+    context = context_type.from_buffer(data)
     context.to_regs(dp.regs)
     exception.context = dp._uc.context_save()
-    print(f"cip: {dp.regs.cip:x}")
     return exception
 
 @syscall
@@ -3157,11 +3157,11 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
         info = MEMORY_BASIC_INFORMATION(dp)
         assert MemoryInformationLength == ctypes.sizeof(info)
         # TODO: hardcoded for the example
-        if BaseAddress in [0x140001050, 0x140001e00]:
+        if BaseAddress.ptr in [0x140001050, 0x140001e00]:
             info.BaseAddress = 0x140001000
             info.AllocationBase = 0x140000000
             info.RegionSize = 0xD000
-        elif BaseAddress in [0x401aef]:
+        elif BaseAddress.ptr in [0x401aef, 0x401080]:
             info.BaseAddress = 0x401000
             info.AllocationBase = 0x400000
             info.RegionSize = 0xC000
@@ -3179,10 +3179,10 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
         info = MEMORY_REGION_INFORMATION(dp)
         assert MemoryInformationLength >= ctypes.sizeof(info)
         # TODO: hardcoded for the example
-        if BaseAddress in [0x140001050, 0x140001e00]:
+        if BaseAddress.ptr in [0x140001050, 0x140001e00]:
             info.AllocationBase = 0x140000000
             info.RegionSize = 0x1c000  # ImageSize
-        elif BaseAddress in [0x401aef]:
+        elif BaseAddress.ptr in [0x401aef, 0x401080]:
             info.AllocationBase = 0x400000
             info.RegionSize = 0x16000  # ImageSize
             pass
@@ -3202,10 +3202,12 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
         # TODO: implement proper UNICODE_STRING type support
         if dp.ptr_size() == 8:
             name = "\\Device\\HarddiskVolume8\\CodeBlocks\\dumpulator\\tests\\ExceptionTest\\x64\\Release\\ExceptionTest.exe"
+            ptr = MemoryInformation.ptr + 0x10
+            ustr = struct.pack("<HHIQ", len(name) * 2, len(name) * 2 + 1, 0, ptr)
         else:
             name = "\\Device\\HarddiskVolume8\\CodeBlocks\\dumpulator\\tests\\ExceptionTest\\Release\\ExceptionTest.exe"
-        ptr = MemoryInformation.ptr + 0x10
-        ustr = struct.pack("<HHIQ", len(name) * 2, len(name) * 2 + 1, 0, ptr)
+            ptr = MemoryInformation.ptr + 0x8
+            ustr = struct.pack("<HHI", len(name) * 2, len(name) * 2 + 1, ptr)
         data = ustr + name.encode("utf-16")
         assert MemoryInformationLength >= len(data)
         MemoryInformation.write(data)
@@ -3283,7 +3285,7 @@ def ZwQueueApcThreadEx(dp: Dumpulator,
 @syscall
 def ZwRaiseException(dp: Dumpulator,
                      ExceptionRecord: P(EXCEPTION_RECORD),
-                     ContextRecord: P(CONTEXT),
+                     ContextRecord: PVOID,  # CONTEXT
                      FirstChance: BOOLEAN
                      ):
     if not FirstChance:
@@ -3713,7 +3715,7 @@ def ZwSetCachedSigningLevel(dp: Dumpulator,
 @syscall
 def ZwSetContextThread(dp: Dumpulator,
                        ThreadHandle: HANDLE,
-                       ThreadContext: P(CONTEXT)
+                       ThreadContext: PVOID  # CONTEXT
                        ):
     raise NotImplementedError()
 

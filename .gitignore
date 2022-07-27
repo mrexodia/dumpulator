@@ -6,7 +6,7 @@ venv/
 __pycache__/
 *.pyc
 /tests/*.trace
-/tests/*.dd32
-/tests/*.dd64
+/tests/*.trace32
+/tests/*.trace64
 /tests/*.txt
 /tests/*.dmp

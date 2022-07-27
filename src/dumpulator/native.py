@@ -379,10 +379,6 @@ class WOW64_CONTEXT(ctypes.Structure):
         self.Dr3 = regs.dr3
         self.Dr6 = regs.dr6
         self.Dr7 = regs.dr7
-        self.SegGs = regs.gs
-        self.SegFs = regs.fs
-        self.SegEs = regs.es
-        self.SegDs = regs.ds
         self.Edi = regs.edi
         self.Esi = regs.esi
         self.Ebx = regs.ebx
@@ -391,10 +387,16 @@ class WOW64_CONTEXT(ctypes.Structure):
         self.Eax = regs.eax
         self.Ebp = regs.ebp
         self.Eip = regs.eip
-        self.SegCs = regs.cs
-        self.Eflags = regs.eflags
+        self.EFlags = regs.eflags
         self.Esp = regs.esp
+
+        self.SegCs = regs.cs
         self.SegSs = regs.ss
+        self.SegDs = regs.ds
+        self.SegEs = regs.es
+        self.SegFs = regs.fs
+        self.SegGs = regs.gs
+
         # TODO: implement xmm
 
     def to_regs(self, regs):
@@ -404,10 +406,6 @@ class WOW64_CONTEXT(ctypes.Structure):
         regs.dr3 = self.Dr3
         regs.dr6 = self.Dr6
         regs.dr7 = self.Dr7
-        regs.gs = self.SegGs
-        regs.fs = self.SegFs
-        regs.es = self.SegEs
-        regs.ds = self.SegDs
         regs.edi = self.Edi
         regs.esi = self.Esi
         regs.ebx = self.Ebx
@@ -416,10 +414,18 @@ class WOW64_CONTEXT(ctypes.Structure):
         regs.eax = self.Eax
         regs.ebp = self.Ebp
         regs.eip = self.Eip
-        regs.cs = self.SegCs
-        regs.eflags = self.Eflags
+        regs.eflags = self.EFlags
         regs.esp = self.Esp
-        regs.ss = self.SegSs
+
+        # TODO: implement segment switching
+        # NOTE: if you update fs/gs the fs_base/gs_base will be set to 0
+        assert regs.cs == self.SegCs & 0xFFFF
+        assert regs.ss == self.SegSs & 0xFFFF
+        assert regs.ds == self.SegDs & 0xFFFF
+        assert regs.es == self.SegEs & 0xFFFF
+        assert regs.fs == self.SegFs & 0xFFFF
+        assert regs.gs == self.SegGs & 0xFFFF
+
         # TODO: implement xmm
 
 assert ctypes.sizeof(WOW64_CONTEXT) == 0x2cc
