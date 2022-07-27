@@ -253,12 +253,9 @@ X32_REGS = [
     "edi",
     "eip",
     "eflags",
-    "gs",
-    "fs",
-    "es",
-    "ds",
-    "cs",
-    "ss",
+    "seg:gs,fs",
+    "seg:es,ds",
+    "seg:cs,ss",
     "dr0",
     "dr1",
     "dr2",
@@ -285,12 +282,8 @@ X64_REGS = [
     "r15",
     "rip",
     "eflags",
-    "gs",
-    "fs",
-    "es",
-    "ds",
-    "cs",
-    "ss",
+    "seg:gs,fs,es,ds",
+    "seg:cs,ss",
     "dr0",
     "dr1",
     "dr2",
@@ -362,8 +355,13 @@ def open_x64dbg_trace(filename, tracef):
             pointer_size = 4  # dword
 
         for i, reg in enumerate(regs):
-            reg_indexes[reg] = i
-            reg_masks[reg] = 0xFFFFFFFFFFFFFFFF >> (64 - pointer_size * 8)
+            if reg.startswith("seg:"):
+                for j, seg in enumerate(reg[4:].split(',')):
+                    reg_indexes[seg] = i
+                    reg_masks[seg] = 0xFFFF << (16 * j)
+            else:
+                reg_indexes[reg] = i
+                reg_masks[reg] = 0xFFFFFFFFFFFFFFFF >> (64 - pointer_size * 8)
         reg_indexes["rflags"] = reg_indexes["eflags"]
         reg_masks["rflags"] = reg_masks["eflags"]
 
@@ -498,11 +496,14 @@ def open_x64dbg_trace(filename, tracef):
                     disasm += " " + op_str
 
             def get_reg(name):
+                if len(name) == 2 and name[1] == 's':
+                    print(f"{name} moment")
                 index = reg_indexes[name]
                 mask = reg_masks[name]
                 val = reg_values[index]
-                if mask == 0xFF00:
-                    mask = 0xFF
+                # Shifts are encoded in the mask
+                while (mask & 0xFF) == 0:
+                    mask >>= 8
                     val >>= 8
                 return val & mask
 
