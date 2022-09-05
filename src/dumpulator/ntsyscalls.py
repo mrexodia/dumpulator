@@ -643,7 +643,10 @@ def ZwClearEvent(dp: Dumpulator,
 def ZwClose(dp: Dumpulator,
             Handle: HANDLE
             ):
-    return STATUS_SUCCESS
+    if dp.hm.valid(Handle):
+        dp.hm.close(Handle)
+        return STATUS_SUCCESS
+    return STATUS_INVALID_HANDLE
 
 @syscall
 def ZwCloseObjectAuditAlarm(dp: Dumpulator,
@@ -835,6 +838,14 @@ def ZwCreateFile(dp: Dumpulator,
     assert IoStatusBlock.ptr != 0
     #assert EaBuffer.ptr == 0
     #assert EaLength == 0
+    
+    handle_data = {
+        "file_name": file_name,
+        "access_mask": DesiredAccess,
+        "file_attributes": FileAttributes,
+        "share_access": ShareAccess
+    }
+    
     if file_name == "\\Device\\ConDrv\\Server":
         assert DesiredAccess == 0x12019f
         assert AllocationSize.ptr == 0x0
@@ -844,32 +855,40 @@ def ZwCreateFile(dp: Dumpulator,
         assert CreateOptions == 0
         handle = dp.console_handle
         if handle == 0:
-            handle = 0x13  # TODO: handle manager
+            handle = dp.hm.new(handle_data)
             dp.console_handle = handle
+        elif not dp.hm.valid(handle):
+            dp.hm.add(handle, handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Reference":
-        FileHandle.write_ptr(0x15)  # TODO: handle manager
+        handle = dp.hm.new(handle_data)
+        FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Connect":
-        FileHandle.write_ptr(0x17)  # TODO: handle manager
+        handle = dp.hm.new(handle_data)
+        FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Input":
         handle = dp.console_handle
         if handle == 0:
-            handle = 0x19  # TODO: handle manager
+            handle = dp.hm.new(handle_data)
             dp.stdin_handle = handle
+        elif not dp.hm.valid(handle):
+            dp.hm.add(handle, handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Output":
         handle = dp.console_handle
         if handle == 0:
-            handle = 0x1A  # TODO: handle manager
+            handle = dp.hm.new(handle_data)
             dp.stdout_handle = handle
+        elif not dp.hm.valid(handle):
+            dp.hm.add(handle, handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
@@ -1478,7 +1497,10 @@ def ZwDuplicateObject(dp: Dumpulator,
                       ):
     assert SourceProcessHandle == dp.NtCurrentProcess()
     assert TargetProcessHandle == dp.NtCurrentProcess()
-    TargetHandle.write_ptr(SourceHandle)
+    if not dp.hm.valid(SourceHandle):
+        return STATUS_INVALID_HANDLE
+    dup_handle = dp.hm.duplicate(SourceHandle)
+    TargetHandle.write_ptr(dup_handle)
     return STATUS_SUCCESS
 
 @syscall
