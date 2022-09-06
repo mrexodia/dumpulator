@@ -643,8 +643,8 @@ def ZwClearEvent(dp: Dumpulator,
 def ZwClose(dp: Dumpulator,
             Handle: HANDLE
             ):
-    if dp.hm.valid(Handle):
-        dp.hm.close(Handle)
+    if dp.handles.valid(Handle):
+        dp.handles.close(Handle)
         return STATUS_SUCCESS
     return STATUS_INVALID_HANDLE
 
@@ -855,40 +855,40 @@ def ZwCreateFile(dp: Dumpulator,
         assert CreateOptions == 0
         handle = dp.console_handle
         if handle == 0:
-            handle = dp.hm.new(handle_data)
+            handle = dp.handles.new(handle_data)
             dp.console_handle = handle
-        elif not dp.hm.valid(handle):
-            dp.hm.add(handle, handle_data)
+        elif not dp.handles.valid(handle):
+            dp.handles.add(handle, handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Reference":
-        handle = dp.hm.new(handle_data)
+        handle = dp.handles.new(handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Connect":
-        handle = dp.hm.new(handle_data)
+        handle = dp.handles.new(handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Input":
         handle = dp.console_handle
         if handle == 0:
-            handle = dp.hm.new(handle_data)
+            handle = dp.handles.new(handle_data)
             dp.stdin_handle = handle
-        elif not dp.hm.valid(handle):
-            dp.hm.add(handle, handle_data)
+        elif not dp.handles.valid(handle):
+            dp.handles.add(handle, handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Output":
         handle = dp.console_handle
         if handle == 0:
-            handle = dp.hm.new(handle_data)
+            handle = dp.handles.new(handle_data)
             dp.stdout_handle = handle
-        elif not dp.hm.valid(handle):
-            dp.hm.add(handle, handle_data)
+        elif not dp.handles.valid(handle):
+            dp.handles.add(handle, handle_data)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
@@ -1497,9 +1497,9 @@ def ZwDuplicateObject(dp: Dumpulator,
                       ):
     assert SourceProcessHandle == dp.NtCurrentProcess()
     assert TargetProcessHandle == dp.NtCurrentProcess()
-    if not dp.hm.valid(SourceHandle):
+    if not dp.handles.valid(SourceHandle):
         return STATUS_INVALID_HANDLE
-    dup_handle = dp.hm.duplicate(SourceHandle)
+    dup_handle = dp.handles.duplicate(SourceHandle)
     TargetHandle.write_ptr(dup_handle)
     return STATUS_SUCCESS
 

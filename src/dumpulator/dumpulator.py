@@ -453,7 +453,7 @@ class Dumpulator(Architecture):
         self.syscalls = []
         self._setup_syscalls()
         self.exports = self._setup_exports()
-        self.hm = HandleManager()
+        self.handles = HandleManager()
 
     def _find_thread(self, thread_id):
         for i in range(0, len(self._minidump.threads.threads)):
