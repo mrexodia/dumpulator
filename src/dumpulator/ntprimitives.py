@@ -108,6 +108,9 @@ class PVOID:
     def __str__(self):
         return f"0x{self:X}"
 
+    def read_byte_str(self, size):
+        return bytes(self.read(size))
+
     def read_str(self, size, encoding="utf8"):
         return self.read(size).decode(encoding)
 
