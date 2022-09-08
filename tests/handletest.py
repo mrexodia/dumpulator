@@ -6,8 +6,8 @@ class TestHandleManager(unittest.TestCase):
     @classmethod
     def setUp(cls):
         cls.handles = HandleManager()
-        cls.file_handle = FileHandle("test.txt")
-        cls.special_file_handle = SpecialFileHandle("test.txt", 1337)
+        cls.file_handle = FileHandleObj("test.txt")
+        cls.special_file_handle = SpecialFileHandleObj("test.txt", 1337)
 
     def test_single_handle(self):
         handle = self.handles.new(self.file_handle)
@@ -30,27 +30,27 @@ class TestHandleManager(unittest.TestCase):
 
     def test_get_handle(self):
         handle = self.handles.new(self.file_handle)
-        data = self.handles.get(handle, FileHandle)
+        data = self.handles.get(handle, FileHandleObj)
         self.assertEqual(data, self.file_handle)
         self.handles.close(handle)
 
     def test_duplicate_handle(self):
-        handle_data = FileHandle("dupe.txt")
+        handle_data = FileHandleObj("dupe.txt")
         handle = self.handles.new(handle_data)
         dup_handle = self.handles.duplicate(handle)
         self.assertEqual(self.handles.close(handle), True)
-        data = self.handles.get(dup_handle, FileHandle)
+        data = self.handles.get(dup_handle, FileHandleObj)
         self.assertEqual(data, handle_data)
         self.assertEqual(self.handles.close(dup_handle), True)
 
     def test_add_handle(self):
         handle = 0x10
         self.handles.add(handle, self.file_handle)
-        data = self.handles.get(handle, FileHandle)
+        data = self.handles.get(handle, FileHandleObj)
         self.assertEqual(data, self.file_handle)
         self.handles.close(handle)
         with self.assertRaises(AssertionError):
-            self.handles.get(handle, FileHandle)
+            self.handles.get(handle, FileHandleObj)
 
     def test_add_handle_assert(self):
         handle = 0x10

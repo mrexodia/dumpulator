@@ -1,15 +1,16 @@
 from typing import Any, Type, TypeVar
 
 
-class FileHandle:
+class FileHandleObj:
     def __init__(self, path):
         self.path = path
+        self.file_offset = 0
 
     def __str__(self):
-        return f"{type(self).__name__}(path: {self.path})"
+        return f"{type(self).__name__}(path: {self.path}, file_offset {self.file_offset})"
 
 
-class SpecialFileHandle(FileHandle):
+class SpecialFileHandleObj(FileHandleObj):
     def __init__(self, path, special):
         super().__init__(path)
         self.special = special
@@ -36,13 +37,13 @@ class HandleManager:
         return self.handles.get(handle_value & ~3, None)
 
     # create new handle object and returns handle value
-    def new(self, handle_data: Any = None) -> int:
+    def new(self, handle_data: Any) -> int:
         handle_value = self.__find_free_handle()
         self.handles[handle_value] = handle_data
         return handle_value
 
     # used to add predefined known handles
-    def add(self, handle_value: int, handle_data: Any = None):
+    def add(self, handle_value: int, handle_data: Any):
         assert handle_value not in self.handles.keys()
         self.handles[handle_value] = handle_data
 
