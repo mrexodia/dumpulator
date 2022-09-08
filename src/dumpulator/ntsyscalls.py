@@ -3246,6 +3246,7 @@ def ZwReadFile(dp: Dumpulator,
             f.seek(file_handle_data.file_offset)
             result = f.read(Length)
             print("reading {file_handle_data.path}: {result}")
+            print(f"reading {file_handle_data.path}: {result}")
             assert len(result) <= Length
 
         Buffer.write(result)
