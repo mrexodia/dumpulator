@@ -3245,6 +3245,7 @@ def ZwReadFile(dp: Dumpulator,
         with open(file_handle_data.path, 'rb') as f:
             f.seek(file_handle_data.file_offset)
             result = f.read(Length)
+            print("reading {file_handle_data.path}: {result}")
             print(f"reading {file_handle_data.path}: {result}")
             assert len(result) <= Length
 
@@ -4397,15 +4398,10 @@ def ZwWriteFile(dp: Dumpulator,
                 ByteOffset: P(LARGE_INTEGER),
                 Key: P(ULONG)
                 ):
-    if FileHandle == dp.stdout_handle:
+    if FileHandle in [dp.stdout_handle, dp.stdin_handle]:
         # data = Buffer.read_str(Length)  # trailing bytes '\x00\x04x\xd7\xcd0\xfd' can't utf8 decode
-        data = Buffer.read_byte_str(Length)
-        print(f"stdout: {data}")
-        return STATUS_SUCCESS
-    elif FileHandle == dp.stdin_handle:
-        # data = Buffer.read_str(Length)  # trailing bytes '\x00\x04x\xd7\xcd0\xfd' can't utf8 decode
-        data = Buffer.read_byte_str(Length)
-        print(f"stdin: {data}")
+        data = Buffer.read(Length)
+        print(data)
         return STATUS_SUCCESS
     raise NotImplementedError()
 
