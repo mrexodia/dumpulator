@@ -321,6 +321,15 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
         else:
             dp._uc.mem_map(base, size, unicorn.UC_PROT_NONE)
         print(f"reserve({hex(base)}[{hex(size)}])")
+    elif AllocationType == MEM_COMMIT | MEM_RESERVE:
+        if base == 0:
+            base = dp.allocate(size, True)
+            dp._uc.mem_protect(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
+            BaseAddress.write_ptr(base)
+        else:
+            dp._uc.mem_map(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
+        print(f"reserve+commit({hex(base)}[{hex(size)}])")
+        return STATUS_SUCCESS
     else:
         assert False
     return STATUS_SUCCESS
@@ -872,12 +881,12 @@ def ZwCreateFile(dp: Dumpulator,
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Reference":
-        handle = dp.handles.new(FileHandleObj(file_name))
+        handle = dp.handles.new(FileHandle(file_name))
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Connect":
-        handle = dp.handles.new(FileHandleObj(file_name))
+        handle = dp.handles.new(FileHandle(file_name))
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
@@ -902,7 +911,9 @@ def ZwCreateFile(dp: Dumpulator,
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     else:
-        handle = dp.handles.new(FileHandleObj(file_name))
+        handle = dp.handles.open_file(file_name)
+        assert handle is not None # TODO: STATUS_NO_SUCH_FILE
+        print(f"Created handle {hex(handle)}")
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
@@ -1144,7 +1155,17 @@ def ZwCreateSection(dp: Dumpulator,
                     AllocationAttributes: ULONG,
                     FileHandle: HANDLE
                     ):
-    raise NotImplementedError()
+    assert SectionHandle != 0
+    assert DesiredAccess == 0xd
+    assert ObjectAttributes == 0
+    assert MaximumSize == 0
+    assert SectionPageProtection == PAGE_EXECUTE
+    assert AllocationAttributes == MEM_IMAGE
+    file = dp.handles.get(FileHandle, FileObject)
+    assert file is not None
+    section_handle = dp.handles.new(SectionObject(file))
+    SectionHandle.write_ptr(section_handle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwCreateSectionEx(dp: Dumpulator,
@@ -1455,8 +1476,8 @@ def ZwDeviceIoControlFile(dp: Dumpulator,
                           ):
     if FileHandle == dp.console_handle:
         if IoControlCode == 0x500016:
-            data = InputBuffer.read(InputBufferLength)
-            print(f"InputBuffer: {data.hex()}")
+            in_data = InputBuffer.read(InputBufferLength)
+            print(f"InputBuffer: {in_data.hex()}")
 
             # TODO: this is totally wrong, but seems to work?
             if dp.ptr_size() == 4:
@@ -1478,8 +1499,17 @@ def ZwDeviceIoControlFile(dp: Dumpulator,
                 return STATUS_SUCCESS
         elif IoControlCode == 0x500037:  # ConsoleLaunchServerProcess (AllocConsole)
             return STATUS_SUCCESS
-    return STATUS_SUCCESS
-    raise NotImplementedError()
+    elif dp.handles.valid(FileHandle):
+        device = dp.handles.get(FileHandle, DeviceObject)
+        in_data = dp.read(InputBuffer.ptr, InputBufferLength)
+        out_data = device.io_control(dp, IoControlCode, in_data)  # TODO: allow changing the status code
+        assert OutputBuffer == 0
+        written = 0  # TODO: change io_control interface
+        # Put the number of bytes written in the status block
+        IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, written))
+        return STATUS_SUCCESS
+    assert False
+    return STATUS_INVALID_HANDLE
 
 @syscall
 def ZwDisableLastKnownGood(dp: Dumpulator
@@ -1945,7 +1975,8 @@ def ZwListenPort(dp: Dumpulator,
 def ZwLoadDriver(dp: Dumpulator,
                  DriverServiceName: P(UNICODE_STRING)
                  ):
-    raise NotImplementedError()
+    print(f"Starting service: {DriverServiceName[0].read_str()}")
+    return STATUS_SUCCESS
 
 @syscall
 def ZwLoadEnclaveData(dp: Dumpulator,
@@ -2086,7 +2117,62 @@ def ZwMapViewOfSection(dp: Dumpulator,
                        AllocationType: ULONG,
                        Win32Protect: ULONG
                        ):
-    raise NotImplementedError()
+    assert ProcessHandle == dp.NtCurrentProcess()
+    assert ZeroBits == 0
+    assert CommitSize == 0
+    assert SectionOffset == 0
+    assert InheritDisposition == SECTION_INHERIT.ViewShare
+    assert AllocationType == MEM_DIFFERENT_IMAGE_BASE_OK
+    assert Win32Protect == PAGE_EXECUTE_WRITECOPY
+    requested_base = BaseAddress.read_ptr()
+    assert requested_base == 0
+    section = dp.handles.get(SectionHandle, SectionObject)
+    data = section.file.read()
+    import pefile
+    pe = pefile.PE(name=None, data=data)
+    image_size = pe.OPTIONAL_HEADER.SizeOfImage
+    section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
+    assert section_alignment == 0x1000
+    # TODO: allocate the base
+    # image_base = dp.allocate(image_size, True)
+    image_base = 0x7ffe7cd20000 # NOTE: temporary
+    dp._uc.mem_map(image_base, image_size)
+    # TODO: map the header properly
+    header = pe.header
+    header_size = pe.sections[0].VirtualAddress_adj
+    print(f"Mapping header {hex(image_base)}[{hex(header_size)}]") 
+    dp.write(image_base, header)
+    dp.protect(image_base, header_size, PAGE_READONLY)
+    for section in pe.sections:
+        name = section.Name.rstrip(b"\0")
+        rva = section.VirtualAddress_adj
+        va = image_base + rva
+        mask = section_alignment - 1
+        size = (section.Misc_VirtualSize + mask) & ~mask
+        flags = section.Characteristics
+        data = section.get_data()
+        assert flags & IMAGE_SCN_MEM_SHARED == 0
+        assert flags & IMAGE_SCN_MEM_READ != 0
+        execute = flags & IMAGE_SCN_MEM_EXECUTE
+        write = flags & IMAGE_SCN_MEM_WRITE
+        protect = PAGE_READONLY
+        if write:
+            protect = PAGE_READWRITE
+        if execute:
+            protect <<= 4
+        print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)}")
+        dp.write(va, data)
+        dp.protect(va, size, protect)
+    
+    # TODO: implement relocations
+    reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]
+    assert reloc_dir.VirtualAddress == 0 and reloc_dir.Size == 0
+    # TODO: set image base in header
+    
+    # Handle out parameters
+    BaseAddress.write_ptr(image_base)
+    ViewSize.write_ptr(image_size)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwModifyBootEntry(dp: Dumpulator,
@@ -2220,12 +2306,11 @@ def ZwOpenFile(dp: Dumpulator,
     assert FileHandle.ptr != 0
     assert ObjectAttributes.ptr != 0
     file_name = ObjectAttributes[0].ObjectName[0].read_str()
-    print(f"open: {file_name}")
-    if "auth_key.bin" in file_name:
-        FileHandle.write_ptr(0x1C)  # TODO: handle manager
-        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
-        return STATUS_SUCCESS
-    raise NotImplementedError()
+    handle = dp.handles.open_file(file_name)
+    assert handle is not None
+    FileHandle.write_ptr(handle)
+    IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwOpenIoCompletion(dp: Dumpulator,
@@ -2249,7 +2334,12 @@ def ZwOpenKey(dp: Dumpulator,
               DesiredAccess: ACCESS_MASK,
               ObjectAttributes: P(OBJECT_ATTRIBUTES)
               ):
-    raise NotImplementedError()
+    key_name = ObjectAttributes[0].ObjectName[0].read_str()
+    assert DesiredAccess == 0x20019
+    handle = dp.handles.open_file(key_name)
+    assert handle is not None
+    KeyHandle.write_ptr(handle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwOpenKeyedEvent(dp: Dumpulator,
@@ -2344,7 +2434,13 @@ def ZwOpenProcessToken(dp: Dumpulator,
                        DesiredAccess: ACCESS_MASK,
                        TokenHandle: P(HANDLE)
                        ):
-    raise NotImplementedError()
+    assert ProcessHandle == dp.NtCurrentProcess()
+    assert DesiredAccess == 0x20
+    # TODO: TokenHandle should be -6 or something
+    handle = dp.handles.new(ProcessTokenHandle(ProcessHandle))
+    print(f"process token: {hex(handle)}")
+    TokenHandle.write_ptr(handle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwOpenProcessTokenEx(dp: Dumpulator,
@@ -2574,7 +2670,21 @@ def ZwQueryAttributesFile(dp: Dumpulator,
                           ObjectAttributes: P(OBJECT_ATTRIBUTES),
                           FileInformation: P(FILE_BASIC_INFORMATION)
                           ):
-    raise NotImplementedError()
+    assert ObjectAttributes.ptr != 0
+    file_name = ObjectAttributes[0].ObjectName[0].read_str()
+    print(f"query attributes {file_name}")
+    handle = dp.handles.open_file(file_name)
+    assert handle is not None
+    file_data = dp.handles.get(handle, FileObject)
+    attr = FILE_BASIC_INFORMATION(dp)
+    attr.CreationTime = 0
+    attr.LastAccessTime = 0
+    attr.LastWriteTime = 0
+    attr.ChangeTime = 0
+    attr.FileAttributes = 0x80  # FILE_ATTRIBUTE_NORMAL
+    dp.write(FileInformation.ptr, bytes(attr))
+    dp.handles.close(handle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwQueryBootEntryOrder(dp: Dumpulator,
@@ -2736,7 +2846,7 @@ def ZwQueryInformationFile(dp: Dumpulator,
             assert FileInformation.ptr != 0
             assert IoStatusBlock.ptr != 0
 
-            file_handle_data = dp.handles.get(FileHandle, FileHandleObj)
+            file_handle_data = dp.handles.get(FileHandle, FileObject)
 
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/5afa7f66-619c-48f3-955f-68c4ece704ae
             # return FILE_STANDARD_INFORMATION
@@ -2758,7 +2868,7 @@ def ZwQueryInformationFile(dp: Dumpulator,
             assert FileInformation.ptr != 0
             assert IoStatusBlock.ptr != 0
 
-            file_handle_data = dp.handles.get(FileHandle, FileHandleObj)
+            file_handle_data = dp.handles.get(FileHandle, FileObject)
 
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e3ce4a39-327e-495c-99b6-6b61606b6f16
             # return FILE_POSITION_INFORMATION
@@ -3208,7 +3318,7 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
             name = "\\Device\\HarddiskVolume8\\CodeBlocks\\dumpulator\\tests\\ExceptionTest\\Release\\ExceptionTest.exe"
             ptr = MemoryInformation.ptr + 0x8
             ustr = struct.pack("<HHI", len(name) * 2, len(name) * 2 + 1, ptr)
-        data = ustr + name.encode("utf-16")
+        data = ustr + name.encode("utf-16-le")
         assert MemoryInformationLength >= len(data)
         MemoryInformation.write(data)
         if ReturnLength.ptr:
@@ -3336,7 +3446,7 @@ def ZwReadFile(dp: Dumpulator,
     elif dp.handles.valid(FileHandle):
         assert Buffer != 0
 
-        file_handle_data = dp.handles.get(FileHandle, FileHandleObj)
+        file_handle_data = dp.handles.get(FileHandle, FileObject)
 
         with open(file_handle_data.path, 'rb') as f:
             f.seek(file_handle_data.file_offset)
@@ -3767,7 +3877,7 @@ def ZwSetEvent(dp: Dumpulator,
                EventHandle: HANDLE,
                PreviousState: P(LONG)
                ):
-    return STATUS_NOT_IMPLEMENTED
+    return STATUS_SUCCESS
 
 @syscall
 def ZwSetEventBoostPriority(dp: Dumpulator,
@@ -3820,7 +3930,7 @@ def ZwSetInformationFile(dp: Dumpulator,
             assert FileInformation.ptr != 0
             assert Length == 8
 
-            handle_data = dp.handles.get(FileHandle, FileHandleObj)
+            handle_data = dp.handles.get(FileHandle, FileObject)
 
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e3ce4a39-327e-495c-99b6-6b61606b6f16
             info = FileInformation.read(Length)
@@ -3885,6 +3995,10 @@ def ZwSetInformationProcess(dp: Dumpulator,
         return STATUS_SUCCESS
     elif ProcessInformationClass == PROCESSINFOCLASS.ProcessFaultInformation:
         assert ProcessInformationLength == 8
+        return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessLoaderDetour:
+        assert ProcessInformationLength == 4
+        dp.write_ulong(ProcessInformation, 0)
         return STATUS_SUCCESS
     raise NotImplementedError()
 

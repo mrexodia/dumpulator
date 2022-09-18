@@ -14,6 +14,9 @@ STATUS_INVALID_HANDLE = 0xC0000008
 STATUS_ACCESS_DENIED = 0xC0000022
 STATUS_PRIVILEGE_NOT_HELD = 0xC0000061
 STATUS_SET_CONTEXT_DENIED = 0xC000060A  # Return from NtContinue to int 29
+STATUS_INFO_LENGTH_MISMATCH = 0xC0000004
+STATUS_INVALID_PARAMETER = 0xC000000D
+STATUS_OBJECT_NAME_NOT_FOUND = 0xC0000034
 
 # Exceptions
 DBG_PRINTEXCEPTION_C = 0x40010006
@@ -22,6 +25,9 @@ DBG_PRINTEXCEPTION_C = 0x40010006
 MEM_COMMIT = 0x1000
 MEM_FREE = 0x10000
 MEM_RESERVE = 0x2000
+MEM_DECOMMIT = 0x4000
+MEM_RELEASE = 0x8000
+MEM_DIFFERENT_IMAGE_BASE_OK = 0x800000
 
 # Memory type
 MEM_IMAGE = 0x1000000
@@ -56,6 +62,12 @@ FILE_CREATED = 0x00000002
 FILE_OVERWRITTEN = 0x00000003
 FILE_EXISTS = 0x00000004
 FILE_DOES_NOT_EXIST = 0x00000005
+
+# Section flags
+IMAGE_SCN_MEM_SHARED = 0x10000000
+IMAGE_SCN_MEM_EXECUTE = 0x20000000
+IMAGE_SCN_MEM_READ = 0x40000000
+IMAGE_SCN_MEM_WRITE = 0x80000000
 
 def round_to_pages(size):
     return (size + 0xFFF) & 0xFFFFFFFFFFFFF000
@@ -457,6 +469,34 @@ class CONTEXT_EX(ctypes.Structure):
     ]
 assert ctypes.sizeof(CONTEXT_EX) == 0x18
 
+def _RTL_PROCESS_MODULE_INFORMATION(arch: Architecture):
+    class _RTL_PROCESS_MODULE_INFORMATION(ctypes.Structure):
+        _alignment_ = arch.alignment()
+        _fields_ = [
+            ("Section", arch.ptr_type()),
+            ("MappedBase", arch.ptr_type()),
+            ("ImageBase", arch.ptr_type()),
+            ("ImageSize", ctypes.c_uint32),
+            ("Flags", ctypes.c_uint32),
+            ("LoadOrderIndex", ctypes.c_uint16),
+            ("InitOrderIndex", ctypes.c_uint16),
+            ("LoadCount", ctypes.c_uint16),
+            ("OffsetToFileName", ctypes.c_uint16),
+            ("FullPathName", ctypes.c_ubyte * 256),
+        ]
+    return _RTL_PROCESS_MODULE_INFORMATION()
+
+def _RTL_PROCESS_MODULES(arch: Architecture, count: int):
+    class _RTL_PROCESS_MODULES(ctypes.Structure):
+        _alignment_ = arch.alignment(),
+        _fields_ = [
+            ("NumberOfModules", ctypes.c_uint32),
+            ("Modules", type(_RTL_PROCESS_MODULE_INFORMATION(arch)) * count)
+        ]
+    modules = _RTL_PROCESS_MODULES()
+    modules.NumberOfModules = count
+    return modules
+
 def MEMORY_BASIC_INFORMATION(arch: Architecture):
     class MEMORY_BASIC_INFORMATION(ctypes.Structure):
         _alignment_ = arch.alignment()
@@ -482,6 +522,18 @@ def MEMORY_REGION_INFORMATION(arch: Architecture):
             ("CommitSize", arch.ptr_type()),
         ]
     return MEMORY_REGION_INFORMATION()
+
+def FILE_BASIC_INFORMATION(arch: Architecture):
+    class FILE_BASIC_INFORMATION(ctypes.Structure):
+        _alignment_ = arch.alignment()
+        _fields_ = [
+            ("CreationTime", ctypes.c_uint64),
+            ("LastAccessTime", ctypes.c_uint64),
+            ("LastWriteTime", ctypes.c_uint64),
+            ("ChangeTime", ctypes.c_uint64),
+            ("Flags", ctypes.c_uint32),
+        ]
+    return FILE_BASIC_INFORMATION()
 
 def P(t):
     class P(PVOID):

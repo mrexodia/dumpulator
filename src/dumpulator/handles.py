@@ -1,20 +1,68 @@
-from typing import Any, Type, TypeVar
+from typing import Any, Dict, Optional, Type, TypeVar
 
+T = TypeVar('T')
 
-class FileHandleObj:
-    def __init__(self, path):
+class FileObject:
+    def __init__(self, path: str, data: bytes = None):
         self.path = path
+        self.data = data
         self.file_offset = 0
 
     def __str__(self):
-        return f"{type(self).__name__}(path: {self.path}, file_offset {self.file_offset})"
+        return f"{type(self).__name__}(path: {self.path}, file_offset: {self.file_offset})"
 
+    def read(self, size: Optional[int] = None) -> bytes:
+        if self.data is None:
+            # TODO: implement properly
+            with open(self.path, "rb") as f:
+                if size is None:
+                    data = f.read()
+                    self.file_offset += len(data)
+                else:
+                    f.seek(self.file_offset)
+                    data = f.read(size)
+                    self.file_offset += size
+        else:
+            if size is None:
+                data = self.data
+                self.file_offset += len(data)
+            else:
+                assert False
+        return data
 
-class SpecialFileHandleObj(FileHandleObj):
+class SectionObject:
+    def __init__(self, file: FileObject):
+        self.file = file
+    
+    def __str__(self):
+        return f"{type(self).__name__}({self.file})"
+
+class SpecialFileObject(FileObject):
     def __init__(self, path, special):
         super().__init__(path)
         self.special = special
 
+class ProcessTokenObject:
+    def __init__(self, process_handle):
+        self.process_handle = process_handle
+
+    def __str__(self):
+        return f"{type(self).__name__}({hex(self.process_handle)})"
+
+class DeviceObject:
+    def __str__(self):
+        return f"{type(self).__name__}"
+
+    def io_control(self, dp, code: int, data: bytes) -> bytes:
+        raise NotImplementedError()
+
+class RegistryKeyObject:
+    def __init__(self, key: str, values: Dict[str, Any] = {}):
+        self.key = key
+        self.values = values
+    
+    def __str__(self):
+        return f"{type(self).__name__}({self.key})"
 
 class HandleManager:
     def __init__(self):
@@ -22,8 +70,7 @@ class HandleManager:
         self.free_handles = []
         self.base_handle = 0x100
         self.handle_count = 0
-
-    T = TypeVar('T')
+        self.mapped_files = {}
 
     def __find_free_handle(self) -> int:
         if not self.free_handles:
@@ -63,7 +110,8 @@ class HandleManager:
     def close(self, handle_value: int) -> bool:
         if handle_value in self.handles.keys():
             del self.handles[handle_value]
-            self.free_handles.append(handle_value)
+            # Make sure all handles are unique
+            # self.free_handles.append(handle_value)
             return True
         return False
 
@@ -74,3 +122,17 @@ class HandleManager:
         new_handle_value = self.__find_free_handle()
         self.handles[new_handle_value] = handle_object
         return new_handle_value
+
+    def map_file(self, filename: str, handle_data: Any):
+        self.mapped_files[filename] = handle_data
+    
+    def open_file(self, filename: str):
+        data = self.mapped_files.get(filename, None)
+        if data is None:
+            return None
+        return self.new(data)
+
+    def create_key(self, key: str, values: Dict[str, Any] = {}):
+        data = RegistryKeyObject(key, values)
+        self.mapped_files[key] = data
+        return data

@@ -12,7 +12,7 @@ from unicorn import *
 from unicorn.x86_const import *
 from pefile import *
 
-from .handles import HandleManager
+from .handles import HandleManager, FileObject
 from .native import *
 from .details import *
 from capstone import *
@@ -355,6 +355,8 @@ class Dumpulator(Architecture):
                 self.write(patch_addr, KiFastSystemCall)
             elif export.name == b"KiUserExceptionDispatcher":
                 self.KiUserExceptionDispatcher = ntdll.baseaddress + export.address
+            elif export.name == b"LdrLoadDll":
+                self.LdrLoadDll = ntdll.baseaddress + export.address
 
         syscalls.sort()
         for index, (rva, name) in enumerate(syscalls):
@@ -432,8 +434,19 @@ class Dumpulator(Architecture):
             # CONTEXT_EX: 0x18 bytes (accessed by RtlpSanitizeContext)
             # Alignment: 0x8 bytes (not overwritten by KiUserExceptionDispatcher)
             # EXCEPTION_RECORD: 0x98 bytes
-            # Unknown: 0x198 bytes
+            # Unknown: 0x198 bytes (JustMagic: should be _MACHINE_FRAME?)
             # 0x4f0 bytes sizeof(CONTEXT) + 0x20 unclear
+            """ JustMagic:
+rsp in KiUserExceptionDispatcher:
+      CONTEXT          @ rsp + 0   : 4d0
+      CONTEXT_EX       @ rsp + 4d0 : 18
+      alignment        @ rsp + 4e8 : 8
+      EXCEPTION_RECORD @ rsp + 4f0 : 98
+      alignment        @ rsp + 588 : 8
+      MACHINE_FRAME    @ rsp + 590 : 28                       | alignas(16) from RSP in exception / xstate
+      alignment        @ rsp + 5b8 : 8
+      xstate           @ rsp + 5c0 : CONTEXT_EX.Xstate.Length | alignas(64) from RSP in exception 
+            """
             allocation_size = 0x720
             context_flags = 0x10005F
             record_type = EXCEPTION_RECORD64
@@ -580,6 +593,7 @@ class Dumpulator(Architecture):
                     continue
                 else:
                     self.error(f'error: {err}, cip = {self.regs.cip:x}')
+                    traceback.print_exc()
                 break
 
     def stop(self, exit_code=None):
@@ -607,6 +621,28 @@ class Dumpulator(Architecture):
 
     def NtCurrentThread(self):
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
+
+    def load_dll(self, file_name: str, file_data: bytes):
+        self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))
+        argument_ptr = self.allocate(0x1000)
+        utf16 = file_name.encode("utf-16-le")
+        if self._x64:
+            argument_data = struct.pack("<IIQHHIQ", 0, 0, 0, len(utf16), len(utf16) + 2, 0, argument_ptr + 32)
+            argument_data += utf16
+            argument_data += b"\0"
+            search_path = argument_ptr + len(argument_data)
+            argument_data += b"Z:\\"
+            image_type = argument_ptr
+            image_base_address = image_type + 8
+            image_file_name = image_base_address + 8
+        else:
+            assert False # TODO
+        self.write(argument_ptr, argument_data)
+
+        print(f"LdrLoadDll({file_name})")
+        status = self.call(self.LdrLoadDll, [1, image_type, image_file_name, image_base_address])
+        print(f"status = {hex(status)}")
+        return self.read_ptr(image_base_address)
 
 def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
     try:
@@ -720,11 +756,14 @@ def _get_regs(instr, include_write=False):
     return regs
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
-    code = dp.read(address, size)
     try:
+        code = dp.read(address, min(size, 15))
         instr = next(dp.cs.disasm(code, address, 1))
     except StopIteration:
         instr = None  # Unsupported instruction
+    except UcError:
+        instr = None # Likely invalid memory
+        code = []
     address_name = dp.exports.get(address, "")
 
     module = ""
@@ -751,20 +790,45 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
         for reg in _get_regs(instr):
             line += f"|{reg}=0x{dp.regs.__getattr__(reg):x}"
     else:
-        line += f"??? ({code.hex()})"
+        line += f"??? (code: {code.hex()}, size: {hex(size)})"
     line += "\n"
     dp.trace.write(line)
 
+def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
+    try:
+        return arg[0].read_str()
+    except UcError:
+        pass
+    return None
 
-def _arg_to_string(arg):
+def _object_attributes_to_string(dp: Dumpulator, arg: P(OBJECT_ATTRIBUTES)):
+    try:
+        return arg[0].ObjectName[0].read_str()
+    except UcError:
+        pass
+    return None
+
+def _arg_to_string(dp: Dumpulator, arg):
     if isinstance(arg, Enum):
         return arg.name
+    elif isinstance(arg, HANDLE):
+        if dp.handles.valid(arg):
+            return f"{hex(arg)} /* {dp.handles.get(arg, None)} */"
+        else:
+            return hex(arg)
+    elif isinstance(arg, PVOID):
+        str = hex(arg.ptr)
+        tstr = None
+        if arg.type is OBJECT_ATTRIBUTES:
+            tstr = _object_attributes_to_string(dp, arg)
+        elif arg.type is UNICODE_STRING:
+            tstr = _unicode_string_to_string(dp, arg)
+        if tstr is not None:
+            str += f" /* {tstr} */"
+        return str
     elif isinstance(arg, int):
         return hex(arg)
-    elif isinstance(arg, PVOID):
-        return hex(arg.ptr)
     raise NotImplemented()
-
 
 def _arg_type_string(arg):
     if isinstance(arg, PVOID) and arg.type is not None:
@@ -841,7 +905,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 if i + 1 == argcount:
                     comma = ""
 
-                dp.info(f"    {_arg_type_string(argvalue)} {argname} = {_arg_to_string(argvalue)}{comma}")
+                dp.info(f"    {_arg_type_string(argvalue)} {argname} = {_arg_to_string(dp, argvalue)}{comma}")
             dp.info(")")
             try:
                 status = syscall_impl(dp, *args)
@@ -868,7 +932,8 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
         dp.error(f"syscall index {index:x} out of range")
         dp.raise_kill(IndexError())
 
-def _hook_invalid(uc: Uc, address, dp: Dumpulator):
+def _hook_invalid(uc: Uc, dp: Dumpulator):
+    address = dp.regs.cip
     # HACK: unicorn cannot gracefully exit in all contexts
     if dp.kill_me:
         dp.error(f"terminating emulation...")

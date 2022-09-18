@@ -113,7 +113,7 @@ class PVOID:
         return self.ptr != other
 
     def __str__(self):
-        return f"0x{self:X}"
+        return hex(self.ptr)
 
     def read_byte_str(self, size):
         return bytes(self.read(size))
