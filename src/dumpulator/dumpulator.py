@@ -7,6 +7,8 @@ from unicorn import *
 from unicorn.x86_const import *
 from pefile import *
 import inspect
+
+from .handles import HandleManager
 from .native import *
 from capstone import *
 from collections import OrderedDict
@@ -451,6 +453,7 @@ class Dumpulator(Architecture):
         self.syscalls = []
         self._setup_syscalls()
         self.exports = self._setup_exports()
+        self.handles = HandleManager()
 
     def _find_thread(self, thread_id):
         for i in range(0, len(self._minidump.threads.threads)):

@@ -2,6 +2,8 @@ import struct
 import unicorn
 from .dumpulator import Dumpulator, syscall_functions
 from .native import *
+from .handles import *
+from pathlib import Path
 
 
 def syscall(func):
@@ -33,7 +35,7 @@ def ZwAccessCheck(dp: Dumpulator,
                   GrantedAccess: P(ACCESS_MASK),
                   AccessStatus: P(NTSTATUS)
                   ):
-    raise NotImplementedError()
+    return STATUS_SUCCESS
 
 @syscall
 def ZwAccessCheckAndAuditAlarm(dp: Dumpulator,
@@ -643,7 +645,10 @@ def ZwClearEvent(dp: Dumpulator,
 def ZwClose(dp: Dumpulator,
             Handle: HANDLE
             ):
-    return STATUS_SUCCESS
+    if dp.handles.valid(Handle):
+        dp.handles.close(Handle)
+        return STATUS_SUCCESS
+    return STATUS_INVALID_HANDLE
 
 @syscall
 def ZwCloseObjectAuditAlarm(dp: Dumpulator,
@@ -835,6 +840,7 @@ def ZwCreateFile(dp: Dumpulator,
     assert IoStatusBlock.ptr != 0
     #assert EaBuffer.ptr == 0
     #assert EaLength == 0
+
     if file_name == "\\Device\\ConDrv\\Server":
         assert DesiredAccess == 0x12019f
         assert AllocationSize.ptr == 0x0
@@ -844,36 +850,49 @@ def ZwCreateFile(dp: Dumpulator,
         assert CreateOptions == 0
         handle = dp.console_handle
         if handle == 0:
-            handle = 0x13  # TODO: handle manager
+            handle = dp.handles.new(None)
             dp.console_handle = handle
+        elif not dp.handles.valid(handle):
+            dp.handles.add(handle, None)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Reference":
-        FileHandle.write_ptr(0x15)  # TODO: handle manager
+        handle = dp.handles.new(FileHandleObj(file_name))
+        FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Connect":
-        FileHandle.write_ptr(0x17)  # TODO: handle manager
+        handle = dp.handles.new(FileHandleObj(file_name))
+        FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Input":
         handle = dp.console_handle
         if handle == 0:
-            handle = 0x19  # TODO: handle manager
+            handle = dp.handles.new(None)
             dp.stdin_handle = handle
+        elif not dp.handles.valid(handle):
+            dp.handles.add(handle, None)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Output":
         handle = dp.console_handle
         if handle == 0:
-            handle = 0x1A  # TODO: handle manager
+            handle = dp.handles.new(None)
             dp.stdout_handle = handle
+        elif not dp.handles.valid(handle):
+            dp.handles.add(handle, None)
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
-    raise NotImplementedError()
+    else:
+        handle = dp.handles.new(FileHandleObj(file_name))
+        FileHandle.write_ptr(handle)
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+        return STATUS_SUCCESS
+
 
 @syscall
 def ZwCreateIoCompletion(dp: Dumpulator,
@@ -1478,7 +1497,10 @@ def ZwDuplicateObject(dp: Dumpulator,
                       ):
     assert SourceProcessHandle == dp.NtCurrentProcess()
     assert TargetProcessHandle == dp.NtCurrentProcess()
-    TargetHandle.write_ptr(SourceHandle)
+    if not dp.handles.valid(SourceHandle):
+        return STATUS_INVALID_HANDLE
+    dup_handle = dp.handles.duplicate(SourceHandle)
+    TargetHandle.write_ptr(dup_handle)
     return STATUS_SUCCESS
 
 @syscall
@@ -2693,6 +2715,45 @@ def ZwQueryInformationFile(dp: Dumpulator,
                            Length: ULONG,
                            FileInformationClass: FILE_INFORMATION_CLASS
                            ):
+    if dp.handles.valid(FileHandle):
+        if FileInformationClass == FILE_INFORMATION_CLASS.FileStandardInformation:
+            assert Length == 0x18
+            assert FileInformation.ptr != 0
+            assert IoStatusBlock.ptr != 0
+
+            file_handle_data = dp.handles.get(FileHandle, FileHandleObj)
+
+            # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/5afa7f66-619c-48f3-955f-68c4ece704ae
+            # return FILE_STANDARD_INFORMATION
+            end_of_file = Path(file_handle_data.path).stat().st_size
+            alloc_size = end_of_file + (end_of_file % 0x1000)
+            number_of_links = 1
+            delete_pending = 0
+            directory = 0
+            reserved = 0
+
+            info = struct.pack("<QQLBBH", alloc_size, end_of_file, number_of_links, delete_pending, directory, reserved)
+            FileInformation.write(info)
+
+            # Put the number of bytes written in the status block
+            IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, len(info)))
+            return STATUS_SUCCESS
+        elif FileInformationClass == FILE_INFORMATION_CLASS.FilePositionInformation:
+            assert Length == 0x8
+            assert FileInformation.ptr != 0
+            assert IoStatusBlock.ptr != 0
+
+            file_handle_data = dp.handles.get(FileHandle, FileHandleObj)
+
+            # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e3ce4a39-327e-495c-99b6-6b61606b6f16
+            # return FILE_POSITION_INFORMATION
+            info = struct.pack("<Q", file_handle_data.file_offset)
+            FileInformation.write(info)
+
+            # Put the number of bytes written in the status block
+            IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, len(info)))
+            return STATUS_SUCCESS
+
     if FileInformationClass == FILE_INFORMATION_CLASS.FileAttributeTagInformation:
         assert Length == 8
         assert FileInformation.ptr != 0
@@ -3074,17 +3135,21 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
                                  Length: ULONG,
                                  FsInformationClass: FSINFOCLASS
                                  ):
-    assert FsInformationClass == FSINFOCLASS.FileFsDeviceInformation
-    assert Length == 8
-    assert FileHandle in [dp.stdout_handle, dp.stdin_handle, dp.stderr_handle]
-    # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/616b66d5-b335-4e1c-8f87-b4a55e8d3e4a
-    # FILE_DEVICE_DISK, FILE_CHARACTERISTIC_TS_DEVICE
-    result = struct.pack('<II', 0x7, 0x1000)
-    FsInformation.write(result)
-    # https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_io_status_block
-    dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
-    dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
-    return STATUS_SUCCESS
+    if FsInformationClass == FSINFOCLASS.FileFsDeviceInformation:
+        assert Length == 8
+        if not dp.handles.valid(FileHandle):
+            assert FileHandle in [dp.stdout_handle, dp.stdin_handle, dp.stderr_handle]
+        # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/616b66d5-b335-4e1c-8f87-b4a55e8d3e4a
+        # FILE_DEVICE_DISK, FILE_CHARACTERISTIC_TS_DEVICE
+        result = struct.pack('<II', 0x7, 0x1000)
+        FsInformation.write(result)
+        # https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_io_status_block
+        dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
+        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
+        return STATUS_SUCCESS
+    #elif FsInformationClass == FSINFOCLASS.FileStandardInformation:
+
+    raise NotImplementedError()
 
 @syscall
 def ZwQueryWnfStateData(dp: Dumpulator,
@@ -3172,6 +3237,24 @@ def ZwReadFile(dp: Dumpulator,
         dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
 
         return STATUS_SUCCESS
+    elif dp.handles.valid(FileHandle):
+        assert Buffer != 0
+
+        file_handle_data = dp.handles.get(FileHandle, FileHandleObj)
+
+        with open(file_handle_data.path, 'rb') as f:
+            f.seek(file_handle_data.file_offset)
+            result = f.read(Length)
+            print(f"reading {file_handle_data.path}: {result}")
+            assert len(result) <= Length
+
+        Buffer.write(result)
+
+        dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
+        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
+
+        return STATUS_SUCCESS
+
     raise NotImplementedError()
 
 @syscall
@@ -3635,6 +3718,22 @@ def ZwSetInformationFile(dp: Dumpulator,
                          Length: ULONG,
                          FileInformationClass: FILE_INFORMATION_CLASS
                          ):
+    if dp.handles.valid(FileHandle):
+        if FileInformationClass == FILE_INFORMATION_CLASS.FilePositionInformation:
+            assert IoStatusBlock.ptr != 0
+            assert FileInformation.ptr != 0
+            assert Length == 8
+
+            handle_data = dp.handles.get(FileHandle, FileHandleObj)
+
+            # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e3ce4a39-327e-495c-99b6-6b61606b6f16
+            info = FileInformation.read(Length)
+            file_offset = struct.unpack("<Q", info)[0]
+            print(f"setting file pos of {handle_data.path} to {file_offset}")
+            handle_data.file_offset = file_offset
+
+            return STATUS_SUCCESS
+
     if FileInformationClass == FILE_INFORMATION_CLASS.FileDispositionInformationEx:
         print(f"Delete file {hex(FileHandle)}")
         assert IoStatusBlock.ptr != 0
@@ -3684,6 +3783,8 @@ def ZwSetInformationProcess(dp: Dumpulator,
                             ProcessInformationLength: ULONG
                             ):
     if ProcessInformationClass == PROCESSINFOCLASS.ProcessConsoleHostProcess:
+        return STATUS_SUCCESS
+    if ProcessInformationClass == PROCESSINFOCLASS.ProcessRaiseUMExceptionOnInvalidHandleClose:
         return STATUS_SUCCESS
     raise NotImplementedError()
 
@@ -4296,9 +4397,15 @@ def ZwWriteFile(dp: Dumpulator,
                 ByteOffset: P(LARGE_INTEGER),
                 Key: P(ULONG)
                 ):
-    if FileHandle in [dp.stdout_handle, dp.stdin_handle]:
-        data = Buffer.read_str(Length)
-        print(data)
+    if FileHandle == dp.stdout_handle:
+        # data = Buffer.read_str(Length)  # trailing bytes '\x00\x04x\xd7\xcd0\xfd' can't utf8 decode
+        data = Buffer.read_byte_str(Length)
+        print(f"stdout: {data}")
+        return STATUS_SUCCESS
+    elif FileHandle == dp.stdin_handle:
+        # data = Buffer.read_str(Length)  # trailing bytes '\x00\x04x\xd7\xcd0\xfd' can't utf8 decode
+        data = Buffer.read_byte_str(Length)
+        print(f"stdin: {data}")
         return STATUS_SUCCESS
     raise NotImplementedError()
 
