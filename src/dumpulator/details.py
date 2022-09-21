@@ -310,6 +310,25 @@ class Registers:
                 "cdi": UC_X86_REG_EDI,
                 "cip": UC_X86_REG_EIP,
             })
+        self._flagposdict = {
+            "cf": 0,
+            "pf": 1,
+            "af": 3,
+            "zf": 5,
+            "sf": 6,
+            "tf": 7,
+            "if": 8,
+            "df": 9,
+            "of": 10,
+            "iopl": 12,
+            "nt": 13,
+            "rf": 15,
+            "vm": 16,
+            "ac": 17,
+            "vif": 18,
+            "vip": 19,
+            "id": 20
+        }
 
     def _resolve_reg(self, regname):
         uc_reg = self._regmap.get(regname, None)
@@ -320,22 +339,22 @@ class Registers:
         return uc_reg
 
     def __getattr__(self, name: str):
-        if name in flagposdict:
+        if name in self._flagposdict:
             eflags = self._uc.reg_read(self._resolve_reg("eflags"))
-            return (eflags >> flagposdict[name]) & 1
+            return (eflags >> self._flagposdict[name]) & 1
         return self._uc.reg_read(self._resolve_reg(name))
 
     def __setattr__(self, name: str, value):
         if name.startswith("_"):
             object.__setattr__(self, name, value)
-        elif name in flagposdict: # For setting specific flags
+        elif name in self._flagposdict: # For setting specific flags
             resolved_reg = self._resolve_reg("eflags")
             holder = self._uc.reg_read(resolved_reg)
             if value == 0:
-                repl_value = holder & ~(1 << flagposdict[name])
+                repl_value = holder & ~(1 << self._flagposdict[name])
                 self._uc.reg_write(resolved_reg, repl_value)
             elif value == 1:
-                repl_value = holder | (1 << flagposdict[name])
+                repl_value = holder | (1 << self._flagposdict[name])
                 self._uc.reg_write(resolved_reg, repl_value)
             else:
                 raise Exception(f"Attempted to improperly set flag '{name}'")
@@ -543,22 +562,3 @@ interrupt_names = [
 ]
 assert len(interrupt_names) == 32
 
-flagposdict = {
-    "cf": 0,
-    "pf": 1,
-    "af": 3,
-    "zf": 5,
-    "sf": 6,
-    "tf": 7,
-    "if": 8,
-    "df": 9,
-    "of": 10,
-    "iopl": 12,
-    "nt": 13,
-    "rf": 15,
-    "vm": 16,
-    "ac": 17,
-    "vif": 18,
-    "vip": 19,
-    "id": 20
-}
