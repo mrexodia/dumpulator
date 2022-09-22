@@ -2128,46 +2128,7 @@ def ZwMapViewOfSection(dp: Dumpulator,
     assert requested_base == 0
     section = dp.handles.get(SectionHandle, SectionObject)
     data = section.file.read()
-    import pefile
-    pe = pefile.PE(name=None, data=data)
-    image_size = pe.OPTIONAL_HEADER.SizeOfImage
-    section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
-    assert section_alignment == 0x1000
-    # TODO: allocate the base
-    # image_base = dp.allocate(image_size, True)
-    image_base = 0x7ffe7cd20000 # NOTE: temporary
-    dp._uc.mem_map(image_base, image_size)
-    # TODO: map the header properly
-    header = pe.header
-    header_size = pe.sections[0].VirtualAddress_adj
-    print(f"Mapping header {hex(image_base)}[{hex(header_size)}]") 
-    dp.write(image_base, header)
-    dp.protect(image_base, header_size, PAGE_READONLY)
-    for section in pe.sections:
-        name = section.Name.rstrip(b"\0")
-        rva = section.VirtualAddress_adj
-        va = image_base + rva
-        mask = section_alignment - 1
-        size = (section.Misc_VirtualSize + mask) & ~mask
-        flags = section.Characteristics
-        data = section.get_data()
-        assert flags & IMAGE_SCN_MEM_SHARED == 0
-        assert flags & IMAGE_SCN_MEM_READ != 0
-        execute = flags & IMAGE_SCN_MEM_EXECUTE
-        write = flags & IMAGE_SCN_MEM_WRITE
-        protect = PAGE_READONLY
-        if write:
-            protect = PAGE_READWRITE
-        if execute:
-            protect <<= 4
-        print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)}")
-        dp.write(va, data)
-        dp.protect(va, size, protect)
-    
-    # TODO: implement relocations
-    reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]
-    assert reloc_dir.VirtualAddress == 0 and reloc_dir.Size == 0
-    # TODO: set image base in header
+    image_base, image_size, pe = dp.map_module(data, section.file.path, requested_base)
     
     # Handle out parameters
     BaseAddress.write_ptr(image_base)

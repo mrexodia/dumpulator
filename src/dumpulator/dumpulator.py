@@ -622,6 +622,53 @@ rsp in KiUserExceptionDispatcher:
     def NtCurrentThread(self):
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
 
+    def map_module(self, file_data: bytes, file_name: str = "", requested_base: int = 0):
+        print(f"Mapping module {file_name if file_name else '<unnamed>'}")
+        pe = PE(name=None, data=file_data)
+        image_size = pe.OPTIONAL_HEADER.SizeOfImage
+        section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
+        assert section_alignment == 0x1000
+        if requested_base == 0:
+            image_base = self.allocate(image_size, True)
+        else:
+            image_base = requested_base
+            self._uc.mem_map(image_base, image_size)
+
+        # TODO: map the header properly
+        header = pe.header
+        header_size = pe.sections[0].VirtualAddress_adj
+        print(f"Mapping header {hex(image_base)}[{hex(header_size)}]")
+        self.write(image_base, header)
+        self.protect(image_base, header_size, PAGE_READONLY)
+
+        for section in pe.sections:
+            name = section.Name.rstrip(b"\0")
+            rva = section.VirtualAddress_adj
+            va = image_base + rva
+            mask = section_alignment - 1
+            size = (section.Misc_VirtualSize + mask) & ~mask
+            flags = section.Characteristics
+            data = section.get_data()
+            assert flags & IMAGE_SCN_MEM_SHARED == 0
+            assert flags & IMAGE_SCN_MEM_READ != 0
+            execute = flags & IMAGE_SCN_MEM_EXECUTE
+            write = flags & IMAGE_SCN_MEM_WRITE
+            protect = PAGE_READONLY
+            if write:
+                protect = PAGE_READWRITE
+            if execute:
+                protect <<= 4
+            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)}")
+            self.write(va, data)
+            self.protect(va, size, protect)
+
+        # TODO: implement relocations
+        reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]
+        assert reloc_dir.VirtualAddress == 0 and reloc_dir.Size == 0
+        # TODO: set image base in header
+
+        return image_base, image_size, pe
+
     def load_dll(self, file_name: str, file_data: bytes):
         self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))
         argument_ptr = self.allocate(0x1000)
