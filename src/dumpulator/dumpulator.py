@@ -859,10 +859,17 @@ def _arg_to_string(dp: Dumpulator, arg):
     if isinstance(arg, Enum):
         return arg.name
     elif isinstance(arg, HANDLE):
-        if dp.handles.valid(arg):
-            return f"{hex(arg)} /* {dp.handles.get(arg, None)} */"
-        else:
-            return hex(arg)
+        str = hex(arg)
+        hstr = None
+        if arg == dp.NtCurrentProcess():
+            hstr = "NtCurrentProcess()"
+        elif arg == dp.NtCurrentThread():
+            hstr = "NtCurrentThread()"
+        elif dp.handles.valid(arg):
+            hstr = f"{dp.handles.get(arg, None)}"
+        if hstr is not None:
+            str += f" /* {hstr} */"
+        return str
     elif isinstance(arg, PVOID):
         str = hex(arg.ptr)
         tstr = None
