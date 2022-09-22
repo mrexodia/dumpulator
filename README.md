@@ -2,9 +2,12 @@
 
 **Note: This is a work-in-progress prototype, please treat it as such. Pull requests are welcome! You can get your feet wet with [good first issues](https://github.com/mrexodia/dumpulator/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)**
 
-An easy-to-use library for emulating code in minidump files.
+An easy-to-use library for emulating code in minidump files. Here are some links to posts/videos using dumpulator:
 
-There is an [introduction video](https://m.youtube.com/watch?v=4Pfu98Xx9Yo) with [OALabs](https://oalabs.openanalysis.net) available!
+- Introduction video with [OALabs](https://oalabs.openanalysis.net): [Dumpulator - Using Binary Emulation To Automate Reverse Engineering](https://youtu.be/4Pfu98Xx9Yo)
+- [Emulating malware with Dumpulator](https://rioasmara.com/2022/07/23/emulating-malware-with-dumpulator/)
+- [Emotet x64 Stack Strings Config Emulation | OALABS Research](https://research.openanalysis.net/emotet/emulation/config/dumpulator/malware/2022/05/19/emotet_x64_emulation.html)
+- [Native function and Assembly Code Invocation](https://research.checkpoint.com/2022/native-function-and-assembly-code-invocation/)
 
 ## Examples
 
