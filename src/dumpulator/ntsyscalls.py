@@ -910,14 +910,15 @@ def ZwCreateFile(dp: Dumpulator,
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
-    else:
+    elif dp.handles.create_file(file_name, CreateDisposition):
         handle = dp.handles.open_file(file_name)
-        assert handle is not None # TODO: STATUS_NO_SUCH_FILE
+        assert handle is not None  # TODO: STATUS_NO_SUCH_FILE
         print(f"Created handle {hex(handle)}")
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
-
+    else:
+        raise NotImplementedError()
 
 @syscall
 def ZwCreateIoCompletion(dp: Dumpulator,
@@ -3407,18 +3408,17 @@ def ZwReadFile(dp: Dumpulator,
     elif dp.handles.valid(FileHandle):
         assert Buffer != 0
 
-        file_handle_data = dp.handles.get(FileHandle, FileObject)
+        file = dp.handles.get(FileHandle, FileObject)
+        buffer = file.read(Length)
 
-        with open(file_handle_data.path, 'rb') as f:
-            f.seek(file_handle_data.file_offset)
-            result = f.read(Length)
-            print(f"reading {file_handle_data.path}: {result}")
-            assert len(result) <= Length
+        print(f"reading {file.path}: {buffer}")
 
-        Buffer.write(result)
+        assert len(buffer) <= Length
+
+        Buffer.write(buffer)
 
         dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
-        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
+        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(buffer))
 
         return STATUS_SUCCESS
 
@@ -4575,15 +4575,29 @@ def ZwWriteFile(dp: Dumpulator,
                 Key: P(ULONG)
                 ):
     if FileHandle == dp.stdout_handle:
-        # data = Buffer.read_str(Length)  # trailing bytes '\x00\x04x\xd7\xcd0\xfd' can't utf8 decode
+        # after debugging seems data gets mangled within unicorn
+        # TODO: look into why unicorn is mangling console output
         data = Buffer.read_byte_str(Length)
         print(f"stdout: {data}")
         return STATUS_SUCCESS
     elif FileHandle == dp.stdin_handle:
-        # data = Buffer.read_str(Length)  # trailing bytes '\x00\x04x\xd7\xcd0\xfd' can't utf8 decode
         data = Buffer.read_byte_str(Length)
         print(f"stdin: {data}")
         return STATUS_SUCCESS
+    elif dp.handles.valid(FileHandle):
+        assert Buffer != 0
+
+        file = dp.handles.get(FileHandle, FileObject)
+        buffer = Buffer.read(Length)
+
+        print(f"writing {file.path}: {buffer}")
+        file.write(buffer, Length)
+
+        dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
+        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(buffer))
+
+        return STATUS_SUCCESS
+
     raise NotImplementedError()
 
 @syscall
