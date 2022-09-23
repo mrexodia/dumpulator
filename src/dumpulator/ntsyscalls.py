@@ -910,7 +910,7 @@ def ZwCreateFile(dp: Dumpulator,
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
-    elif dp.handles.create_file(file_name, CreateDisposition):
+    elif dp.create_file(file_name, CreateDisposition):
         handle = dp.handles.open_file(file_name)
         assert handle is not None  # TODO: STATUS_NO_SUCH_FILE
         print(f"Created handle {hex(handle)}")

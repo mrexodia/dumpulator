@@ -3,6 +3,7 @@ import struct
 import sys
 import traceback
 from enum import Enum
+from pathlib import Path
 from typing import List, Union, NamedTuple
 import inspect
 from collections import OrderedDict
@@ -690,6 +691,43 @@ rsp in KiUserExceptionDispatcher:
         status = self.call(self.LdrLoadDll, [1, image_type, image_file_name, image_base_address])
         print(f"status = {hex(status)}")
         return self.read_ptr(image_base_address)
+
+    def create_file(self, filename: str, options: int) -> bool:
+        # if file is already mapped just return true
+        if filename in self.handles.mapped_files:
+            return True
+        # if file exists open and store contents in FileObject
+        elif options == FILE_OPEN or options == FILE_OVERWRITE:
+            file = Path(filename)
+            if file.exists():
+                with file.open("rb") as f:
+                    file_data = f.read()
+                    self.handles.map_file(filename, FileObject(filename, file_data))
+                return True
+        # if file does not exist create a new FileObject
+        elif options == FILE_CREATE:
+            file = Path(filename)
+            if not file.exists():
+                self.handles.map_file(filename, FileObject(filename))
+                return True
+        # no matter what create a new FileObject
+        elif options == FILE_SUPERSEDE:
+            file = Path(filename)
+            if not file.exists():
+                self.handles.map_file(filename, FileObject(filename))
+                return True
+        # if file exists open if it doesn't create a new one then store contents in FileObject
+        elif options == FILE_OPEN_IF or options == FILE_OVERWRITE_IF:
+            file = Path(filename)
+            if file.exists():
+                with file.open("rb") as f:
+                    file_data = f.read()
+                    self.handles.map_file(filename, FileObject(filename, file_data))
+                    return True
+            else:
+                self.handles.map_file(filename, FileObject(filename))
+                return True
+        return False
 
 def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
     try:
