@@ -16,7 +16,7 @@ void read_file_test()
     FILE* fp = NULL;
     char* buffer = NULL;
 
-    fp = fopen( "C:\\Windows\\Temp\\test_file.txt", "r" );
+    fp = fopen( "./test_file.txt", "r" );
 
     if( fp )
     {
@@ -42,7 +42,7 @@ void write_file_test()
     FILE* fp = NULL;
     char* buffer = NULL;
 
-    fp = fopen( "C:\\Windows\\Temp\\test_file.txt", "w+" );
+    fp = fopen( "./test_file.txt", "w+" );
 
     if( fp )
     {
@@ -71,7 +71,7 @@ void write_file_offset_test()
     FILE* fp = NULL;
     char* buffer = NULL;
 
-    fp = fopen( "C:\\Windows\\Temp\\test_file.txt", "w+" );
+    fp = fopen( "./test_file.txt", "w+" );
 
     if( fp )
     {
