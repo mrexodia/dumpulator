@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional, Type, TypeVar
 from .native import *
-from pathlib import Path
 
 T = TypeVar('T')
 
@@ -23,7 +22,7 @@ class FileObject:
             data = self.data[self.file_offset:]
             self.file_offset += len(data)
         else:
-            data = self.data[self.file_offset:size]
+            data = self.data[self.file_offset:self.file_offset+size]
             self.file_offset += len(data)
         return bytes(data)
 
@@ -35,9 +34,11 @@ class FileObject:
         # creation options 
         # incase input size differs from actual buffer size
         if size is not None:
-            self.data = self.data[:self.file_offset] + buffer + self.data[self.file_offset+size:]
+            self.data = self.data[:self.file_offset] + buffer[:size] + self.data[self.file_offset+size:]
+            self.file_offset += size
         else:
             self.data = self.data[:self.file_offset] + buffer + self.data[self.file_offset + len(buffer):]
+            self.file_offset += len(buffer)
 
 
 class SectionObject:
