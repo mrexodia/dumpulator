@@ -1,4 +1,5 @@
 from dumpulator import Dumpulator
+from dumpulator.native import *
 
 test_funcs = {
     "console_output_test": 0x140001150,
@@ -9,10 +10,11 @@ test_funcs = {
 }
 
 
-# will fail with error: Invalid instruction (UC_ERR_INSN_INVALID), cip = 7ffc9648a980
-# 00007FFC9648A980 | C4E37D18C0 01 | vinsertf128 ymm0,ymm0,xmm0,1 |
 def main():
     dp = Dumpulator("HandleTest_x64.dmp")
+
+    dp.handles.create_file("test_file.txt", FILE_OPEN)
+    dp.handles.create_file("nonexistant_file.txt", FILE_CREATE)
 
     for name, addr in test_funcs.items():
         print(f"\n---- calling {name} ----\n")

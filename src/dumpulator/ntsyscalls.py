@@ -910,15 +910,14 @@ def ZwCreateFile(dp: Dumpulator,
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
-    elif dp.create_file(file_name, CreateDisposition):
+    else:
         handle = dp.handles.open_file(file_name)
-        assert handle is not None  # TODO: STATUS_NO_SUCH_FILE
+        if handle is None:
+            return STATUS_NO_SUCH_FILE
         print(f"Created handle {hex(handle)}")
         FileHandle.write_ptr(handle)
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
-    else:
-        raise NotImplementedError()
 
 @syscall
 def ZwCreateIoCompletion(dp: Dumpulator,

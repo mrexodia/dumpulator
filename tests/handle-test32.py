@@ -1,4 +1,5 @@
 from dumpulator import Dumpulator
+from dumpulator.native import *
 
 test_funcs = {
     "console_output_test": 0x4010C0,
@@ -11,6 +12,9 @@ test_funcs = {
 
 def main():
     dp = Dumpulator("HandleTest_x86.dmp")
+
+    dp.handles.create_file("test_file.txt", FILE_OPEN)
+    dp.handles.create_file("nonexistant_file.txt", FILE_CREATE)
 
     for name, addr in test_funcs.items():
         print(f"\n---- calling {name} ----\n")

@@ -1,4 +1,6 @@
 from typing import Any, Dict, Optional, Type, TypeVar
+from pathlib import Path
+
 from .native import *
 
 T = TypeVar('T')
@@ -150,6 +152,43 @@ class HandleManager:
         if data is None:
             return None
         return self.new(data)
+
+    def create_file(self, filename: str, options: int) -> bool:
+        # if file is already mapped just return true
+        if filename in self.mapped_files:
+            return True
+        # if file exists open and store contents in FileObject
+        elif options == FILE_OPEN or options == FILE_OVERWRITE:
+            file = Path(filename)
+            if file.exists():
+                with file.open("rb") as f:
+                    file_data = f.read()
+                    self.map_file(filename, FileObject(filename, file_data))
+                return True
+        # if file does not exist create a new FileObject
+        elif options == FILE_CREATE:
+            file = Path(filename)
+            if not file.exists():
+                self.map_file(filename, FileObject(filename))
+                return True
+        # no matter what create a new FileObject
+        elif options == FILE_SUPERSEDE:
+            file = Path(filename)
+            if not file.exists():
+                self.map_file(filename, FileObject(filename))
+                return True
+        # if file exists open if it doesn't create a new one then store contents in FileObject
+        elif options == FILE_OPEN_IF or options == FILE_OVERWRITE_IF:
+            file = Path(filename)
+            if file.exists():
+                with file.open("rb") as f:
+                    file_data = f.read()
+                    self.map_file(filename, FileObject(filename, file_data))
+                    return True
+            else:
+                self.map_file(filename, FileObject(filename))
+                return True
+        return False
 
     def create_key(self, key: str, values: Dict[str, Any] = {}):
         data = RegistryKeyObject(key, values)
