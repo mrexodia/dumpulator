@@ -95,12 +95,42 @@ void write_file_offset_test()
     }
 }
 
+void create_file_test()
+{
+    FILE* fp = NULL;
+    char* buffer = NULL;
+
+    fp = fopen( "./nonexistant_file.txt", "w+" );
+
+    if( fp )
+    {
+        rewind( fp );
+        fprintf( fp, "testing creating and writing to a file\n" );
+
+        fseek( fp, 0, SEEK_END );
+        long len = ftell( fp );
+        fseek( fp, 0, SEEK_SET );
+        buffer = ( char* )malloc( len );
+        if( buffer )
+        {
+            fread( buffer, 1, len, fp );
+        }
+        fclose( fp );
+    }
+
+    if( buffer )
+    {
+        printf( "create_file_test: %s\n", buffer );
+    }
+}
+
 int main()
 {
     console_output_test();
     read_file_test();
     write_file_test();
     write_file_offset_test();
+    create_file_test();
     return 0;
 }
 

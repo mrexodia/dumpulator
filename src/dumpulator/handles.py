@@ -33,12 +33,20 @@ class FileObject:
         # currently overwrites data given offset and buffer size, does not overwrite with zeros with different
         # creation options 
         # incase input size differs from actual buffer size
-        if size is not None:
-            self.data = self.data[:self.file_offset] + buffer[:size] + self.data[self.file_offset+size:]
-            self.file_offset += size
+        if self.data is None:
+            if size is not None:
+                self.data = buffer[:size]
+                self.file_offset += size
+            else:
+                self.data = buffer
+                self.file_offset += len(buffer)
         else:
-            self.data = self.data[:self.file_offset] + buffer + self.data[self.file_offset + len(buffer):]
-            self.file_offset += len(buffer)
+            if size is not None:
+                self.data = self.data[:self.file_offset] + buffer[:size] + self.data[self.file_offset+size:]
+                self.file_offset += size
+            else:
+                self.data = self.data[:self.file_offset] + buffer + self.data[self.file_offset + len(buffer):]
+                self.file_offset += len(buffer)
 
 
 class SectionObject:

@@ -2808,11 +2808,11 @@ def ZwQueryInformationFile(dp: Dumpulator,
             assert FileInformation.ptr != 0
             assert IoStatusBlock.ptr != 0
 
-            file_handle_data = dp.handles.get(FileHandle, FileObject)
+            file = dp.handles.get(FileHandle, FileObject)
 
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/5afa7f66-619c-48f3-955f-68c4ece704ae
             # return FILE_STANDARD_INFORMATION
-            end_of_file = Path(file_handle_data.path).stat().st_size
+            end_of_file = 0 if file.data is None else len(file.data)
             alloc_size = end_of_file + (end_of_file % 0x1000)
             number_of_links = 1
             delete_pending = 0

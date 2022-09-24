@@ -3,8 +3,9 @@ from dumpulator import Dumpulator
 test_funcs = {
     "console_output_test": 0x4010C0,
     "read_file_test": 0x4010E0,
-    "write_file_test": 0x00401190,
-    "write_file_offset_test": 0x00401270,
+    "write_file_test": 0x401190,
+    "write_file_offset_test": 0x401270,
+    "create_file_test": 0x401350,
 }
 
 

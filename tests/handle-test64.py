@@ -5,6 +5,7 @@ test_funcs = {
     "read_file_test": 0x140001170,
     "write_file_test": 0x140001240,
     "write_file_offset_test": 0x140001330,
+    "create_file_test": 0x140001420,
 }
 
 
