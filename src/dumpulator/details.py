@@ -562,3 +562,196 @@ interrupt_names = [
 ]
 assert len(interrupt_names) == 32
 
+
+
+class MemoryManager():
+        def __init__(self, uc: Uc):
+            self._memory_map = []
+            self._uc = uc
+
+        def mem_protect(self, addr, size, perms):
+            for memory_region in self._memory_map: # Query parents
+                if addr in memory_region and addr+size in memory_region: # Verify that the memory you are altering is inside a parent memory chunk
+                    perms = map_unicorn_perms(perms)
+                    memory_region.children.confliction_check(addr,size) # Identify if there are any conflictions
+                    new_addr, new_size = memory_region.children.mem_protect_correct(addr, size, perms) # Using the conflictions, correct the memory layout
+                    memory_region.children.add_child(ChildMemoryRegion(new_addr,new_size,perms, None, memory_region.start))
+                    self._uc.mem_protect(addr, size, perms)
+                else:
+                    print("MEMORY_MANAGER | Attempted to change write permissions to memory that isn't mapped...")
+            return
+
+        def mem_free(self, addr): # MAJOR : NEED TO MANAGE FREE'ING PARENT MEMORY AND SHRINKING EFFECTED CHILD MEMORY OR DELETING CHILDREN ENTIRELY
+            for memory_region in self._memory_map:
+                if memory_region.start == addr:
+                    self._memory_map.remove(memory_region) # NEED TO ADD SELF._UC.MEM_UNMAP(ADDRESS,SIZE) ASSERT SIZE >= 0x1000
+                    return
+            return
+
+        def mem_allocate(self, addr:int, size:int, perms:int=UC_PROT_ALL, comment=None): # WORKS
+            assert size >= 0x1000
+            if self.check_memory_avail(addr, size) == True:
+                self._memory_map.append(ParentMemoryRegion(addr,size,perms,comment))
+                self._uc.mem_map(addr, size, perms)
+                return
+            else:
+                print("MEMORY_MANAGER | There was an attempt to illegally overmap memory from", addr, "to", addr+size)
+                return
+
+        def mem_find(self, addr): # WORKS
+            for memory_region in self._memory_map: 
+                if addr in memory_region:
+                    return memory_region
+            self.mem_error("MEMORY_MANAGER | Unable to find parent memory for given address...")
+            return 0
+
+        def check_memory_avail(self, addr, size):
+            for memory_region in self._memory_map:
+                if memory_region.query_parent(addr, size) == False:
+                    return True
+                else:
+                    return False
+            return True
+
+        def write(self, addr, data):
+            self._uc.mem_write(addr, data)
+
+        def read(self, addr, size):
+            return self._uc.mem_read(addr, size)
+
+        def readable_contents(self):
+            if len(self._memory_map):
+                for mem_region in self._memory_map:
+                    print("MEMORY_MANAGER | There is a parent block which starts at", mem_region.start, "and ends at", mem_region.end)
+            else:
+                print("MEMORY_MANAGER | There is no memory allocated...")
+
+class MemoryRegionChildL:
+    def __init__(self):
+        self._child_mem_list = []
+        self._conflicting_regions = []
+    
+    def sort(self):
+        length = len(self._child_mem_list)
+        for i in range(length-1):
+            for j in range(0, length-i-1):
+                if self._child_mem_list[j] > self._child_mem_list[j+1]:
+                    swapped = True
+                    self._child_mem_list[j], self._child_mem_list[j+1] = self._child_mem_list[j+1], self._child_mem_list[j]
+            if not swapped:
+                return
+
+    def confliction_check(self, addr, size): # Updates the conflicting memory regions list
+        self._conflicting_regions = []
+        assert len(self._conflicting_regions) == 0 # Make sure that confliction regions is cleared
+        for gen_address in range(addr, addr+size, 0x100):
+            for child_mem in self._child_mem_list:
+                if gen_address in child_mem:
+                    self._conflicting_regions.append(child_mem)
+        return
+
+    def mem_protect_correct(self, addr, size, perms):
+        new_addr = addr
+        new_size = size
+        for mem_region in self._conflicting_regions: #Clear the area for the new write permissions
+            if new_addr not in mem_region and new_addr+new_size not in mem_region: # No need to correct to split this area, it will be overwritten anyway.
+                self.remove_child(mem_region)
+            elif new_addr in mem_region and new_addr+new_size not in mem_region and mem_region.perms != perms: # The start of the region is in the mem_region, but not the end.
+                mod_region = self.find_child(mem_region)
+                mod_region.end = new_addr
+                mod_region.size = mem_region.end - mem_region.start
+            elif new_addr not in mem_region and new_addr+new_size in mem_region and mem_region.perms != perms:
+                mod_region = self.find_child(mem_region)
+                mod_region.start = new_addr+new_size
+                mod_region.size = mem_region.end - mem_region.start
+            elif new_addr in mem_region and new_addr+new_size in mem_region and mem_region.perms != perms:
+                new_region = ChildMemoryRegion(addr+size, mem_region.end-addr+size, mem_region.perms, mem_region.comment, mem_region.start)
+                mod_region = self.find_child(mem_region)
+                mod_region.end = new_addr
+                mod_region.size = mem_region.end - mem_region.start
+                self._child_mem_list.append(new_region)
+            elif new_addr in mem_region and new_addr+new_size in mem_region and mem_region.perms == perms:
+                return False # The attempted write permissions is within a single child memory block, with the same permissions, its safe to fail the change protection.
+            elif new_addr in mem_region and new_addr+new_size not in mem_region and mem_region.perms == perms:
+                new_addr = mem_region.start
+                new_size += addr - mem_region.start
+                self.remove_child(mem_region)
+            elif new_addr not in mem_region and new_addr+new_size in mem_region and mem_region.perms == perms:
+                new_size += mem_region.end - new_addr+new_size
+                self.remove_child(mem_region)
+            else:
+                print("MEMORY_REGION_CHILD | Unhandled logic in mem_protect_correct")
+                return False
+        return new_addr, new_size
+
+    def add_child(self, memory_region):
+        self._child_mem_list.append(memory_region)
+        return
+    
+    def find_child(self, mem_region):
+        for i, mem in enumerate(self._child_mem_list):
+            if mem_region.start == mem.start:
+                return self._child_mem_list[i]
+
+    def remove_child(self, mem_region):
+        for i, mem in enumerate(self._child_mem_list):
+            if mem_region.start == mem.start:
+                del self._child_mem_list[i]
+                break
+
+    def print_contents(self):
+        for i in self._child_mem_list:
+            print("A child memory block starts at", i.start, "ends at", i.start+i.size, "with permissions of", i.perms, "and a comment of", i.comment)
+
+class ChildMemoryRegion:
+    def __init__(self, start_addr, size, perms, comment=None, alloc_base=None):
+        self.region = comment
+        self.start = start_addr
+        self.end = self.start+size
+        self.alloc_base = alloc_base
+        self.size = size
+        self.perms = perms
+        self.comment = comment
+
+    def __gt__(self, other):
+        if self.start > other.start:
+            return True
+        return False
+
+    def __contains__(self, addr):
+        if self.start <= addr and addr <= self.end:
+            # print(self.start, "<=",addr, " & ",addr, "<=", self.end)
+            return True
+        else:
+            return False
+
+class ParentMemoryRegion:
+    def __init__(self, start_addr, size, perms, comment=None, alloc_base=None):
+        self.region = comment
+        self.start = start_addr
+        self.end = self.start+size
+        self.alloc_base = alloc_base
+        self.size = size
+        self.perms = perms
+        self.comment = comment
+        self.children = MemoryRegionChildL()
+
+    @property
+    def is_parent(self):
+        return self.alloc_base is None
+
+    def __contains__(self, addr):
+        if self.start <= addr and addr <= self.end:
+            return True
+        else:
+            return False
+
+    def query_parent(self, addr, size):
+        for gen_address in range(addr, addr+size, 0x100): # Could change the range step
+            if gen_address in self:
+                return True
+        return False
+
+    def print_contents(self):
+        print("MEMORY_REGION | This block starts at", self.start, "ends at", self.end, "with permissions of", self.perms,)
+        return
