@@ -871,10 +871,10 @@ def ZwCreateFile(dp: Dumpulator,
         assert ShareAccess == 0x7
         assert CreateDisposition == 0x2
         assert CreateOptions == 0
-        handle = dp.console_handle
+        handle = dp.peb.console_handle
         if handle == 0:
             handle = dp.handles.new(None)
-            dp.console_handle = handle
+            dp.peb.console_handle = handle
         elif not dp.handles.valid(handle):
             dp.handles.add(handle, None)
         FileHandle.write_ptr(handle)
@@ -891,7 +891,7 @@ def ZwCreateFile(dp: Dumpulator,
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Input":
-        handle = dp.console_handle
+        handle = dp.peb.console_handle
         if handle == 0:
             handle = dp.handles.new(None)
             dp.stdin_handle = handle
@@ -901,10 +901,10 @@ def ZwCreateFile(dp: Dumpulator,
         IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
         return STATUS_SUCCESS
     elif file_name == "\\Output":
-        handle = dp.console_handle
+        handle = dp.peb.console_handle
         if handle == 0:
             handle = dp.handles.new(None)
-            dp.stdout_handle = handle
+            dp.peb.stdout_handle = handle
         elif not dp.handles.valid(handle):
             dp.handles.add(handle, None)
         FileHandle.write_ptr(handle)
@@ -1474,7 +1474,7 @@ def ZwDeviceIoControlFile(dp: Dumpulator,
                           OutputBuffer: PVOID,
                           OutputBufferLength: ULONG
                           ):
-    if FileHandle == dp.console_handle:
+    if FileHandle == dp.peb.console_handle:
         if IoControlCode == 0x500016:
             in_data = InputBuffer.read(InputBufferLength)
             print(f"InputBuffer: {in_data.hex()}")
@@ -3298,7 +3298,7 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
     if FsInformationClass == FSINFOCLASS.FileFsDeviceInformation:
         assert Length == 8
         if not dp.handles.valid(FileHandle):
-            assert FileHandle in [dp.stdout_handle, dp.stdin_handle, dp.stderr_handle]
+            assert FileHandle in [dp.peb.stdout_handle, dp.peb.stdin_handle, dp.peb.stderr_handle]
         # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/616b66d5-b335-4e1c-8f87-b4a55e8d3e4a
         # FILE_DEVICE_DISK, FILE_CHARACTERISTIC_TS_DEVICE
         result = struct.pack('<II', 0x7, 0x1000)
@@ -3391,7 +3391,7 @@ def ZwReadFile(dp: Dumpulator,
                ByteOffset: P(LARGE_INTEGER),
                Key: P(ULONG)
                ):
-    if FileHandle == dp.stdin_handle:
+    if FileHandle == dp.peb.stdin_handle:
         result = b"some console input"
 
         assert Buffer != 0
@@ -4573,13 +4573,13 @@ def ZwWriteFile(dp: Dumpulator,
                 ByteOffset: P(LARGE_INTEGER),
                 Key: P(ULONG)
                 ):
-    if FileHandle == dp.stdout_handle:
+    if FileHandle == dp.peb.stdout_handle:
         # after debugging seems data gets mangled within unicorn
         # TODO: look into why unicorn is mangling console output
         data = Buffer.read_byte_str(Length)
         print(f"stdout: {data}")
         return STATUS_SUCCESS
-    elif FileHandle == dp.stdin_handle:
+    elif FileHandle == dp.peb.stdin_handle:
         data = Buffer.read_byte_str(Length)
         print(f"stdin: {data}")
         return STATUS_SUCCESS

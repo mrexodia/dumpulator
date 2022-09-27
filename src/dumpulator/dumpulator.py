@@ -10,9 +10,8 @@ from collections import OrderedDict
 import minidump.minidumpfile as minidump
 from unicorn import *
 from unicorn.x86_const import *
-from pefile import *
 
-from .handles import HandleManager, FileObject
+from .handles import HandleManager
 from .native import *
 from .details import *
 from capstone import *
@@ -29,11 +28,13 @@ IRETQ_OFFSET = 0x100
 IRETD_OFFSET = IRETQ_OFFSET + 1
 GDT_BASE = TSS_BASE - 0x3000
 
+
 class ExceptionType(Enum):
     NoException = 0
     Memory = 1
     Interrupt = 2
     ContextSwitch = 3
+
 
 class ExceptionInfo:
     def __init__(self):
@@ -54,6 +55,7 @@ class ExceptionInfo:
 
     def __str__(self):
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
+
 
 class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
@@ -76,8 +78,6 @@ class Dumpulator(Architecture):
         else:
             self.trace = None
 
-        self.last_module: Optional[minidump.MinidumpModule] = None
-
         self._uc = Uc(UC_ARCH_X86, UC_MODE_64)
 
         # TODO: multiple cs instances per segment
@@ -91,11 +91,14 @@ class Dumpulator(Architecture):
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
         self._setup_emulator(thread)
+        # hacky but ¯\_(ツ)_/¯
+        from .modules import ModuleManager
+        self.modules = ModuleManager(self)
+        self.peb = self.modules.peb
         self.kill_me = None
         self.exit_code = None
         self.syscalls = []
         self._setup_syscalls()
-        self.exports = self._setup_exports()
         self.handles = HandleManager()
         self.exception = ExceptionInfo()
         self.last_exception: Optional[ExceptionInfo] = None
@@ -265,107 +268,33 @@ class Dumpulator(Architecture):
         if self.trace:
             self._uc.hook_add(UC_HOOK_CODE, _hook_code, user_data=self)
 
-        # https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
-        # Handle PEB
-        # Retrieve console handle
-        if self._x64:
-            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_TEB
-            self.peb = self.read_ptr(self.teb + 0x60)
-            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_PEB
-            process_parameters = self.read_ptr(self.peb + 0x20)
-            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_RTL_USER_PROCESS_PARAMETERS
-            self.console_handle = self.read_ptr(process_parameters + 0x10)
-            self.stdin_handle = self.read_ptr(process_parameters + 0x20)
-            self.stdout_handle = self.read_ptr(process_parameters + 0x28)
-            self.stderr_handle = self.read_ptr(process_parameters + 0x30)
-        else:
-            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_TEB
-            self.peb = self.read_ptr(self.teb + 0x30)
-            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_PEB
-            process_parameters = self.read_ptr(self.peb + 0x10)
-            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_RTL_USER_PROCESS_PARAMETERS
-            self.console_handle = self.read_ptr(process_parameters + 0x10)
-            self.stdin_handle = self.read_ptr(process_parameters + 0x18)
-            self.stdout_handle = self.read_ptr(process_parameters + 0x1c)
-            self.stderr_handle = self.read_ptr(process_parameters + 0x20)
-        self.info(f"TEB: 0x{self.teb:x}, PEB: 0x{self.peb:x}")
-        self.info(f"  ConsoleHandle: 0x{self.console_handle:x}")
-        self.info(f"  StandardInput: 0x{self.stdin_handle:x}")
-        self.info(f"  StandardOutput: 0x{self.stdout_handle:x}")
-        self.info(f"  StandardError: 0x{self.stderr_handle:x}")
-
-    def _setup_exports(self):
-        exports = {}
-        for module in self._minidump.modules.modules:
-            module_name = module.name.split('\\')[-1].lower()
-            self.info(f"{module_name} 0x{module.baseaddress:x}[0x{module.size:x}]")
-            for export in self._parse_module_exports(module):
-                if export.name:
-                    name = export.name.decode("utf-8")
-                else:
-                    name = f"#{export.ordinal}"
-                exports[module.baseaddress + export.address] = f"{module_name}:{name}"
-        return exports
-
-    def _find_module(self, name) -> minidump.MinidumpModule:
-        module: minidump.MinidumpModule
-        for module in self._minidump.modules.modules:
-            filename = module.name.split('\\')[-1].lower()
-            if filename == name.lower():
-                return module
-        raise Exception(f"Module '{name}' not found")
-
-    def find_module_by_addr(self, address) -> Optional[minidump.MinidumpModule]:
-        module: minidump.MinidumpModule
-        for module in self._minidump.modules.modules:
-            if module.baseaddress <= address < module.baseaddress + module.size:
-                return module
-        return None
-
-    def _parse_module_exports(self, module):
-        try:
-            module_data = self.read(module.baseaddress, module.size)
-        except UcError:
-            self.error(f"Failed to read module data")
-            return []
-        pe = PE(data=module_data, fast_load=True)
-        # Hack to adjust pefile to accept in-memory modules
-        for section in pe.sections:
-            # Potentially interesting members: Misc_PhysicalAddress, Misc_VirtualSize, SizeOfRawData
-            section.PointerToRawData = section.VirtualAddress
-            section.PointerToRawData_adj = section.VirtualAddress
-        # Parser exports and find the syscall indices
-        pe.parse_data_directories(directories=[DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]])
-        return pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(pe, "DIRECTORY_ENTRY_EXPORT") else []
-
     def _setup_syscalls(self):
-        # Load the ntdll module from memory
-        ntdll = self._find_module("ntdll.dll")
+        ntdll = self.modules["ntdll.dll"]
         syscalls = []
-        for export in self._parse_module_exports(ntdll):
-            if export.name and export.name.startswith(b"Zw"):
-                syscalls.append((export.address, export.name.decode("utf-8")))
-            elif export.name == b"Wow64Transition":
-                addr = ntdll.baseaddress + export.address
-                patch_addr = self.read_ptr(addr)
-                self.info(f"Patching Wow64Transition: {addr:x} -> {patch_addr:x}")
-                # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
-                # mov edx, esp; sysenter; ret
-                KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
-                self.write(patch_addr, KiFastSystemCall)
-            elif export.name == b"KiUserExceptionDispatcher":
-                self.KiUserExceptionDispatcher = ntdll.baseaddress + export.address
-            elif export.name == b"LdrLoadDll":
-                self.LdrLoadDll = ntdll.baseaddress + export.address
+
+        for func in ntdll:
+            if func.name.startswith("Zw"):
+                syscalls.append(func)
+
+        if "Wow64Transition" in ntdll:
+            patch_addr = self.read_ptr(ntdll["Wow64Transition"].va)
+            self.info(f"Patching Wow64Transition: {ntdll['Wow64Transition'].va:x} -> {patch_addr:x}")
+            # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
+            # mov edx, esp; sysenter; ret
+            KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
+            self.write(patch_addr, KiFastSystemCall)
+
+        self.KiUserExceptionDispatcher = ntdll["KiUserExceptionDispatcher"].va
+        self.LdrLoadDll = ntdll["LdrLoadDll"].va
 
         syscalls.sort()
-        for index, (rva, name) in enumerate(syscalls):
-            cb = syscall_functions.get(name, None)
+        for index, export in enumerate(syscalls):
+            cb = syscall_functions.get(export.name, None)
             argcount = 0
             if cb:
                 argspec = inspect.getfullargspec(cb)
                 argcount = len(argspec.args) - 1
-            self.syscalls.append((name, cb, argcount))
+            self.syscalls.append((export.name, cb, argcount))
 
     def push(self, value):
         csp = self.regs.csp - self.ptr_size()
@@ -622,74 +551,10 @@ rsp in KiUserExceptionDispatcher:
     def NtCurrentThread(self):
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
 
-    def map_module(self, file_data: bytes, file_name: str = "", requested_base: int = 0):
-        print(f"Mapping module {file_name if file_name else '<unnamed>'}")
-        pe = PE(name=None, data=file_data)
-        image_size = pe.OPTIONAL_HEADER.SizeOfImage
-        section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
-        assert section_alignment == 0x1000
-        if requested_base == 0:
-            image_base = self.allocate(image_size, True)
-        else:
-            image_base = requested_base
-            self._uc.mem_map(image_base, image_size)
 
-        # TODO: map the header properly
-        header = pe.header
-        header_size = pe.sections[0].VirtualAddress_adj
-        print(f"Mapping header {hex(image_base)}[{hex(header_size)}]")
-        self.write(image_base, header)
-        self.protect(image_base, header_size, PAGE_READONLY)
 
-        for section in pe.sections:
-            name = section.Name.rstrip(b"\0")
-            rva = section.VirtualAddress_adj
-            va = image_base + rva
-            mask = section_alignment - 1
-            size = (section.Misc_VirtualSize + mask) & ~mask
-            flags = section.Characteristics
-            data = section.get_data()
-            assert flags & IMAGE_SCN_MEM_SHARED == 0
-            assert flags & IMAGE_SCN_MEM_READ != 0
-            execute = flags & IMAGE_SCN_MEM_EXECUTE
-            write = flags & IMAGE_SCN_MEM_WRITE
-            protect = PAGE_READONLY
-            if write:
-                protect = PAGE_READWRITE
-            if execute:
-                protect <<= 4
-            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)}")
-            self.write(va, data)
-            self.protect(va, size, protect)
 
-        # TODO: implement relocations
-        reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]
-        assert reloc_dir.VirtualAddress == 0 and reloc_dir.Size == 0
-        # TODO: set image base in header
 
-        return image_base, image_size, pe
-
-    def load_dll(self, file_name: str, file_data: bytes):
-        self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))
-        argument_ptr = self.allocate(0x1000)
-        utf16 = file_name.encode("utf-16-le")
-        if self._x64:
-            argument_data = struct.pack("<IIQHHIQ", 0, 0, 0, len(utf16), len(utf16) + 2, 0, argument_ptr + 32)
-            argument_data += utf16
-            argument_data += b"\0"
-            search_path = argument_ptr + len(argument_data)
-            argument_data += b"Z:\\"
-            image_type = argument_ptr
-            image_base_address = image_type + 8
-            image_file_name = image_base_address + 8
-        else:
-            assert False # TODO
-        self.write(argument_ptr, argument_data)
-
-        print(f"LdrLoadDll({file_name})")
-        status = self.call(self.LdrLoadDll, [1, image_type, image_file_name, image_base_address])
-        print(f"status = {hex(status)}")
-        return self.read_ptr(image_base_address)
 
 def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
     try:
@@ -702,6 +567,7 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
     except UcError as err:
         dp.error(f"Exception during unicorn hook, please report this as a bug")
         raise err
+
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     if access == UC_MEM_FETCH_UNMAPPED and address >= FORCE_KILL_ADDR - 0x10 and address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
@@ -733,18 +599,19 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             dp.error(f"{info} unmapped fetch of {address:x}[{size:x}], cip = {dp.regs.rip:x}, cs = {dp.regs.cs:x}")
         else:
             names = {
-                UC_MEM_READ: "UC_MEM_READ", # Memory is read from
-                UC_MEM_WRITE: "UC_MEM_WRITE", # Memory is written to
-                UC_MEM_FETCH: "UC_MEM_FETCH", # Memory is fetched
-                UC_MEM_READ_UNMAPPED: "UC_MEM_READ_UNMAPPED", # Unmapped memory is read from
-                UC_MEM_WRITE_UNMAPPED: "UC_MEM_WRITE_UNMAPPED", # Unmapped memory is written to
-                UC_MEM_FETCH_UNMAPPED: "UC_MEM_FETCH_UNMAPPED", # Unmapped memory is fetched
-                UC_MEM_WRITE_PROT: "UC_MEM_WRITE_PROT", # Write to write protected, but mapped, memory
-                UC_MEM_READ_PROT: "UC_MEM_READ_PROT", # Read from read protected, but mapped, memory
-                UC_MEM_FETCH_PROT: "UC_MEM_FETCH_PROT", # Fetch from non-executable, but mapped, memory
-                UC_MEM_READ_AFTER: "UC_MEM_READ_AFTER", # Memory is read from (successful access)
+                UC_MEM_READ: "UC_MEM_READ",  # Memory is read from
+                UC_MEM_WRITE: "UC_MEM_WRITE",  # Memory is written to
+                UC_MEM_FETCH: "UC_MEM_FETCH",  # Memory is fetched
+                UC_MEM_READ_UNMAPPED: "UC_MEM_READ_UNMAPPED",  # Unmapped memory is read from
+                UC_MEM_WRITE_UNMAPPED: "UC_MEM_WRITE_UNMAPPED",  # Unmapped memory is written to
+                UC_MEM_FETCH_UNMAPPED: "UC_MEM_FETCH_UNMAPPED",  # Unmapped memory is fetched
+                UC_MEM_WRITE_PROT: "UC_MEM_WRITE_PROT",  # Write to write protected, but mapped, memory
+                UC_MEM_READ_PROT: "UC_MEM_READ_PROT",  # Read from read protected, but mapped, memory
+                UC_MEM_FETCH_PROT: "UC_MEM_FETCH_PROT",  # Fetch from non-executable, but mapped, memory
+                UC_MEM_READ_AFTER: "UC_MEM_READ_AFTER",  # Memory is read from (successful access)
             }
-            dp.error(f"{info} unsupported access {names.get(access, str(access))} of {address:x}[{size:x}] = {value:X}, cip = {dp.regs.cip:x}")
+            dp.error(
+                f"{info} unsupported access {names.get(access, str(access))} of {address:x}[{size:x}] = {value:X}, cip = {dp.regs.cip:x}")
 
         if final:
             # Make sure this is the same exception we expect
@@ -792,6 +659,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     except Exception as err:
         raise err
 
+
 def _get_regs(instr, include_write=False):
     regs = OrderedDict()
     operands = instr.operands
@@ -814,6 +682,7 @@ def _get_regs(instr, include_write=False):
                 regs[instr.reg_name(reg)] = None
     return regs
 
+
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     try:
         code = dp.read(address, min(size, 15))
@@ -821,24 +690,17 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     except StopIteration:
         instr = None  # Unsupported instruction
     except UcError:
-        instr = None # Likely invalid memory
+        instr = None  # Likely invalid memory
         code = []
-    address_name = dp.exports.get(address, "")
 
-    module = ""
-    if dp.last_module and dp.last_module.baseaddress <= address < dp.last_module.baseaddress + dp.last_module.size:
-        # same module again
-        pass
-    else:
-        # new module
-        dp.last_module = dp.find_module_by_addr(address)
-        if dp.last_module:
-            module = dp.last_module.name.split("\\")[-1].lower()
-
-    if address_name:
-        address_name = " " + address_name
-    elif module:
-        address_name = " " + module
+    address_name = ""
+    module = dp.modules.find_module_by_address(address)
+    if module is not None:
+        function_name = module.find_function_name(address)
+        if function_name:
+            address_name = " " + function_name
+        else:
+            address_name = " " + module.name
 
     line = f"0x{address:x}{address_name}|"
     if instr is not None:
@@ -853,6 +715,7 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     line += "\n"
     dp.trace.write(line)
 
+
 def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
     try:
         return arg[0].read_str()
@@ -860,12 +723,14 @@ def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
         pass
     return None
 
+
 def _object_attributes_to_string(dp: Dumpulator, arg: P(OBJECT_ATTRIBUTES)):
     try:
         return arg[0].ObjectName[0].read_str()
     except UcError:
         pass
     return None
+
 
 def _arg_to_string(dp: Dumpulator, arg):
     if isinstance(arg, Enum):
@@ -896,10 +761,12 @@ def _arg_to_string(dp: Dumpulator, arg):
         return hex(arg)
     raise NotImplemented()
 
+
 def _arg_type_string(arg):
     if isinstance(arg, PVOID) and arg.type is not None:
         return arg.type.__name__ + "*"
     return type(arg).__name__
+
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
     try:
@@ -937,6 +804,7 @@ def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
 
     # Stop emulation (we resume it on KiUserExceptionDispatcher later)
     raise UcError(UC_ERR_EXCEPTION)
+
 
 def _hook_syscall(uc: Uc, dp: Dumpulator):
     index = dp.regs.cax & 0xffff
@@ -998,6 +866,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
         dp.error(f"syscall index {index:x} out of range")
         dp.raise_kill(IndexError())
 
+
 def _hook_invalid(uc: Uc, dp: Dumpulator):
     address = dp.regs.cip
     # HACK: unicorn cannot gracefully exit in all contexts
@@ -1006,3 +875,6 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
         return False
     dp.error(f"invalid instruction at {address:x}")
     return False
+
+
+#from .modules import ModuleManager
