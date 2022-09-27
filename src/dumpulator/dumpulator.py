@@ -683,7 +683,7 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
         instr = None  # Likely invalid memory
         code = []
 
-    address_name = ""
+    address_name = " "
     module = dp.modules.find_module_by_address(address)
     if module is not None:
         function_name = module.find_function_name(address)
