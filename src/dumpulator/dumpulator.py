@@ -274,15 +274,15 @@ class Dumpulator(Architecture):
                 syscalls.append(func)
 
         if "Wow64Transition" in ntdll:
-            patch_addr = self.read_ptr(ntdll["Wow64Transition"].va)
-            self.info(f"Patching Wow64Transition: {ntdll['Wow64Transition'].va:x} -> {patch_addr:x}")
+            patch_addr = self.read_ptr(ntdll["Wow64Transition"].address)
+            self.info(f"Patching Wow64Transition: {ntdll['Wow64Transition'].address:x} -> {patch_addr:x}")
             # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
             # mov edx, esp; sysenter; ret
             KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
             self.write(patch_addr, KiFastSystemCall)
 
-        self.KiUserExceptionDispatcher = ntdll["KiUserExceptionDispatcher"].va
-        self.LdrLoadDll = ntdll["LdrLoadDll"].va
+        self.KiUserExceptionDispatcher = ntdll["KiUserExceptionDispatcher"].address
+        self.LdrLoadDll = ntdll["LdrLoadDll"].address
 
         syscalls.sort()
         for index, export in enumerate(syscalls):

@@ -41,19 +41,19 @@ class Peb:
 
 
 class Function:
-    def __init__(self, name: str, address: int, va: int,):
+    def __init__(self, name: str, rva: int, address: int,):
         self.name = name
-        self.va = va
+        self.rva = rva
         self.address = address
 
     def __lt__(self, export: 'Function'):
-        return self.va < export.va
+        return self.address < export.address
 
     def __gt__(self, export: 'Function'):
-        return self.va < export.va
+        return self.address < export.address
 
     def __eq__(self, export: 'Function'):
-        return self.va == export.va
+        return self.address == export.address
 
 
 class Module:
@@ -120,10 +120,16 @@ class Module:
                 self._functions[name] = Function(name, export.address, self.base_address + export.address)
 
     def find_function_name(self, address: int) -> str:
-        for export in self._functions.values():
-            if export.address == address:
-                return f"{self.name}:{export.name}"
-        return f"{self.name}:unknown_function"
+        offset: int = 0xFFFFFFFFFFFFFFFF
+        curr_func: Optional[Function] = None
+        for func in self._functions.values():
+            if func.address == address:
+                return f"{self.name}:{func.name}"
+            elif 0 < address - func.address < offset:
+                curr_func = func
+                offset = address - curr_func.address
+        if curr_func is not None:
+            return f"{self.name}:{curr_func.name}+0x{offset:x}"
 
 
 class ModuleManager:
