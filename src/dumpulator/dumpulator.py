@@ -28,13 +28,11 @@ IRETQ_OFFSET = 0x100
 IRETD_OFFSET = IRETQ_OFFSET + 1
 GDT_BASE = TSS_BASE - 0x3000
 
-
 class ExceptionType(Enum):
     NoException = 0
     Memory = 1
     Interrupt = 2
     ContextSwitch = 3
-
 
 class ExceptionInfo:
     def __init__(self):
@@ -55,7 +53,6 @@ class ExceptionInfo:
 
     def __str__(self):
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
-
 
 class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
@@ -552,10 +549,6 @@ rsp in KiUserExceptionDispatcher:
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
 
 
-
-
-
-
 def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
     try:
         dp.info(f"exception step: {address:x}[{size}]")
@@ -567,7 +560,6 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
     except UcError as err:
         dp.error(f"Exception during unicorn hook, please report this as a bug")
         raise err
-
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     if access == UC_MEM_FETCH_UNMAPPED and address >= FORCE_KILL_ADDR - 0x10 and address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
@@ -659,7 +651,6 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     except Exception as err:
         raise err
 
-
 def _get_regs(instr, include_write=False):
     regs = OrderedDict()
     operands = instr.operands
@@ -681,7 +672,6 @@ def _get_regs(instr, include_write=False):
             for reg in instr.regs_write:
                 regs[instr.reg_name(reg)] = None
     return regs
-
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     try:
@@ -715,7 +705,6 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     line += "\n"
     dp.trace.write(line)
 
-
 def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
     try:
         return arg[0].read_str()
@@ -723,14 +712,12 @@ def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
         pass
     return None
 
-
 def _object_attributes_to_string(dp: Dumpulator, arg: P(OBJECT_ATTRIBUTES)):
     try:
         return arg[0].ObjectName[0].read_str()
     except UcError:
         pass
     return None
-
 
 def _arg_to_string(dp: Dumpulator, arg):
     if isinstance(arg, Enum):
@@ -761,12 +748,10 @@ def _arg_to_string(dp: Dumpulator, arg):
         return hex(arg)
     raise NotImplemented()
 
-
 def _arg_type_string(arg):
     if isinstance(arg, PVOID) and arg.type is not None:
         return arg.type.__name__ + "*"
     return type(arg).__name__
-
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
     try:
@@ -804,7 +789,6 @@ def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
 
     # Stop emulation (we resume it on KiUserExceptionDispatcher later)
     raise UcError(UC_ERR_EXCEPTION)
-
 
 def _hook_syscall(uc: Uc, dp: Dumpulator):
     index = dp.regs.cax & 0xffff
@@ -866,7 +850,6 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
         dp.error(f"syscall index {index:x} out of range")
         dp.raise_kill(IndexError())
 
-
 def _hook_invalid(uc: Uc, dp: Dumpulator):
     address = dp.regs.cip
     # HACK: unicorn cannot gracefully exit in all contexts
@@ -875,6 +858,3 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
         return False
     dp.error(f"invalid instruction at {address:x}")
     return False
-
-
-#from .modules import ModuleManager
