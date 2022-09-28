@@ -79,7 +79,7 @@ class Dumpulator(Architecture):
         self.last_module: Optional[minidump.MinidumpModule] = None
 
         self._uc = Uc(UC_ARCH_X86, UC_MODE_64)
-        self._mem_manager = MemoryManager()
+        self._mem_manager = MemoryManager(self._uc)
 
         # TODO: multiple cs instances per segment
         mode = CS_MODE_64 if self._x64 else CS_MODE_32
