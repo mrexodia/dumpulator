@@ -79,6 +79,7 @@ class Dumpulator(Architecture):
         self.last_module: Optional[minidump.MinidumpModule] = None
 
         self._uc = Uc(UC_ARCH_X86, UC_MODE_64)
+        self._mem_manager = MemoryManager()
 
         # TODO: multiple cs instances per segment
         mode = CS_MODE_64 if self._x64 else CS_MODE_32
@@ -129,18 +130,18 @@ class Dumpulator(Architecture):
 
     def _setup_gdt(self):
         # TODO: is the TSS actually necessary?
-        self._uc.mem_map(TSS_BASE, PAGE_SIZE, UC_PROT_READ | UC_PROT_WRITE)
+        self._mem_manager.alloc(TSS_BASE, PAGE_SIZE, AllocationProtect.PAGE_READWRITE)
 
-        self._uc.mem_map(GDT_BASE, PAGE_SIZE, UC_PROT_READ | UC_PROT_WRITE)
+        self._mem_manager.alloc(GDT_BASE, PAGE_SIZE, AllocationProtect.PAGE_READWRITE)
         for i in range(0, len(windows_gdt)):
             self.write(GDT_BASE + 8 * i, struct.pack("<Q", windows_gdt[i]))
         self.regs.gdtr = (0, GDT_BASE, 8 * len(windows_gdt) - 1, 0x0)
 
     def _setup_emulator(self, thread):
         # map in codecaves (TODO: can be mapped as UC_PROT_NONE unless used)
-        self._uc.mem_map(USER_CAVE, PAGE_SIZE)
+        self._mem_manager.alloc(USER_CAVE, PAGE_SIZE)
         self._uc.mem_write(USER_CAVE, b"\xCC" * PAGE_SIZE)
-        self._uc.mem_map(KERNEL_CAVE, PAGE_SIZE)
+        self._mem_manager.alloc(KERNEL_CAVE, PAGE_SIZE)
         kernel_code = bytearray(b"\xCC" * (PAGE_SIZE // 2) + b"\x00" * (PAGE_SIZE // 2))
         kernel_code[IRETQ_OFFSET] = 0x48
         kernel_code[IRETD_OFFSET] = 0xCF
@@ -151,12 +152,12 @@ class Dumpulator(Architecture):
             emu_addr = info.BaseAddress & self.addr_mask
             if info.State == minidump.MemoryState.MEM_COMMIT:
                 self.info(f"committed: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
-                self._uc.mem_map(emu_addr, info.RegionSize, map_unicorn_perms(info.Protect))
+                self._mem_manager.alloc(emu_addr, info.RegionSize, info.Protect)
             elif info.State == minidump.MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
                 self._allocate_base = emu_addr
             elif info.State == minidump.MemoryState.MEM_RESERVE:
                 self.info(f"reserved: {hex(emu_addr)}, size: {hex(info.RegionSize)}")
-                self._uc.mem_map(emu_addr, info.RegionSize, UC_PROT_NONE)
+                self._mem_manager.alloc(emu_addr, info.RegionSize, AllocationProtect.PAGE_NOACCESS)
 
         memory = self._minidump.get_reader().get_buffered_reader()
         seg: minidump.MinidumpMemorySegment
@@ -380,7 +381,7 @@ class Dumpulator(Architecture):
 
     def protect(self, addr, size, protect):
         perms = map_unicorn_perms(protect)
-        self._uc.mem_protect(addr, size, perms)
+        self._mem_manager.protect(addr, size, perms)
 
     def call(self, addr, args: List[int] = [], regs: dict = {}, count=0):
         # allow passing custom registers
@@ -402,7 +403,7 @@ class Dumpulator(Architecture):
 
     def allocate(self, size, page_align=False):
         if not self._allocate_ptr:
-            self._uc.mem_map(self._allocate_base, self._allocate_size)
+            self._mem_manager.alloc(self._allocate_base, self._allocate_size)
             self._allocate_ptr = self._allocate_base
 
         if page_align:
@@ -632,7 +633,7 @@ rsp in KiUserExceptionDispatcher:
             image_base = self.allocate(image_size, True)
         else:
             image_base = requested_base
-            self._uc.mem_map(image_base, image_size)
+            self._mem_manager.alloc(image_base, image_size)
 
         # TODO: map the header properly
         header = pe.header
