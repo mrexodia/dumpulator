@@ -4,6 +4,7 @@ import unicorn
 from .dumpulator import Dumpulator, syscall_functions, ExceptionInfo, ExceptionType
 from .native import *
 from .handles import *
+from .modules import NewModule
 from pathlib import Path
 
 
@@ -2126,13 +2127,13 @@ def ZwMapViewOfSection(dp: Dumpulator,
     assert Win32Protect == PAGE_EXECUTE_WRITECOPY
     requested_base = BaseAddress.read_ptr()
     assert requested_base == 0
-    section = dp.handles.get(SectionHandle, SectionObject)
-    data = section.file.read()
-    image_base, image_size, pe = dp.map_module(data, section.file.path, requested_base)
-    
+    section = dp.handles.get(SectionHandle, FileObject)
+    data = section.read()
+    module = dp.modules.add_module(data, section.path, requested_base)
+
     # Handle out parameters
-    BaseAddress.write_ptr(image_base)
-    ViewSize.write_ptr(image_size)
+    BaseAddress.write_ptr(module.base_address)
+    ViewSize.write_ptr(module.size)
     return STATUS_SUCCESS
 
 @syscall
@@ -2428,7 +2429,13 @@ def ZwOpenSection(dp: Dumpulator,
                   DesiredAccess: ACCESS_MASK,
                   ObjectAttributes: P(OBJECT_ATTRIBUTES)
                   ):
-    return STATUS_NOT_IMPLEMENTED
+    assert SectionHandle.ptr != 0
+    assert ObjectAttributes.ptr != 0
+    file_name = ObjectAttributes[0].ObjectName[0].read_str()
+    file_handle = dp.handles.open_file(file_name)
+    assert file_handle is not None
+    SectionHandle.write_ptr(file_handle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwOpenSemaphore(dp: Dumpulator,

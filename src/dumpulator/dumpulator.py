@@ -89,7 +89,7 @@ class Dumpulator(Architecture):
         self._allocate_ptr = None
         self._setup_emulator(thread)
         # hacky but ¯\_(ツ)_/¯
-        from .modules import ModuleManager
+        from .modules import ModuleManager, Module
         self.modules = ModuleManager(self)
         self.peb = self.modules.peb
         self.kill_me = None
@@ -99,6 +99,7 @@ class Dumpulator(Architecture):
         self.handles = HandleManager()
         self.exception = ExceptionInfo()
         self.last_exception: Optional[ExceptionInfo] = None
+        self.last_module = None
 
     def _find_thread(self, thread_id):
         for i in range(0, len(self._minidump.threads.threads)):
@@ -686,10 +687,11 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     address_name = " "
     module = dp.modules.find_module_by_address(address)
     if module is not None:
+        dp.last_module = module
         function_name = module.find_function_name(address)
         if function_name:
             address_name = " " + function_name
-        else:
+        elif module is not dp.last_module:
             address_name = " " + module.name
 
     line = f"0x{address:x}{address_name}|"

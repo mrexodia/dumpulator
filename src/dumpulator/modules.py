@@ -3,6 +3,7 @@ from minidump.streams.ModuleListStream import MinidumpModule
 from pefile import *
 from unicorn import *
 from .handles import *
+from typing import List
 
 
 class Peb:
@@ -41,10 +42,11 @@ class Peb:
 
 
 class Function:
-    def __init__(self, name: str, rva: int, address: int,):
+    def __init__(self, dp: Dumpulator, name: str, rva: int, address: int):
         self.name = name
         self.rva = rva
         self.address = address
+        self.dp = dp
 
     def __lt__(self, export: 'Function'):
         return self.address < export.address
@@ -55,22 +57,139 @@ class Function:
     def __eq__(self, export: 'Function'):
         return self.address == export.address
 
+    def __call__(self, args: List[int] = [], regs: dict = {}, count=0):
+        return self.dp.call(self.address, args=args, regs=regs, count=count)
+
+
+class NewModule:
+    def __init__(self, dp: Dumpulator, file_data: bytes, file_name: str = "", requested_base: int = 0):
+        self.dp = dp
+        self.data = bytearray(file_data)
+        self.image_base = 0
+        self.image_size = 0
+        self.entry_point = 0
+        self.full_path = file_name
+        self.name = self.full_path.split('\\')[-1].lower()
+        self._map_module(requested_base)
+
+    def _map_module(self, requested_base: int = 0):
+        print(f"Mapping module {self.name if self.name else '<unnamed>'}")
+        pe = PE(name=None, data=self.data)
+        self.pe = pe
+        self.image_size = pe.OPTIONAL_HEADER.SizeOfImage
+        section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
+        bits = 64 if pe.PE_TYPE == OPTIONAL_HEADER_MAGIC_PE_PLUS else 32
+        assert section_alignment == 0x1000, f"invalid section alignment of 0x{section_alignment:x}"
+        if requested_base == 0:
+            self.image_base = self.dp.allocate(self.image_size, True)
+        else:
+            self.image_base = requested_base
+            self.dp._uc.mem_map(self.image_base, self.image_size)
+
+        # fix relocations, saves to pe.__data__ buffer
+        pe.relocate_image(self.image_base)
+
+        self.entry_point = pe.OPTIONAL_HEADER.AddressOfEntryPoint + pe.OPTIONAL_HEADER.ImageBase
+
+        self.dp.info(f"image_base:  {self.image_base:x}")
+        self.dp.info(f"entry_point: {self.entry_point:x}")
+
+        header = bytes(pe.header)
+        header_size = pe.sections[0].VirtualAddress_adj  # 0x1000
+        print(f"Mapping header {hex(self.image_base)}[{hex(header_size)}]")
+        self.dp.write(self.image_base, header)
+        self.dp.protect(self.image_base, header_size, PAGE_READONLY)
+
+        # https://vtopan.wordpress.com/2019/04/12/patching-resolving-imports-in-a-pe-file-python-pefile/
+        # manually resolve imports
+        if hasattr(pe, "DIRECTORY_ENTRY_IMPORT"):
+            ordinal_flag = 2 ** (bits - 1)
+            for iid in pe.DIRECTORY_ENTRY_IMPORT:
+                dll_name = iid.dll.decode("utf-8").lower()
+                assert dll_name in self.dp.modules, f"{dll_name} is not loaded"
+                self.dp.info(f"resolving imports for {dll_name}")
+                ilt_rva = iid.struct.OriginalFirstThunk
+                ilt = pe.get_import_table(ilt_rva)
+                iat_rva = iid.struct.FirstThunk
+                iat = pe.get_import_table(iat_rva)
+                assert iat is not None, "iat is empty"
+                assert ilt is not None, "ilt is empty"
+                for idx in range(len(ilt)):
+                    hint_rva = ilt[idx].AddressOfData
+                    assert hint_rva is not None, "hint_rva is 0"
+                    if hint_rva & ordinal_flag:
+                        ordinal = f"#{hint_rva & 0xffff}"
+                        assert ordinal in self.dp.modules[dll_name], f"ordinal #{ordinal} not in module"
+                        imp_va = self.dp.modules[dll_name][ordinal].address
+                        self.dp.info(f"\t{ordinal:<32}:0x{imp_va:0>16x}")
+                    else:
+                        hint = pe.get_word_from_data(pe.get_data(hint_rva, 2), 0)
+                        func_name = pe.get_string_at_rva(ilt[idx].AddressOfData + 2, MAX_IMPORT_NAME_LENGTH)
+                        func_name = func_name.decode("utf-8")
+                        assert func_name in self.dp.modules[dll_name], f"{func_name} is not in {dll_name}"
+                        imp_va = self.dp.modules[dll_name][func_name].address
+                        self.dp.info(f"\t{func_name:<32}:0x{imp_va:0>16x}")
+                    file_offset = iat[idx].get_field_absolute_offset('AddressOfData')
+                    if bits == 64:
+                        self.data[file_offset:file_offset + 8] = struct.pack('<Q', imp_va)
+                    else:
+                        self.data[file_offset:file_offset + 4] = struct.pack('<L', imp_va)
+
+        for section in pe.sections:
+            name = section.Name.rstrip(b"\0")
+            rva = section.VirtualAddress_adj
+            va = self.image_base + rva
+            mask = section_alignment - 1
+            size = (section.Misc_VirtualSize + mask) & ~mask
+            flags = section.Characteristics
+            data = bytes(section.get_data())
+            assert flags & IMAGE_SCN_MEM_SHARED == 0
+            read = flags & IMAGE_SCN_MEM_READ
+            write = flags & IMAGE_SCN_MEM_WRITE
+            execute = flags & IMAGE_SCN_MEM_EXECUTE
+            protect = PAGE_NOACCESS
+            if read:
+                protect <<= 1
+                if write:
+                    protect <<= 1
+                if execute:
+                    protect <<= 4
+            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}][{hex(protect)}] -> {hex(va)}")
+            self.dp.write(va, data)
+            self.dp.protect(va, size, protect)
+
 
 class Module:
-    def __init__(self, dp: Dumpulator, minidump_module: MinidumpModule):
+    def __init__(self, dp: Dumpulator, minidump: Optional[MinidumpModule] = None, module: Optional[NewModule] = None):
         self._dp = dp
-        self._minidump_module = minidump_module
-        self.full_path = self._minidump_module.name
-        self.name = self.full_path.split('\\')[-1].lower()
-        self.base_address = self._minidump_module.baseaddress
-        self.size = self._minidump_module.size
-        self.end_address = self._minidump_module.endaddress
-        self.version_info = self._minidump_module.versioninfo
-        self.checksum = self._minidump_module.checksum
-        self.time_stamp = self._minidump_module.timestamp
-        self.pe = self.__parse_pe()
-        self._functions = {}
-        self.__parse_exports()  # adds exports to _functions dict
+        if minidump is not None and module is None:
+            self.full_path = minidump.name
+            self.name = self.full_path.split('\\')[-1].lower()
+            self.base_address = minidump.baseaddress
+            self.size = minidump.size
+            self.end_address = minidump.endaddress
+            self.version_info = minidump.versioninfo
+            self.checksum = minidump.checksum
+            self.time_stamp = minidump.timestamp
+            self.pe = self.__parse_pe()
+            self.entry_point = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
+            self._functions = {}
+            self.__parse_exports()  # adds exports to _functions dict
+        elif module is not None and minidump is None:
+            self.full_path = module.full_path
+            self.name = module.name
+            self.base_address = module.image_base
+            self.size = module.image_size
+            self.end_address = self.base_address + self.size
+            self.version_info = 0
+            self.checksum = 0
+            self.time_stamp = 0
+            self.pe = module.pe
+            self.end_address = module.entry_point
+            self._functions = {}
+            self.__parse_exports()
+        else:
+            raise Exception()
 
     # TODO: finish off the operator _functions to work with the funcs dict
 
@@ -117,9 +236,9 @@ class Module:
                     name = export.name.decode("utf-8")
                 else:
                     name = f"#{export.ordinal}"
-                self._functions[name] = Function(name, export.address, self.base_address + export.address)
+                self._functions[name] = Function(self._dp, name, export.address, self.base_address + export.address)
 
-    def find_function_name(self, address: int) -> str:
+    def find_function_name_offset(self, address: int) -> str:
         offset: int = 0xFFFFFFFFFFFFFFFF
         curr_func: Optional[Function] = None
         for func in self._functions.values():
@@ -131,6 +250,12 @@ class Module:
         if curr_func is not None:
             return f"{self.name}:{curr_func.name}+0x{offset:x}"
 
+    def find_function_name(self, address: int) -> str:
+        for func in self._functions.values():
+            if func.address == address:
+                return f"{self.name}:{func.name}"
+        return ""
+
 
 class ModuleManager:
     def __init__(self, dp: Dumpulator):
@@ -139,7 +264,7 @@ class ModuleManager:
         self._modules = {}
 
         for dump_module in dp._minidump.modules.modules:
-            module = Module(dp, dump_module)
+            module = Module(dp, minidump=dump_module)
             self._modules[module.name] = module
             dp.info(f"Parsed {module.name} 0x{module.base_address:x}[0x{module.size}]")
 
@@ -171,53 +296,13 @@ class ModuleManager:
             if module.contains_address(address):
                 return module
 
-    # TODO: map new module into ModuleManager
-    def __map_module(self, file_data: bytes, file_name: str = "", requested_base: int = 0):
-        print(f"Mapping module {file_name if file_name else '<unnamed>'}")
-        pe = PE(name=None, data=file_data)
-        image_size = pe.OPTIONAL_HEADER.SizeOfImage
-        section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
-        assert section_alignment == 0x1000
-        if requested_base == 0:
-            image_base = self.dp.allocate(image_size, True)
-        else:
-            image_base = requested_base
-            self.dp._uc.mem_map(image_base, image_size)
-
-        # TODO: map the header properly
-        header = pe.header
-        header_size = pe.sections[0].VirtualAddress_adj
-        print(f"Mapping header {hex(image_base)}[{hex(header_size)}]")
-        self.dp.write(image_base, header)
-        self.dp.protect(image_base, header_size, PAGE_READONLY)
-
-        for section in pe.sections:
-            name = section.Name.rstrip(b"\0")
-            rva = section.VirtualAddress_adj
-            va = image_base + rva
-            mask = section_alignment - 1
-            size = (section.Misc_VirtualSize + mask) & ~mask
-            flags = section.Characteristics
-            data = section.get_data()
-            assert flags & IMAGE_SCN_MEM_SHARED == 0
-            assert flags & IMAGE_SCN_MEM_READ != 0
-            execute = flags & IMAGE_SCN_MEM_EXECUTE
-            write = flags & IMAGE_SCN_MEM_WRITE
-            protect = PAGE_READONLY
-            if write:
-                protect = PAGE_READWRITE
-            if execute:
-                protect <<= 4
-            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)}")
-            self.dp.write(va, data)
-            self.dp.protect(va, size, protect)
-
-        # TODO: implement relocations
-        reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]
-        assert reloc_dir.VirtualAddress == 0 and reloc_dir.Size == 0
-        # TODO: set image base in header
-
-        return image_base, image_size, pe
+    def add_module(self, file_data: bytes, file_name: str = "", requested_base: int = 0) -> Module:
+        module = Module(self.dp, module=NewModule(self.dp, file_data, file_name, requested_base))
+        self._modules[module.name] = module
+        self.dp.info(f"Parsed {module.name} 0x{module.base_address:x}[0x{module.size}]")
+        for func in module:
+            self.dp.info(f"{func.name}:0x{func.address:0>16x}")
+        return module
 
     def load_dll(self, file_name: str, file_data: bytes):
         self.dp.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))
@@ -240,3 +325,11 @@ class ModuleManager:
         status = self.dp.call(self.dp.LdrLoadDll, [1, image_type, image_file_name, image_base_address])
         print(f"status = {hex(status)}")
         return self.dp.read_ptr(image_base_address)
+
+    def load_library(self, file_name: str, file_data: bytes, flags: int = 0):
+        assert "kernel32.dll" in self.dp.modules
+        self.dp.handles.map_file(file_name, FileObject(file_name, file_data))
+        argument_ptr = self.dp.allocate(0x1000)
+        self.dp.write(argument_ptr, file_name.encode("utf-16-le"))
+        module = self.dp.modules["kernel32.dll"]["LoadLibraryExW"]([argument_ptr, 0, flags])
+        return module
