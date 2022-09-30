@@ -64,17 +64,16 @@ class Function:
 class NewModule:
     def __init__(self, dp: Dumpulator, file_data: bytes, file_name: str = "", requested_base: int = 0):
         self.dp = dp
-        self.data = bytearray(file_data)
         self.image_base = 0
         self.image_size = 0
         self.entry_point = 0
         self.full_path = file_name
         self.name = self.full_path.split('\\')[-1].lower()
-        self._map_module(requested_base)
+        self._map_module(file_data, requested_base)
 
-    def _map_module(self, requested_base: int = 0):
+    def _map_module(self, file_data: bytes, requested_base: int = 0):
         print(f"Mapping module {self.name if self.name else '<unnamed>'}")
-        pe = PE(name=None, data=self.data)
+        pe = PE(name=None, data=file_data)
         self.pe = pe
         self.image_size = pe.OPTIONAL_HEADER.SizeOfImage
         section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
@@ -131,9 +130,9 @@ class NewModule:
                         self.dp.info(f"\t{func_name:<32}:0x{imp_va:0>16x}")
                     file_offset = iat[idx].get_field_absolute_offset('AddressOfData')
                     if bits == 64:
-                        self.data[file_offset:file_offset + 8] = struct.pack('<Q', imp_va)
+                        pe.__data__[file_offset:file_offset + 8] = struct.pack('<Q', imp_va)
                     else:
-                        self.data[file_offset:file_offset + 4] = struct.pack('<L', imp_va)
+                        pe.__data__[file_offset:file_offset + 4] = struct.pack('<L', imp_va)
 
         for section in pe.sections:
             name = section.Name.rstrip(b"\0")
