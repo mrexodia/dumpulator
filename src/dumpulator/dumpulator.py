@@ -592,19 +592,18 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             dp.error(f"{info} unmapped fetch of {address:x}[{size:x}], cip = {dp.regs.rip:x}, cs = {dp.regs.cs:x}")
         else:
             names = {
-                UC_MEM_READ: "UC_MEM_READ",  # Memory is read from
-                UC_MEM_WRITE: "UC_MEM_WRITE",  # Memory is written to
-                UC_MEM_FETCH: "UC_MEM_FETCH",  # Memory is fetched
-                UC_MEM_READ_UNMAPPED: "UC_MEM_READ_UNMAPPED",  # Unmapped memory is read from
-                UC_MEM_WRITE_UNMAPPED: "UC_MEM_WRITE_UNMAPPED",  # Unmapped memory is written to
-                UC_MEM_FETCH_UNMAPPED: "UC_MEM_FETCH_UNMAPPED",  # Unmapped memory is fetched
-                UC_MEM_WRITE_PROT: "UC_MEM_WRITE_PROT",  # Write to write protected, but mapped, memory
-                UC_MEM_READ_PROT: "UC_MEM_READ_PROT",  # Read from read protected, but mapped, memory
-                UC_MEM_FETCH_PROT: "UC_MEM_FETCH_PROT",  # Fetch from non-executable, but mapped, memory
-                UC_MEM_READ_AFTER: "UC_MEM_READ_AFTER",  # Memory is read from (successful access)
+                UC_MEM_READ: "UC_MEM_READ", # Memory is read from
+                UC_MEM_WRITE: "UC_MEM_WRITE", # Memory is written to
+                UC_MEM_FETCH: "UC_MEM_FETCH", # Memory is fetched
+                UC_MEM_READ_UNMAPPED: "UC_MEM_READ_UNMAPPED", # Unmapped memory is read from
+                UC_MEM_WRITE_UNMAPPED: "UC_MEM_WRITE_UNMAPPED", # Unmapped memory is written to
+                UC_MEM_FETCH_UNMAPPED: "UC_MEM_FETCH_UNMAPPED", # Unmapped memory is fetched
+                UC_MEM_WRITE_PROT: "UC_MEM_WRITE_PROT", # Write to write protected, but mapped, memory
+                UC_MEM_READ_PROT: "UC_MEM_READ_PROT", # Read from read protected, but mapped, memory
+                UC_MEM_FETCH_PROT: "UC_MEM_FETCH_PROT", # Fetch from non-executable, but mapped, memory
+                UC_MEM_READ_AFTER: "UC_MEM_READ_AFTER", # Memory is read from (successful access)
             }
-            dp.error(
-                f"{info} unsupported access {names.get(access, str(access))} of {address:x}[{size:x}] = {value:X}, cip = {dp.regs.cip:x}")
+            dp.error(f"{info} unsupported access {names.get(access, str(access))} of {address:x}[{size:x}] = {value:X}, cip = {dp.regs.cip:x}")
 
         if final:
             # Make sure this is the same exception we expect
@@ -681,7 +680,7 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     except StopIteration:
         instr = None  # Unsupported instruction
     except UcError:
-        instr = None  # Likely invalid memory
+        instr = None # Likely invalid memory
         code = []
 
     address_name = " "
