@@ -15,6 +15,7 @@ from pefile import *
 from .handles import HandleManager, FileObject
 from .native import *
 from .details import *
+from .memory import *
 from capstone import *
 from capstone.x86_const import *
 
@@ -55,6 +56,19 @@ class ExceptionInfo:
     def __str__(self):
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
 
+class UnicornPageManager(PageManager):
+    def __init__(self, uc: Uc):
+        self._uc = uc
+
+    def commit(self, addr: int, protect: MemoryProtect) -> None:
+        self._uc.mem_map(addr, PAGE_SIZE, map_unicorn_perms(protect))
+
+    def decommit(self, addr: int) -> None:
+        self._uc.mem_unmap(addr, PAGE_SIZE)
+
+    def protect(self, addr: int, protect: MemoryProtect) -> None:
+        self._uc.mem_protect(addr, PAGE_SIZE, map_unicorn_perms(protect))
+
 class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
         self._quiet = quiet
@@ -87,6 +101,7 @@ class Dumpulator(Architecture):
 
         self.regs = Registers(self._uc, self._x64)
         self.args = Arguments(self._uc, self.regs, self._x64)
+        self.memory = MemoryManager(UnicornPageManager(self._uc))
         self._allocate_base = None
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
@@ -147,6 +162,35 @@ class Dumpulator(Architecture):
         self._uc.mem_write(KERNEL_CAVE, bytes(kernel_code))
 
         info: minidump.MinidumpMemoryInfo
+        regions: List[List[minidump.MinidumpMemoryInfo]] = []
+        for info in self._minidump.memory_info.infos:
+            if len(regions) == 0 or info.AllocationBase != regions[-1][0].AllocationBase or info.State == minidump.MemoryState.MEM_FREE:
+                regions.append([])
+            regions[-1].append(info)
+        # NOTE: The HYPERVISOR_SHARED_DATA does not respect the allocation granularity
+        self.memory._granularity = PAGE_SIZE
+        for region in regions:
+            reserve_addr = None
+            reserve_size = 0
+            assert len(region) >= 1
+            for info in region:
+                if reserve_addr is None:
+                    reserve_addr = info.BaseAddress
+                reserve_size += info.RegionSize
+            info = region[0]
+            emu_addr = info.BaseAddress & self.addr_mask
+            if info.State == minidump.MemoryState.MEM_FREE:
+                if emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
+                    self._allocate_base = emu_addr
+                continue
+            print(f"reserved: {hex(reserve_addr)}, size: {hex(reserve_size)}")
+            self.memory.reserve(reserve_addr, reserve_size, info.AllocationProtect, info.Type)
+            for info in region:
+                emu_addr = info.BaseAddress & self.addr_mask
+                if info.State == minidump.MemoryState.MEM_COMMIT:
+                    print(f"committed: {hex(emu_addr)}, size: {hex(info.RegionSize)}, protect: {info.Protect}")
+                    self.memory.commit(info.BaseAddress, info.RegionSize, info.Protect)
+        self.memory._granularity = 0x10000
         for info in self._minidump.memory_info.infos:
             emu_addr = info.BaseAddress & self.addr_mask
             if info.State == minidump.MemoryState.MEM_COMMIT:
@@ -445,7 +489,7 @@ rsp in KiUserExceptionDispatcher:
       alignment        @ rsp + 588 : 8
       MACHINE_FRAME    @ rsp + 590 : 28                       | alignas(16) from RSP in exception / xstate
       alignment        @ rsp + 5b8 : 8
-      xstate           @ rsp + 5c0 : CONTEXT_EX.Xstate.Length | alignas(64) from RSP in exception 
+      xstate           @ rsp + 5c0 : CONTEXT_EX.Xstate.Length | alignas(64) from RSP in exception
             """
             allocation_size = 0x720
             context_flags = 0x10005F
