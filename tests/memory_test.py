@@ -7,18 +7,21 @@ class MockPageManager(PageManager):
     def __init__(self):
         self.pages: Dict[int, MemoryProtect] = {}
 
-    def commit(self, addr: int, protect: MemoryProtect) -> None:
-        print(f"commit({hex(addr)}, {protect})")
-        self.pages[addr] = protect
+    def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        print(f"commit({hex(addr)}, {hex(size)}, {protect})")
+        for page in range(addr, addr + size, PAGE_SIZE):
+            self.pages[page] = protect
 
-    def decommit(self, addr: int) -> None:
-        print(f"decommit({hex(addr)})")
-        del self.pages[addr]
+    def decommit(self, addr: int, size: int) -> None:
+        print(f"decommit({hex(addr)}, {hex(size)})")
+        for page in range(addr, addr + size, PAGE_SIZE):
+            del self.pages[page]
 
-    def protect(self, addr: int, protect: MemoryProtect) -> None:
-        print(f"protect({hex(addr)}, {protect})")
-        assert addr in self.pages
-        self.pages[addr] = protect
+    def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        print(f"protect({hex(addr)}, {hex(size)}, {protect})")
+        for page in range(addr, addr + size, PAGE_SIZE):
+            assert page in self.pages
+            self.pages[page] = protect
 
 class TestMemoryManager(unittest.TestCase):
     def setUp(self) -> None:

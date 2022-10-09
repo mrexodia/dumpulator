@@ -1,24 +1,26 @@
 import struct
 from collections import namedtuple
 
-from minidump.minidumpfile import AllocationProtect
 from unicorn import *
 from unicorn.x86_const import *
 
-def map_unicorn_perms(protect: AllocationProtect):
+from dumpulator.memory import MemoryProtect
+
+def map_unicorn_perms(protect: MemoryProtect):
     if isinstance(protect, int):
-        protect = AllocationProtect(protect)
+        protect = MemoryProtect(protect)
+    assert isinstance(protect, MemoryProtect)
     mapping = {
-        AllocationProtect.PAGE_EXECUTE: UC_PROT_EXEC | UC_PROT_READ,
-        AllocationProtect.PAGE_EXECUTE_READ: UC_PROT_EXEC | UC_PROT_READ,
-        AllocationProtect.PAGE_EXECUTE_READWRITE: UC_PROT_ALL,
-        AllocationProtect.PAGE_EXECUTE_WRITECOPY: UC_PROT_ALL,
-        AllocationProtect.PAGE_NOACCESS: UC_PROT_NONE,
-        AllocationProtect.PAGE_READONLY: UC_PROT_READ,
-        AllocationProtect.PAGE_READWRITE: UC_PROT_READ | UC_PROT_WRITE,
-        AllocationProtect.PAGE_WRITECOPY: UC_PROT_READ | UC_PROT_WRITE,
+        MemoryProtect.PAGE_EXECUTE: UC_PROT_EXEC | UC_PROT_READ,
+        MemoryProtect.PAGE_EXECUTE_READ: UC_PROT_EXEC | UC_PROT_READ,
+        MemoryProtect.PAGE_EXECUTE_READWRITE: UC_PROT_ALL,
+        MemoryProtect.PAGE_EXECUTE_WRITECOPY: UC_PROT_ALL,
+        MemoryProtect.PAGE_NOACCESS: UC_PROT_NONE,
+        MemoryProtect.PAGE_READONLY: UC_PROT_READ,
+        MemoryProtect.PAGE_READWRITE: UC_PROT_READ | UC_PROT_WRITE,
+        MemoryProtect.PAGE_WRITECOPY: UC_PROT_READ | UC_PROT_WRITE,
     }
-    return mapping.get(protect, UC_PROT_NONE)
+    return mapping[protect]
 
 
 class Registers:

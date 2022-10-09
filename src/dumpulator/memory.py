@@ -1,10 +1,10 @@
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, Flag
 from typing import Any, List, Dict
 import bisect
 
 PAGE_SIZE = 0x1000
 
-class MemoryProtect(IntFlag):
+class MemoryProtect(Flag):
     UNDEFINED = 0x0
     PAGE_EXECUTE = 0x10
     PAGE_EXECUTE_READ = 0x20
@@ -92,13 +92,13 @@ class MemoryRegion:
             yield page
 
 class PageManager:
-    def commit(self, addr: int, protect: MemoryProtect) -> None:
+    def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
         raise NotImplementedError()
 
-    def decommit(self, addr: int) -> None:
+    def decommit(self, addr: int, size: int) -> None:
         raise NotImplementedError()
 
-    def protect(self, addr: int, protect: MemoryProtect) -> None:
+    def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
         raise NotImplementedError()
 
 class MemoryManager:
@@ -130,6 +130,8 @@ class MemoryManager:
         return (addr + mask) & ~mask
 
     def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE):
+        assert isinstance(protect, MemoryProtect)
+        assert isinstance(type, MemoryType)
         assert size > 0 and self.page_align(size) == size
         assert self.allocation_align(start) == start
         region = MemoryRegion(start, size, protect, type)
@@ -159,13 +161,19 @@ class MemoryManager:
         if parent_region.start != start:
             raise KeyError(f"You can only release the whole parent region")
 
-        for page in parent_region.pages():
-            if page in self._committed:
-                self._page_manager.decommit(page)
+        if all([page in self._committed for page in parent_region.pages()]):
+            self._page_manager.decommit(parent_region.start, parent_region.size)
+            for page in parent_region.pages():
                 del self._committed[page]
+        else:
+            for page in parent_region.pages():
+                if page in self._committed:
+                    self._page_manager.decommit(page, PAGE_SIZE)
+                    del self._committed[page]
         self._regions.remove(parent_region)
 
     def commit(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.UNDEFINED):
+        assert isinstance(protect, MemoryProtect)
         assert size > 0 and self.page_align(size) == size
         assert self.page_align(start) == start
         region = MemoryRegion(start, size)
@@ -176,13 +184,18 @@ class MemoryManager:
         if protect == MemoryProtect.UNDEFINED:
             protect = parent_region.protect
 
-        for page in region.pages():
-            if page in self._committed:
-                self._page_manager.protect(page, protect)
-                self._committed[page].protect = protect
-            else:
-                self._page_manager.commit(page, protect)
+        if all([page not in self._committed for page in region.pages()]):
+            self._page_manager.commit(region.start, region.size, protect)
+            for page in region.pages():
                 self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
+        else:
+            for page in region.pages():
+                if page in self._committed:
+                    self._page_manager.protect(page, PAGE_SIZE, protect)
+                    self._committed[page].protect = protect
+                else:
+                    self._page_manager.commit(page, PAGE_SIZE, protect)
+                    self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
 
     def decommit(self, start: int, size: int):
         assert size > 0 and self.page_align(size) == size
@@ -192,12 +205,18 @@ class MemoryManager:
         if parent_region is None:
             raise KeyError(f"Could not find parent for {region}")
 
-        for page in region.pages():
-            if page in self._committed:
-                self._page_manager.decommit(page)
+        if all([page in self._committed for page in region.pages()]):
+            self._page_manager.decommit(region.start, region.size)
+            for page in self._committed:
                 del self._committed[page]
+        else:
+            for page in region.pages():
+                if page in self._committed:
+                    self._page_manager.decommit(page, PAGE_SIZE)
+                    del self._committed[page]
 
     def protect(self, start: int, size: int, protect: MemoryProtect):
+        assert isinstance(protect, MemoryProtect)
         assert size > 0 and self.page_align(size) == size
         assert self.page_align(start) == start
         region = MemoryRegion(start, size)
@@ -212,9 +231,10 @@ class MemoryManager:
 
         # Change the protection
         old_protect = self._committed[region.start].protect
+        self._page_manager.protect(region.start, region.size, protect)
         for page in region.pages():
-            self._page_manager.protect(page, protect)
             self._committed[page].protect = protect
+
         return old_protect
 
     def query(self, start: int):

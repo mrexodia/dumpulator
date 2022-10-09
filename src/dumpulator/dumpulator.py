@@ -60,14 +60,15 @@ class UnicornPageManager(PageManager):
     def __init__(self, uc: Uc):
         self._uc = uc
 
-    def commit(self, addr: int, protect: MemoryProtect) -> None:
-        self._uc.mem_map(addr, PAGE_SIZE, map_unicorn_perms(protect))
+    def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        perms = map_unicorn_perms(protect)
+        self._uc.mem_map(addr, size, perms)
 
-    def decommit(self, addr: int) -> None:
-        self._uc.mem_unmap(addr, PAGE_SIZE)
+    def decommit(self, addr: int, size: int) -> None:
+        self._uc.mem_unmap(addr, size)
 
-    def protect(self, addr: int, protect: MemoryProtect) -> None:
-        self._uc.mem_protect(addr, PAGE_SIZE, map_unicorn_perms(protect))
+    def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        self._uc.mem_protect(addr, size, map_unicorn_perms(protect))
 
 class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
@@ -169,11 +170,13 @@ class Dumpulator(Architecture):
             regions[-1].append(info)
         # NOTE: The HYPERVISOR_SHARED_DATA does not respect the allocation granularity
         self.memory._granularity = PAGE_SIZE
-        for region in regions:
+        for i in range(len(regions)):
+            region = regions[i]
             reserve_addr = None
             reserve_size = 0
             assert len(region) >= 1
-            for info in region:
+            for j in range(len(region)):
+                info = region[j]
                 if reserve_addr is None:
                     reserve_addr = info.BaseAddress
                 reserve_size += info.RegionSize
@@ -183,24 +186,17 @@ class Dumpulator(Architecture):
                 if emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
                     self._allocate_base = emu_addr
                 continue
-            print(f"reserved: {hex(reserve_addr)}, size: {hex(reserve_size)}")
-            self.memory.reserve(reserve_addr, reserve_size, info.AllocationProtect, info.Type)
+            reserve_protect = MemoryProtect(info.AllocationProtect)
+            reserve_type = MemoryType(info.Type.value)
+            print(f" reserved: {hex(reserve_addr)}, size: {hex(reserve_size)}, protect: {reserve_protect}, type: {reserve_type}")
+            self.memory.reserve(reserve_addr, reserve_size, reserve_protect, reserve_type)
             for info in region:
                 emu_addr = info.BaseAddress & self.addr_mask
                 if info.State == minidump.MemoryState.MEM_COMMIT:
-                    print(f"committed: {hex(emu_addr)}, size: {hex(info.RegionSize)}, protect: {info.Protect}")
-                    self.memory.commit(info.BaseAddress, info.RegionSize, info.Protect)
+                    protect = reserve_protect if info.Protect is None else MemoryProtect(info.Protect.value)
+                    print(f"committed: {hex(emu_addr)}, size: {hex(info.RegionSize)}, protect: {protect}")
+                    self.memory.commit(info.BaseAddress, info.RegionSize, protect)
         self.memory._granularity = 0x10000
-        for info in self._minidump.memory_info.infos:
-            emu_addr = info.BaseAddress & self.addr_mask
-            if info.State == minidump.MemoryState.MEM_COMMIT:
-                self.info(f"committed: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
-                self._uc.mem_map(emu_addr, info.RegionSize, map_unicorn_perms(info.Protect))
-            elif info.State == minidump.MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
-                self._allocate_base = emu_addr
-            elif info.State == minidump.MemoryState.MEM_RESERVE:
-                self.info(f"reserved: {hex(emu_addr)}, size: {hex(info.RegionSize)}")
-                self._uc.mem_map(emu_addr, info.RegionSize, UC_PROT_NONE)
 
         memory = self._minidump.get_reader().get_buffered_reader()
         seg: minidump.MinidumpMemorySegment
@@ -446,7 +442,7 @@ class Dumpulator(Architecture):
 
     def allocate(self, size, page_align=False):
         if not self._allocate_ptr:
-            self._uc.mem_map(self._allocate_base, self._allocate_size)
+            self.memory.reserve(self._allocate_base, self._allocate_size, MemoryProtect.PAGE_EXECUTE_READWRITE)
             self._allocate_ptr = self._allocate_base
 
         if page_align:
