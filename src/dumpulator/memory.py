@@ -1,5 +1,5 @@
 from enum import Enum, IntFlag, Flag
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Union
 import bisect
 
 PAGE_SIZE = 0x1000
@@ -44,13 +44,14 @@ class MemoryBasicInformation:
         return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
 
 class MemoryRegion:
-    def __init__(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS, type: MemoryType = MemoryType.MEM_PRIVATE):
+    def __init__(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS, type: MemoryType = MemoryType.MEM_PRIVATE, comment: str = ""):
         assert start & 0xFFF == 0
         assert size & 0xFFF == 0
         self.start = start
         self.size = size
         self.protect = protect
         self.type = type
+        self.comment = comment
 
     @property
     def end(self):
@@ -82,10 +83,13 @@ class MemoryRegion:
         raise TypeError()
 
     def __str__(self):
-        return f"{hex(self.start)}[{hex(self.size)}]"
+        result = f"{hex(self.start)}[{hex(self.size)}]"
+        if len(self.comment) > 0:
+            result += f" ({self.comment})"
+        return result
 
     def __repr__(self) -> str:
-        return f"MemoryRegion({hex(self.start)}, {hex(self.size)}, {self.protect}, {self.type})"
+        return f"MemoryRegion({hex(self.start)}, {hex(self.size)}, {self.protect}, {self.type}, {self.comment}"
 
     def pages(self):
         for page in range(self.start, self.end, PAGE_SIZE):
@@ -110,7 +114,9 @@ class MemoryManager:
         self._regions: List[MemoryRegion] = []
         self._committed: Dict[int, MemoryRegion] = {}
 
-    def find_parent(self, region: MemoryRegion):
+    def find_parent(self, region: Union[MemoryRegion, int]):
+        if isinstance(region, int):
+            region = MemoryRegion(self.page_align(region), 0)
         index = bisect.bisect_right(self._regions, region)
         if index == 0:
             return None
@@ -140,12 +146,12 @@ class MemoryManager:
             base += info.region_size
         return None
 
-    def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE):
+    def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, comment: str = ""):
         assert isinstance(protect, MemoryProtect)
         assert isinstance(type, MemoryType)
         assert size > 0 and self.page_align(size) == size
         assert self.allocation_align(start) == start
-        region = MemoryRegion(start, size, protect, type)
+        region = MemoryRegion(start, size, protect, type, comment)
         if region.start < self._minimum or region.end > self._maximum:
             raise KeyError(f"Requested region {region} is out of bounds")
 
@@ -166,7 +172,7 @@ class MemoryManager:
     def release(self, start: int):
         assert self.allocation_align(start) == start
 
-        parent_region = self.find_parent(MemoryRegion(start, 0))
+        parent_region = self.find_parent(start)
         if parent_region is None:
             raise KeyError(f"Could not find parent for {hex(start)}")
         if parent_region.start != start:

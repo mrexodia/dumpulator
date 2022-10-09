@@ -183,8 +183,6 @@ class Dumpulator(Architecture):
             info = region[0]
             emu_addr = info.BaseAddress & self.addr_mask
             if info.State == minidump.MemoryState.MEM_FREE:
-                if emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
-                    self._allocate_base = emu_addr
                 continue
             reserve_protect = MemoryProtect(info.AllocationProtect)
             reserve_type = MemoryType(info.Type.value)
@@ -438,17 +436,26 @@ class Dumpulator(Architecture):
 
     def allocate(self, size, page_align=False):
         if not self._allocate_ptr:
-            self.memory.reserve(self._allocate_base, self._allocate_size, MemoryProtect.PAGE_EXECUTE_READWRITE)
+            self._allocate_base = self.memory.find_free(self._allocate_size)
+            self.memory.reserve(
+                start=self._allocate_base,
+                size=self._allocate_size,
+                protect=MemoryProtect.PAGE_EXECUTE_READWRITE,
+                type=MemoryType.MEM_PRIVATE,
+                comment="allocated region"
+            )
             self._allocate_ptr = self._allocate_base
 
         if page_align:
             self._allocate_ptr = round_to_pages(self._allocate_ptr)
             size = round_to_pages(size)
 
-        ptr = self._allocate_ptr + size
-        if ptr > self._allocate_base + self._allocate_size:
+        if self._allocate_ptr + size > self._allocate_base + self._allocate_size:
             raise Exception("not enough room to allocate!")
-        self._allocate_ptr = ptr
+
+        ptr = self._allocate_ptr
+        self._allocate_ptr += size
+        self.memory.commit(self.memory.page_align(ptr), self.memory.page_align(size))
         return ptr
 
     def handle_exception(self):

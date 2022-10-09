@@ -3239,7 +3239,7 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
             ReturnLength.write_ulong(ctypes.sizeof(mbi))
         return STATUS_SUCCESS
     elif MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryRegionInformation:
-        parent_region = dp.memory.find_parent(MemoryRegion(BaseAddress.ptr, 0))
+        parent_region = dp.memory.find_parent(BaseAddress.ptr)
         mri = MEMORY_REGION_INFORMATION(dp)
         mri.AllocationBase = parent_region.start
         mri.AllocationProtect = parent_region.protect
