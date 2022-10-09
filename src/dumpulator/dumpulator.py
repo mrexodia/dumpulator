@@ -418,10 +418,6 @@ class Dumpulator(Architecture):
     def write(self, addr, data):
         self._uc.mem_write(addr, data)
 
-    def protect(self, addr, size, protect):
-        perms = map_unicorn_perms(protect)
-        self._uc.mem_protect(addr, size, perms)
-
     def call(self, addr, args: List[int] = [], regs: dict = {}, count=0):
         # allow passing custom registers
         for name, value in regs.items():
@@ -669,17 +665,17 @@ rsp in KiUserExceptionDispatcher:
         section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
         assert section_alignment == 0x1000
         if requested_base == 0:
-            image_base = self.allocate(image_size, True)
+            image_base = self.memory.find_free(image_size)
         else:
             image_base = requested_base
-            self._uc.mem_map(image_base, image_size)
+        self.memory.reserve(image_base, image_size, MemoryProtect.PAGE_EXECUTE_WRITECOPY)
 
         # TODO: map the header properly
         header = pe.header
         header_size = pe.sections[0].VirtualAddress_adj
         print(f"Mapping header {hex(image_base)}[{hex(header_size)}]")
+        self.memory.commit(image_base, header_size, MemoryProtect.PAGE_READONLY)
         self.write(image_base, header)
-        self.protect(image_base, header_size, PAGE_READONLY)
 
         for section in pe.sections:
             name = section.Name.rstrip(b"\0")
@@ -693,14 +689,14 @@ rsp in KiUserExceptionDispatcher:
             assert flags & IMAGE_SCN_MEM_READ != 0
             execute = flags & IMAGE_SCN_MEM_EXECUTE
             write = flags & IMAGE_SCN_MEM_WRITE
-            protect = PAGE_READONLY
+            protect = MemoryProtect.PAGE_READONLY
             if write:
-                protect = PAGE_READWRITE
+                protect = MemoryProtect.PAGE_READWRITE
             if execute:
-                protect <<= 4
-            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)}")
+                protect = MemoryProtect(protect.value << 4)
+            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)} as {protect}")
+            self.memory.commit(va, size, protect)
             self.write(va, data)
-            self.protect(va, size, protect)
 
         # TODO: implement relocations
         reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]

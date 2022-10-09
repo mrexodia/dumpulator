@@ -129,6 +129,17 @@ class MemoryManager:
         mask = self._granularity - 1
         return (addr + mask) & ~mask
 
+    def find_free(self, size: int):
+        assert size > 0 and self.page_align(size) == size
+        base = self._minimum
+        while base < self._maximum:
+            info = self.query(base)
+            assert info.base == base
+            if info.state == MemoryState.MEM_FREE and info.region_size >= size and self.allocation_align(base) == base:
+                return info.base
+            base += info.region_size
+        return None
+
     def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE):
         assert isinstance(protect, MemoryProtect)
         assert isinstance(type, MemoryType)
