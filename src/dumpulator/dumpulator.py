@@ -15,6 +15,7 @@ from pefile import *
 from .handles import HandleManager, FileObject
 from .native import *
 from .details import *
+from .memory import *
 from capstone import *
 from capstone.x86_const import *
 
@@ -55,6 +56,20 @@ class ExceptionInfo:
     def __str__(self):
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
 
+class UnicornPageManager(PageManager):
+    def __init__(self, uc: Uc):
+        self._uc = uc
+
+    def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        perms = map_unicorn_perms(protect)
+        self._uc.mem_map(addr, size, perms)
+
+    def decommit(self, addr: int, size: int) -> None:
+        self._uc.mem_unmap(addr, size)
+
+    def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        self._uc.mem_protect(addr, size, map_unicorn_perms(protect))
+
 class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
         self._quiet = quiet
@@ -87,6 +102,7 @@ class Dumpulator(Architecture):
 
         self.regs = Registers(self._uc, self._x64)
         self.args = Arguments(self._uc, self.regs, self._x64)
+        self.memory = MemoryManager(UnicornPageManager(self._uc))
         self._allocate_base = None
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
@@ -147,16 +163,38 @@ class Dumpulator(Architecture):
         self._uc.mem_write(KERNEL_CAVE, bytes(kernel_code))
 
         info: minidump.MinidumpMemoryInfo
+        regions: List[List[minidump.MinidumpMemoryInfo]] = []
         for info in self._minidump.memory_info.infos:
+            if len(regions) == 0 or info.AllocationBase != regions[-1][0].AllocationBase or info.State == minidump.MemoryState.MEM_FREE:
+                regions.append([])
+            regions[-1].append(info)
+        # NOTE: The HYPERVISOR_SHARED_DATA does not respect the allocation granularity
+        self.memory._granularity = PAGE_SIZE
+        for i in range(len(regions)):
+            region = regions[i]
+            reserve_addr = None
+            reserve_size = 0
+            assert len(region) >= 1
+            for j in range(len(region)):
+                info = region[j]
+                if reserve_addr is None:
+                    reserve_addr = info.BaseAddress
+                reserve_size += info.RegionSize
+            info = region[0]
             emu_addr = info.BaseAddress & self.addr_mask
-            if info.State == minidump.MemoryState.MEM_COMMIT:
-                self.info(f"committed: 0x{emu_addr:x}, size: 0x{info.RegionSize:x}, protect: {info.Protect}")
-                self._uc.mem_map(emu_addr, info.RegionSize, map_unicorn_perms(info.Protect))
-            elif info.State == minidump.MemoryState.MEM_FREE and emu_addr > 0x10000 and info.RegionSize >= self._allocate_size:
-                self._allocate_base = emu_addr
-            elif info.State == minidump.MemoryState.MEM_RESERVE:
-                self.info(f"reserved: {hex(emu_addr)}, size: {hex(info.RegionSize)}")
-                self._uc.mem_map(emu_addr, info.RegionSize, UC_PROT_NONE)
+            if info.State == minidump.MemoryState.MEM_FREE:
+                continue
+            reserve_protect = MemoryProtect(info.AllocationProtect)
+            reserve_type = MemoryType(info.Type.value)
+            print(f" reserved: {hex(reserve_addr)}, size: {hex(reserve_size)}, protect: {reserve_protect}, type: {reserve_type}")
+            self.memory.reserve(reserve_addr, reserve_size, reserve_protect, reserve_type)
+            for info in region:
+                emu_addr = info.BaseAddress & self.addr_mask
+                if info.State == minidump.MemoryState.MEM_COMMIT:
+                    protect = reserve_protect if info.Protect is None else MemoryProtect(info.Protect.value)
+                    print(f"committed: {hex(emu_addr)}, size: {hex(info.RegionSize)}, protect: {protect}")
+                    self.memory.commit(info.BaseAddress, info.RegionSize, protect)
+        self.memory._granularity = 0x10000
 
         memory = self._minidump.get_reader().get_buffered_reader()
         seg: minidump.MinidumpMemorySegment
@@ -378,10 +416,6 @@ class Dumpulator(Architecture):
     def write(self, addr, data):
         self._uc.mem_write(addr, data)
 
-    def protect(self, addr, size, protect):
-        perms = map_unicorn_perms(protect)
-        self._uc.mem_protect(addr, size, perms)
-
     def call(self, addr, args: List[int] = [], regs: dict = {}, count=0):
         # allow passing custom registers
         for name, value in regs.items():
@@ -402,17 +436,26 @@ class Dumpulator(Architecture):
 
     def allocate(self, size, page_align=False):
         if not self._allocate_ptr:
-            self._uc.mem_map(self._allocate_base, self._allocate_size)
+            self._allocate_base = self.memory.find_free(self._allocate_size)
+            self.memory.reserve(
+                start=self._allocate_base,
+                size=self._allocate_size,
+                protect=MemoryProtect.PAGE_EXECUTE_READWRITE,
+                type=MemoryType.MEM_PRIVATE,
+                comment="allocated region"
+            )
             self._allocate_ptr = self._allocate_base
 
         if page_align:
             self._allocate_ptr = round_to_pages(self._allocate_ptr)
             size = round_to_pages(size)
 
-        ptr = self._allocate_ptr + size
-        if ptr > self._allocate_base + self._allocate_size:
+        if self._allocate_ptr + size > self._allocate_base + self._allocate_size:
             raise Exception("not enough room to allocate!")
-        self._allocate_ptr = ptr
+
+        ptr = self._allocate_ptr
+        self._allocate_ptr += size
+        self.memory.commit(self.memory.page_align(ptr), self.memory.page_align(size))
         return ptr
 
     def handle_exception(self):
@@ -445,7 +488,7 @@ rsp in KiUserExceptionDispatcher:
       alignment        @ rsp + 588 : 8
       MACHINE_FRAME    @ rsp + 590 : 28                       | alignas(16) from RSP in exception / xstate
       alignment        @ rsp + 5b8 : 8
-      xstate           @ rsp + 5c0 : CONTEXT_EX.Xstate.Length | alignas(64) from RSP in exception 
+      xstate           @ rsp + 5c0 : CONTEXT_EX.Xstate.Length | alignas(64) from RSP in exception
             """
             allocation_size = 0x720
             context_flags = 0x10005F
@@ -629,17 +672,17 @@ rsp in KiUserExceptionDispatcher:
         section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
         assert section_alignment == 0x1000
         if requested_base == 0:
-            image_base = self.allocate(image_size, True)
+            image_base = self.memory.find_free(image_size)
         else:
             image_base = requested_base
-            self._uc.mem_map(image_base, image_size)
+        self.memory.reserve(image_base, image_size, MemoryProtect.PAGE_EXECUTE_WRITECOPY)
 
         # TODO: map the header properly
         header = pe.header
         header_size = pe.sections[0].VirtualAddress_adj
         print(f"Mapping header {hex(image_base)}[{hex(header_size)}]")
+        self.memory.commit(image_base, header_size, MemoryProtect.PAGE_READONLY)
         self.write(image_base, header)
-        self.protect(image_base, header_size, PAGE_READONLY)
 
         for section in pe.sections:
             name = section.Name.rstrip(b"\0")
@@ -653,14 +696,14 @@ rsp in KiUserExceptionDispatcher:
             assert flags & IMAGE_SCN_MEM_READ != 0
             execute = flags & IMAGE_SCN_MEM_EXECUTE
             write = flags & IMAGE_SCN_MEM_WRITE
-            protect = PAGE_READONLY
+            protect = MemoryProtect.PAGE_READONLY
             if write:
-                protect = PAGE_READWRITE
+                protect = MemoryProtect.PAGE_READWRITE
             if execute:
-                protect <<= 4
-            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)}")
+                protect = MemoryProtect(protect.value << 4)
+            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)} as {protect}")
+            self.memory.commit(va, size, protect)
             self.write(va, data)
-            self.protect(va, size, protect)
 
         # TODO: implement relocations
         reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]

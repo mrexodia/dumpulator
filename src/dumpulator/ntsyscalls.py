@@ -1,9 +1,11 @@
 import ctypes
 import struct
 import unicorn
+
 from .dumpulator import Dumpulator, syscall_functions, ExceptionInfo, ExceptionType
 from .native import *
 from .handles import *
+from .memory import *
 from pathlib import Path
 
 
@@ -303,33 +305,29 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
                             ):
     assert ZeroBits == 0
     assert ProcessHandle == dp.NtCurrentProcess()
-    assert Protect == PAGE_READWRITE
     base = dp.read_ptr(BaseAddress.ptr)
     assert base & 0xFFF == 0
     size = round_to_pages(dp.read_ptr(RegionSize.ptr))
     assert size != 0
+    protect = MemoryProtect(Protect)
     if AllocationType == MEM_COMMIT:
         if base == 0:
             base = dp.allocate(size, True)
         print(f"commit({hex(base)}[{hex(size)}])")
-        dp._uc.mem_protect(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
+        dp.memory.commit(base, size, protect)
     elif AllocationType == MEM_RESERVE:
         if base == 0:
-            base = dp.allocate(size, True)
-            dp._uc.mem_protect(base, size, unicorn.UC_PROT_NONE)
+            base = dp.memory.find_free(size)
             BaseAddress.write_ptr(base)
-        else:
-            dp._uc.mem_map(base, size, unicorn.UC_PROT_NONE)
         print(f"reserve({hex(base)}[{hex(size)}])")
+        dp.memory.reserve(base, size, protect)
     elif AllocationType == MEM_COMMIT | MEM_RESERVE:
         if base == 0:
-            base = dp.allocate(size, True)
-            dp._uc.mem_protect(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
+            base = dp.memory.find_free(size)
             BaseAddress.write_ptr(base)
-        else:
-            dp._uc.mem_map(base, size, unicorn.UC_PROT_READ | unicorn.UC_PROT_WRITE)
         print(f"reserve+commit({hex(base)}[{hex(size)}])")
-        return STATUS_SUCCESS
+        dp.memory.reserve(base, size, protect)
+        dp.memory.commit(base, size)
     else:
         assert False
     return STATUS_SUCCESS
@@ -2129,7 +2127,7 @@ def ZwMapViewOfSection(dp: Dumpulator,
     section = dp.handles.get(SectionHandle, SectionObject)
     data = section.file.read()
     image_base, image_size, pe = dp.map_module(data, section.file.path, requested_base)
-    
+
     # Handle out parameters
     BaseAddress.write_ptr(image_base)
     ViewSize.write_ptr(image_size)
@@ -2613,10 +2611,11 @@ def ZwProtectVirtualMemory(dp: Dumpulator,
                            ):
     base = BaseAddress.read_ptr() & 0xFFFFFFFFFFFFF000
     size = round_to_pages(RegionSize.read_ptr())
+    protect = MemoryProtect(NewProtect)
 
-    print(f"protect {base:x}[{size:x}] = {NewProtect:x}")
-    dp.protect(base, size, NewProtect)
-    # TODO: OldProtect is not implemented
+    print(f"protect {hex(base)}[{hex(size)}] = {protect}")
+    old_protect = dp.memory.protect(base, size, protect)
+    OldProtect.write_ulong(old_protect.value)
     return STATUS_SUCCESS
 
 @syscall
@@ -3225,47 +3224,33 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          ):
     assert ProcessHandle == dp.NtCurrentProcess()
     if MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryBasicInformation:
-        info = MEMORY_BASIC_INFORMATION(dp)
         assert MemoryInformationLength == ctypes.sizeof(info)
-        # TODO: hardcoded for the example
-        if BaseAddress.ptr in [0x140001050, 0x140001e00]:
-            info.BaseAddress = 0x140001000
-            info.AllocationBase = 0x140000000
-            info.RegionSize = 0xD000
-        elif BaseAddress.ptr in [0x401aef, 0x401080]:
-            info.BaseAddress = 0x401000
-            info.AllocationBase = 0x400000
-            info.RegionSize = 0xC000
-        else:
-            raise NotImplementedError()
-        info.AllocationProtect = PAGE_EXECUTE_WRITECOPY
-        info.ParitionId = 0
-        info.State = MEM_COMMIT
-        info.Type = MEM_IMAGE
-        MemoryInformation.write(bytes(info))
+        info = dp.memory.query(BaseAddress.ptr)
+        mbi = MEMORY_BASIC_INFORMATION(dp)
+        mbi.BaseAddress = info.base
+        mbi.AllocationBase = info.allocation_base
+        mbi.AllocationProtect = info.allocation_protect
+        mbi.RegionSize = info.region_size
+        mbi.State = info.state.value
+        mbi.Protect = info.protect.value
+        mbi.Type = info.type.value
+        MemoryInformation.write(bytes(mbi))
         if ReturnLength.ptr:
-            ReturnLength.write_ulong(ctypes.sizeof(info))
+            ReturnLength.write_ulong(ctypes.sizeof(mbi))
         return STATUS_SUCCESS
     elif MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryRegionInformation:
-        info = MEMORY_REGION_INFORMATION(dp)
-        assert MemoryInformationLength >= ctypes.sizeof(info)
-        # TODO: hardcoded for the example
-        if BaseAddress.ptr in [0x140001050, 0x140001e00]:
-            info.AllocationBase = 0x140000000
-            info.RegionSize = 0x1c000  # ImageSize
-        elif BaseAddress.ptr in [0x401aef, 0x401080]:
-            info.AllocationBase = 0x400000
-            info.RegionSize = 0x16000  # ImageSize
-            pass
-        else:
-            raise NotImplementedError()
-        info.AllocationProtect = PAGE_EXECUTE_WRITECOPY
-        info.Flags = REGION_MAPPED_IMAGE
-        info.CommitSize = info.RegionSize
-        MemoryInformation.write(bytes(info))
-        extra_size = MemoryInformationLength - ctypes.sizeof(info)
+        parent_region = dp.memory.find_parent(BaseAddress.ptr)
+        mri = MEMORY_REGION_INFORMATION(dp)
+        mri.AllocationBase = parent_region.start
+        mri.AllocationProtect = parent_region.protect
+        mri.Flags = REGION_MAPPED_IMAGE if parent_region.type == MemoryType.MEM_IMAGE else REGION_PRIVATE
+        mri.RegionSize = parent_region.size
+        mri.CommitSize = parent_region.size  # TODO
+        assert MemoryInformationLength >= ctypes.sizeof(mri)
+        MemoryInformation.write(bytes(mri))
+        extra_size = MemoryInformationLength - ctypes.sizeof(mri)
         if extra_size > 0:
-            dp.write(MemoryInformation.ptr + ctypes.sizeof(info), b"\x69" * extra_size)
+            dp.write(MemoryInformation.ptr + ctypes.sizeof(mri), b"\x69" * extra_size)
         if ReturnLength.ptr:
             ReturnLength.write_ulong(MemoryInformationLength)
         return STATUS_SUCCESS
