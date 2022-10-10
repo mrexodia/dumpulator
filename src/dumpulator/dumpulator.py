@@ -16,6 +16,7 @@ from .handles import HandleManager, FileObject
 from .native import *
 from .details import *
 from .memory import *
+from .modules import *
 from capstone import *
 from capstone.x86_const import *
 
@@ -91,7 +92,7 @@ class Dumpulator(Architecture):
         else:
             self.trace = None
 
-        self.last_module: Optional[minidump.MinidumpModule] = None
+        self.last_module: Optional[Module] = None
 
         self._uc = Uc(UC_ARCH_X86, UC_MODE_64)
 
@@ -103,15 +104,18 @@ class Dumpulator(Architecture):
         self.regs = Registers(self._uc, self._x64)
         self.args = Arguments(self._uc, self.regs, self._x64)
         self.memory = MemoryManager(UnicornPageManager(self._uc))
+        self.modules = ModuleManager(self.memory)
         self._allocate_base = None
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
+        self._setup_memory()
+        self._setup_modules()
         self._setup_emulator(thread)
         self.kill_me = None
         self.exit_code = None
         self.syscalls = []
         self._setup_syscalls()
-        self.exports = self._setup_exports()
+        self.exports = self._all_exports()
         self.handles = HandleManager()
         self.exception = ExceptionInfo()
         self.last_exception: Optional[ExceptionInfo] = None
@@ -152,16 +156,7 @@ class Dumpulator(Architecture):
             self.write(GDT_BASE + 8 * i, struct.pack("<Q", windows_gdt[i]))
         self.regs.gdtr = (0, GDT_BASE, 8 * len(windows_gdt) - 1, 0x0)
 
-    def _setup_emulator(self, thread):
-        # map in codecaves (TODO: can be mapped as UC_PROT_NONE unless used)
-        self._uc.mem_map(USER_CAVE, PAGE_SIZE)
-        self._uc.mem_write(USER_CAVE, b"\xCC" * PAGE_SIZE)
-        self._uc.mem_map(KERNEL_CAVE, PAGE_SIZE)
-        kernel_code = bytearray(b"\xCC" * (PAGE_SIZE // 2) + b"\x00" * (PAGE_SIZE // 2))
-        kernel_code[IRETQ_OFFSET] = 0x48
-        kernel_code[IRETD_OFFSET] = 0xCF
-        self._uc.mem_write(KERNEL_CAVE, bytes(kernel_code))
-
+    def _setup_memory(self):
         info: minidump.MinidumpMemoryInfo
         regions: List[List[minidump.MinidumpMemoryInfo]] = []
         for info in self._minidump.memory_info.infos:
@@ -205,6 +200,17 @@ class Dumpulator(Architecture):
             assert memory.current_position == seg.start_virtual_address
             data = memory.read(seg.size)
             self._uc.mem_write(emu_addr, data)
+
+    def _setup_emulator(self, thread):
+        # TODO: map these using self.memory instead
+        # map in codecaves (TODO: can be mapped as UC_PROT_NONE unless used)
+        self._uc.mem_map(USER_CAVE, PAGE_SIZE)
+        self._uc.mem_write(USER_CAVE, b"\xCC" * PAGE_SIZE)
+        self._uc.mem_map(KERNEL_CAVE, PAGE_SIZE)
+        kernel_code = bytearray(b"\xCC" * (PAGE_SIZE // 2) + b"\x00" * (PAGE_SIZE // 2))
+        kernel_code[IRETQ_OFFSET] = 0x48
+        kernel_code[IRETD_OFFSET] = 0xCF
+        self._uc.mem_write(KERNEL_CAVE, bytes(kernel_code))
 
         # Set up context
         self._setup_gdt()
@@ -332,33 +338,16 @@ class Dumpulator(Architecture):
         self.info(f"  StandardOutput: 0x{self.stdout_handle:x}")
         self.info(f"  StandardError: 0x{self.stderr_handle:x}")
 
-    def _setup_exports(self):
-        exports = {}
-        for module in self._minidump.modules.modules:
-            module_name = module.name.split('\\')[-1].lower()
-            self.info(f"{module_name} 0x{module.baseaddress:x}[0x{module.size:x}]")
-            for export in self._parse_module_exports(module):
+    def _all_exports(self):
+        exports: Dict[int, str] = {}
+        for module in self.modules:
+            for export in module.exports:
                 if export.name:
-                    name = export.name.decode("utf-8")
+                    name = export.name
                 else:
                     name = f"#{export.ordinal}"
-                exports[module.baseaddress + export.address] = f"{module_name}:{name}"
+                exports[export.address] = f"{module.name}:{name}"
         return exports
-
-    def _find_module(self, name) -> minidump.MinidumpModule:
-        module: minidump.MinidumpModule
-        for module in self._minidump.modules.modules:
-            filename = module.name.split('\\')[-1].lower()
-            if filename == name.lower():
-                return module
-        raise Exception(f"Module '{name}' not found")
-
-    def find_module_by_addr(self, address) -> Optional[minidump.MinidumpModule]:
-        module: minidump.MinidumpModule
-        for module in self._minidump.modules.modules:
-            if module.baseaddress <= address < module.baseaddress + module.size:
-                return module
-        return None
 
     def _parse_module_exports(self, module):
         try:
@@ -376,25 +365,60 @@ class Dumpulator(Architecture):
         pe.parse_data_directories(directories=[DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]])
         return pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(pe, "DIRECTORY_ENTRY_EXPORT") else []
 
+    def _setup_modules(self):
+        minidump_module: minidump.MinidumpModule
+        for minidump_module in self._minidump.modules.modules:
+            module = self.modules.add(minidump_module.baseaddress, minidump_module.size, minidump_module.name)
+            header = self.read(module.base, PAGE_SIZE)
+            pe = PE(data=header, fast_load=True)
+            image_size = pe.OPTIONAL_HEADER.SizeOfImage
+            section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
+            mapped_data = bytearray(header)
+            mapped_data += b"\0" * (image_size - len(header))
+            for section in pe.sections:
+                name = section.Name.rstrip(b"\0").decode()
+                mask = section_alignment - 1
+                rva = (section.VirtualAddress + mask) & ~mask
+                size = self.memory.align_page(section.Misc_VirtualSize)
+                va = module.base + rva
+                for page in range(va, va + size, PAGE_SIZE):
+                    region = self.memory.find_commit(page)
+                    if region is not None:
+                        region.info = name
+                try:
+                    data = self.read(va, size)
+                    mapped_data[rva:size] = data
+                except UcError:
+                    self.error(f"Failed to read section {name} from module {module.path}")
+            # Load the PE dumped from memory
+            pe = PE(data=mapped_data, fast_load=True)
+            # Hack to adjust pefile to accept in-memory modules
+            for section in pe.sections:
+                # Potentially interesting members: Misc_PhysicalAddress, Misc_VirtualSize, SizeOfRawData
+                section.PointerToRawData = section.VirtualAddress
+                section.PointerToRawData_adj = section.VirtualAddress
+            # Extract the relevant information from the PE
+            module.parse_pe(pe)
+
+
     def _setup_syscalls(self):
         # Load the ntdll module from memory
-        ntdll = self._find_module("ntdll.dll")
+        ntdll = self.modules["ntdll.dll"]
         syscalls = []
-        for export in self._parse_module_exports(ntdll):
-            if export.name and export.name.startswith(b"Zw"):
-                syscalls.append((export.address, export.name.decode("utf-8")))
-            elif export.name == b"Wow64Transition":
-                addr = ntdll.baseaddress + export.address
-                patch_addr = self.read_ptr(addr)
-                self.info(f"Patching Wow64Transition: {addr:x} -> {patch_addr:x}")
+        for export in ntdll.exports:
+            if export.name and export.name.startswith("Zw"):
+                syscalls.append((export.address, export.name))
+            elif export.name == "Wow64Transition":
+                patch_addr = self.read_ptr(export.address)
+                self.info(f"Patching Wow64Transition: {export.address:x} -> {patch_addr:x}")
                 # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
                 # mov edx, esp; sysenter; ret
                 KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
                 self.write(patch_addr, KiFastSystemCall)
-            elif export.name == b"KiUserExceptionDispatcher":
-                self.KiUserExceptionDispatcher = ntdll.baseaddress + export.address
-            elif export.name == b"LdrLoadDll":
-                self.LdrLoadDll = ntdll.baseaddress + export.address
+            elif export.name == "KiUserExceptionDispatcher":
+                self.KiUserExceptionDispatcher = export.address
+            elif export.name == "LdrLoadDll":
+                self.LdrLoadDll = export.address
 
         syscalls.sort()
         for index, (rva, name) in enumerate(syscalls):
@@ -670,7 +694,7 @@ rsp in KiUserExceptionDispatcher:
         pe = PE(name=None, data=file_data)
         image_size = pe.OPTIONAL_HEADER.SizeOfImage
         section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
-        assert section_alignment == 0x1000
+        assert section_alignment == 0x1000  # TODO
         if requested_base == 0:
             image_base = self.memory.find_free(image_size)
         else:
@@ -869,14 +893,14 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     address_name = dp.exports.get(address, "")
 
     module = ""
-    if dp.last_module and dp.last_module.baseaddress <= address < dp.last_module.baseaddress + dp.last_module.size:
+    if dp.last_module and address in dp.last_module:
         # same module again
         pass
     else:
         # new module
-        dp.last_module = dp.find_module_by_addr(address)
+        dp.last_module = dp.modules.find(address)
         if dp.last_module:
-            module = dp.last_module.name.split("\\")[-1].lower()
+            module = dp.last_module.name
 
     if address_name:
         address_name = " " + address_name

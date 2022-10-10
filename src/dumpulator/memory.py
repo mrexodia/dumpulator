@@ -127,6 +127,10 @@ class MemoryManager:
             else:
                 return None
 
+    def find_commit(self, addr: int):
+        addr = self.align_page(addr)
+        return self._committed.get(addr, None)
+
     def align_page(self, addr: int):
         mask = PAGE_SIZE - 1
         return (addr + mask) & ~mask
