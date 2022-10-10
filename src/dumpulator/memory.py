@@ -208,8 +208,10 @@ class MemoryManager:
         else:
             for page in region.pages():
                 if page in self._committed:
-                    self._page_manager.protect(page, PAGE_SIZE, protect)
-                    self._committed[page].protect = protect
+                    page_region = self._committed[page]
+                    if page_region.protect != protect:
+                        self._page_manager.protect(page, PAGE_SIZE, protect)
+                        page_region.protect = protect
                 else:
                     self._page_manager.commit(page, PAGE_SIZE, protect)
                     self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
@@ -250,7 +252,9 @@ class MemoryManager:
         old_protect = self._committed[region.start].protect
         self._page_manager.protect(region.start, region.size, protect)
         for page in region.pages():
-            self._committed[page].protect = protect
+            page_region = self._committed[page]
+            if page_region.protect != protect:
+                page_region.protect = protect
 
         return old_protect
 
