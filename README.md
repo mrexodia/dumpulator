@@ -103,7 +103,7 @@ You can get the syscall parameters from [ntsyscalls.py](https://github.com/mrexo
 
 ## Collecting the dump
 
-There is a simple [x64dbg](https://github.com/x64dbg/x64dbg) plugin available called [MiniDumpPlugin](https://github.com/mrexodia/MiniDumpPlugin/releases). To create a dump, pause execution and execute the command `MiniDump my.dmp`.
+~~There is a simple [x64dbg](https://github.com/x64dbg/x64dbg) plugin available called [MiniDumpPlugin](https://github.com/mrexodia/MiniDumpPlugin/releases)~~ The [minidump](https://help.x64dbg.com/en/latest/commands/memory-operations/minidump.html) command has been integrated into x64dbg since 2022-10-10. To create a dump, pause execution and execute the command `MiniDump my.dmp`.
 
 ## Installation
 
