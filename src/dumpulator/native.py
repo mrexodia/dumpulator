@@ -508,19 +508,36 @@ def _RTL_PROCESS_MODULES(arch: Architecture, count: int):
     modules.NumberOfModules = count
     return modules
 
+class MEMORY_BASIC_INFORMATION32(ctypes.Structure):
+    _alignment_ = 8
+    _fields_ = [
+        ("BaseAddress", ctypes.c_uint32),
+        ("AllocationBase", ctypes.c_uint32),
+        ("AllocationProtect", ctypes.c_uint32),
+        ("RegionSize", ctypes.c_uint32),
+        ("State", ctypes.c_uint32),
+        ("Protect", ctypes.c_uint32),
+        ("Type", ctypes.c_uint32),
+    ]
+
+class MEMORY_BASIC_INFORMATION64(ctypes.Structure):
+    _alignment_ = 8
+    _fields_ = [
+        ("BaseAddress", ctypes.c_uint64),
+        ("AllocationBase", ctypes.c_uint64),
+        ("AllocationProtect", ctypes.c_uint32),
+        ("PartitionId", ctypes.c_uint16),
+        ("RegionSize", ctypes.c_uint64),
+        ("State", ctypes.c_uint32),
+        ("Protect", ctypes.c_uint32),
+        ("Type", ctypes.c_uint32),
+    ]
+
 def MEMORY_BASIC_INFORMATION(arch: Architecture):
-    class MEMORY_BASIC_INFORMATION(ctypes.Structure):
-        _alignment_ = arch.alignment()
-        _fields_ = [
-            ("BaseAddress", arch.ptr_type()),
-            ("AllocationBase", arch.ptr_type()),
-            ("AllocationProtect", ctypes.c_uint32),
-            ("RegionSize", ctypes.c_uint32),
-            ("State", ctypes.c_uint32),
-            ("Protect", ctypes.c_uint32),
-            ("Type", ctypes.c_uint32),
-        ]
-    return MEMORY_BASIC_INFORMATION()
+    if arch.ptr_size() == 8:
+        return MEMORY_BASIC_INFORMATION64()
+    else:
+        return MEMORY_BASIC_INFORMATION32()
 
 def MEMORY_REGION_INFORMATION(arch: Architecture):
     class MEMORY_REGION_INFORMATION(ctypes.Structure):

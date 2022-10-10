@@ -3224,12 +3224,12 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          ):
     assert ProcessHandle == dp.NtCurrentProcess()
     if MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryBasicInformation:
-        assert MemoryInformationLength == ctypes.sizeof(info)
         info = dp.memory.query(BaseAddress.ptr)
         mbi = MEMORY_BASIC_INFORMATION(dp)
+        assert MemoryInformationLength == ctypes.sizeof(mbi)
         mbi.BaseAddress = info.base
         mbi.AllocationBase = info.allocation_base
-        mbi.AllocationProtect = info.allocation_protect
+        mbi.AllocationProtect = info.allocation_protect.value
         mbi.RegionSize = info.region_size
         mbi.State = info.state.value
         mbi.Protect = info.protect.value
@@ -3242,7 +3242,7 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
         parent_region = dp.memory.find_region(BaseAddress.ptr)
         mri = MEMORY_REGION_INFORMATION(dp)
         mri.AllocationBase = parent_region.start
-        mri.AllocationProtect = parent_region.protect
+        mri.AllocationProtect = parent_region.protect.value
         mri.Flags = REGION_MAPPED_IMAGE if parent_region.type == MemoryType.MEM_IMAGE else REGION_PRIVATE
         mri.RegionSize = parent_region.size
         mri.CommitSize = parent_region.size  # TODO

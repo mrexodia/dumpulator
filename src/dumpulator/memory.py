@@ -255,7 +255,7 @@ class MemoryManager:
         return old_protect
 
     def query(self, start: int):
-        assert self.align_page(start) == start
+        start = self.align_page(start)
 
         region = MemoryRegion(start, 0)
         parent_region = self.find_region(region)
