@@ -114,9 +114,9 @@ class MemoryManager:
         self._regions: List[MemoryRegion] = []
         self._committed: Dict[int, MemoryRegion] = {}
 
-    def find_parent(self, region: Union[MemoryRegion, int]):
+    def find_region(self, region: Union[MemoryRegion, int]):
         if isinstance(region, int):
-            region = MemoryRegion(self.page_align(region), 0)
+            region = MemoryRegion(self.align_page(region), 0)
         index = bisect.bisect_right(self._regions, region)
         if index == 0:
             return None
@@ -127,21 +127,21 @@ class MemoryManager:
             else:
                 return None
 
-    def page_align(self, addr: int):
+    def align_page(self, addr: int):
         mask = PAGE_SIZE - 1
         return (addr + mask) & ~mask
 
-    def allocation_align(self, addr: int):
+    def align_allocation(self, addr: int):
         mask = self._granularity - 1
         return (addr + mask) & ~mask
 
     def find_free(self, size: int):
-        assert size > 0 and self.page_align(size) == size
+        assert size > 0 and self.align_page(size) == size
         base = self._minimum
         while base < self._maximum:
             info = self.query(base)
             assert info.base == base
-            if info.state == MemoryState.MEM_FREE and info.region_size >= size and self.allocation_align(base) == base:
+            if info.state == MemoryState.MEM_FREE and info.region_size >= size and self.align_allocation(base) == base:
                 return info.base
             base += info.region_size
         return None
@@ -149,8 +149,8 @@ class MemoryManager:
     def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, comment: str = ""):
         assert isinstance(protect, MemoryProtect)
         assert isinstance(type, MemoryType)
-        assert size > 0 and self.page_align(size) == size
-        assert self.allocation_align(start) == start
+        assert size > 0 and self.align_page(size) == size
+        assert self.align_allocation(start) == start
         region = MemoryRegion(start, size, protect, type, comment)
         if region.start < self._minimum or region.end > self._maximum:
             raise KeyError(f"Requested region {region} is out of bounds")
@@ -170,9 +170,9 @@ class MemoryManager:
         self._regions.insert(index, region)
 
     def release(self, start: int):
-        assert self.allocation_align(start) == start
+        assert self.align_allocation(start) == start
 
-        parent_region = self.find_parent(start)
+        parent_region = self.find_region(start)
         if parent_region is None:
             raise KeyError(f"Could not find parent for {hex(start)}")
         if parent_region.start != start:
@@ -191,10 +191,10 @@ class MemoryManager:
 
     def commit(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.UNDEFINED):
         assert isinstance(protect, MemoryProtect)
-        assert size > 0 and self.page_align(size) == size
-        assert self.page_align(start) == start
+        assert size > 0 and self.align_page(size) == size
+        assert self.align_page(start) == start
         region = MemoryRegion(start, size)
-        parent_region = self.find_parent(region)
+        parent_region = self.find_region(region)
         if parent_region is None:
             raise KeyError(f"Could not find parent for {region}")
 
@@ -215,10 +215,10 @@ class MemoryManager:
                     self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
 
     def decommit(self, start: int, size: int):
-        assert size > 0 and self.page_align(size) == size
-        assert self.page_align(start) == start
+        assert size > 0 and self.align_page(size) == size
+        assert self.align_page(start) == start
         region = MemoryRegion(start, size)
-        parent_region = self.find_parent(region)
+        parent_region = self.find_region(region)
         if parent_region is None:
             raise KeyError(f"Could not find parent for {region}")
 
@@ -234,10 +234,10 @@ class MemoryManager:
 
     def protect(self, start: int, size: int, protect: MemoryProtect):
         assert isinstance(protect, MemoryProtect)
-        assert size > 0 and self.page_align(size) == size
-        assert self.page_align(start) == start
+        assert size > 0 and self.align_page(size) == size
+        assert self.align_page(start) == start
         region = MemoryRegion(start, size)
-        parent_region = self.find_parent(region)
+        parent_region = self.find_region(region)
         if parent_region is None:
             raise KeyError(f"Could not find parent for {region}")
 
@@ -255,10 +255,10 @@ class MemoryManager:
         return old_protect
 
     def query(self, start: int):
-        assert self.page_align(start) == start
+        assert self.align_page(start) == start
 
         region = MemoryRegion(start, 0)
-        parent_region = self.find_parent(region)
+        parent_region = self.find_region(region)
         if parent_region is None:
             index = bisect.bisect_right(self._regions, region)
             next_start = self._maximum

@@ -455,7 +455,7 @@ class Dumpulator(Architecture):
 
         ptr = self._allocate_ptr
         self._allocate_ptr += size
-        self.memory.commit(self.memory.page_align(ptr), self.memory.page_align(size))
+        self.memory.commit(self.memory.align_page(ptr), self.memory.align_page(size))
         return ptr
 
     def handle_exception(self):
