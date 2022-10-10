@@ -44,14 +44,14 @@ class MemoryBasicInformation:
         return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
 
 class MemoryRegion:
-    def __init__(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS, type: MemoryType = MemoryType.MEM_PRIVATE, comment: str = ""):
+    def __init__(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None):
         assert start & 0xFFF == 0
         assert size & 0xFFF == 0
         self.start = start
         self.size = size
         self.protect = protect
         self.type = type
-        self.comment = comment
+        self.info = info
 
     @property
     def end(self):
@@ -84,12 +84,12 @@ class MemoryRegion:
 
     def __str__(self):
         result = f"{hex(self.start)}[{hex(self.size)}]"
-        if len(self.comment) > 0:
-            result += f" ({self.comment})"
+        if self.info is not None:
+            result += f" ({self.info})"
         return result
 
     def __repr__(self) -> str:
-        return f"MemoryRegion({hex(self.start)}, {hex(self.size)}, {self.protect}, {self.type}, {self.comment}"
+        return f"MemoryRegion({hex(self.start)}, {hex(self.size)}, {self.protect}, {self.type}, {repr(self.info)})"
 
     def pages(self):
         for page in range(self.start, self.end, PAGE_SIZE):
@@ -146,12 +146,12 @@ class MemoryManager:
             base += info.region_size
         return None
 
-    def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, comment: str = ""):
+    def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None):
         assert isinstance(protect, MemoryProtect)
         assert isinstance(type, MemoryType)
         assert size > 0 and self.align_page(size) == size
         assert self.align_allocation(start) == start
-        region = MemoryRegion(start, size, protect, type, comment)
+        region = MemoryRegion(start, size, protect, type, info)
         if region.start < self._minimum or region.end > self._maximum:
             raise KeyError(f"Requested region {region} is out of bounds")
 

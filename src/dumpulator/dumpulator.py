@@ -442,7 +442,7 @@ class Dumpulator(Architecture):
                 size=self._allocate_size,
                 protect=MemoryProtect.PAGE_EXECUTE_READWRITE,
                 type=MemoryType.MEM_PRIVATE,
-                comment="allocated region"
+                info="allocated region"
             )
             self._allocate_ptr = self._allocate_base
 
