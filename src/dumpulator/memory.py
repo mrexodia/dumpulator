@@ -30,19 +30,6 @@ class MemoryState(Enum):
     MEM_RESERVE = 0x2000
     MEM_FREE = 0x10000
 
-class MemoryBasicInformation:
-    def __init__(self, base: int, allocation_base: int, allocation_protect: MemoryProtect):
-        self.base = base
-        self.allocation_base = allocation_base
-        self.allocation_protect = allocation_protect
-        self.region_size: int = PAGE_SIZE
-        self.state: MemoryState = None
-        self.protect: MemoryProtect = None
-        self.type: MemoryType = None
-
-    def __str__(self):
-        return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
-
 class MemoryRegion:
     def __init__(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None):
         assert start & 0xFFF == 0
@@ -104,6 +91,20 @@ class PageManager:
 
     def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
         raise NotImplementedError()
+
+class MemoryBasicInformation:
+    def __init__(self, base: int, allocation_base: int, allocation_protect: MemoryProtect):
+        self.base = base
+        self.allocation_base = allocation_base
+        self.allocation_protect = allocation_protect
+        self.region_size: int = PAGE_SIZE
+        self.state: MemoryState = None
+        self.protect: MemoryProtect = None
+        self.type: MemoryType = None
+        self.info: Any = None
+
+    def __str__(self):
+        return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
 
 class MemoryManager:
     def __init__(self, page_manager: PageManager, minimum = 0x10000, maximum = 0x7fffffff0000, granularity = 0x10000):
@@ -287,11 +288,15 @@ class MemoryManager:
                 continue
             elif result is None:
                 result = MemoryBasicInformation(page, parent_region.start, parent_region.protect)
+                if page == parent_region.start:
+                    result.info = parent_region.info
                 if page in self._committed:
                     result.state = MemoryState.MEM_COMMIT
                     commited_page = self._committed[page]
                     result.protect = commited_page.protect
                     result.type = commited_page.type
+                    if commited_page.info:
+                        result.info = commited_page.info
                     assert commited_page.type == parent_region.type
                 else:
                     result.state = MemoryState.MEM_RESERVE
@@ -300,6 +305,8 @@ class MemoryManager:
             else:
                 commited_page = self._committed.get(page, None)
                 if result.state == MemoryState.MEM_RESERVE:
+                    if commited_page is not None:
+                        break
                     result.region_size += PAGE_SIZE
                 elif result.state == MemoryState.MEM_COMMIT:
                     if commited_page is not None and commited_page.type == result.type and commited_page.protect == result.protect:
