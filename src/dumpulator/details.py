@@ -1,5 +1,6 @@
 import struct
 from collections import namedtuple
+from typing import List
 
 from unicorn import *
 from unicorn.x86_const import *
@@ -563,3 +564,21 @@ interrupt_names = [
     "Reserved"
 ]
 assert len(interrupt_names) == 32
+
+def format_table(table: List[List[str]]):
+    result = ""
+    header = table[0]
+    lengths = [0] * len(header)
+    for row in table:
+        for index, col in enumerate(row):
+            lengths[index] = max(lengths[index], len(col))
+    for row in table:
+        if len(result) > 0:
+            result += "\n"
+        line = ""
+        for index, col in enumerate(row):
+            if index > 0:
+                line += " "
+            line += f"{col:>{lengths[index]}}"
+        result += line.rstrip()
+    return result
