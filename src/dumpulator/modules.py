@@ -11,21 +11,22 @@ class ModuleExport:
         self.name = name
 
 class Module:
-    def __init__(self, base: int, size: int, path: str):
-        self.base = base
-        self.size = size
+    def __init__(self, pe: pefile.PE, path: str):
+        self.pe = pe
         self.path = path
-        self.name = path.split('\\')[-1]
-        self.pe: pefile.PE = None
+        self.name = path.split("\\")[-1]
         self._exports_by_address: Dict[int, int] = {}
         self._exports_by_ordinal: Dict[int, int] = {}
         self._exports_by_name: Dict[str, int] = {}
         self.exports: List[ModuleExport] = []
+        self._parse_pe()
 
-    def parse_pe(self, pe: pefile.PE):
-        self.pe = pe
+    def _parse_pe(self):
+        self.base: int = self.pe.OPTIONAL_HEADER.ImageBase
+        self.size: int = self.pe.OPTIONAL_HEADER.SizeOfImage
+        self.entry: int = self.base + self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
         self.pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]])
-        pe_exports = pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(pe, "DIRECTORY_ENTRY_EXPORT") else []
+        pe_exports = self.pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(self.pe, "DIRECTORY_ENTRY_EXPORT") else []
         for pe_export in pe_exports:
             va = self.base + pe_export.address
             if pe_export.name:
@@ -66,11 +67,11 @@ class ModuleManager:
         self._name_lookup: Dict[str, int] = {}
         self._modules: Dict[int, Module] = {}
 
-    def add(self, base: int, size: int, path: str):
-        module = Module(base, size, path)
-        self._modules[base] = module
+    def add(self, pe: pefile.PE, path: str):
+        module = Module(pe, path)
+        self._modules[module.base] = module
         region = self._memory.find_region(module.base)
-        assert region.start == base
+        assert region.start == module.base
         assert region is not None
         region.info = module
         self._name_lookup[module.name] = module.base

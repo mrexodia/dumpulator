@@ -400,8 +400,12 @@ class Dumpulator(Architecture):
     def _setup_modules(self):
         minidump_module: minidump.MinidumpModule
         for minidump_module in self._minidump.modules.modules:
-            module = self.modules.add(minidump_module.baseaddress, minidump_module.size, minidump_module.name)
-            header = self.read(module.base, PAGE_SIZE)
+            base = minidump_module.baseaddress
+            size = minidump_module.size
+            path = minidump_module.name
+
+            # Parse the header to dump the sections from memory
+            header = self.read(base, PAGE_SIZE)
             pe = PE(data=header, fast_load=True)
             image_size = pe.OPTIONAL_HEADER.SizeOfImage
             section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
@@ -412,7 +416,7 @@ class Dumpulator(Architecture):
                 mask = section_alignment - 1
                 rva = (section.VirtualAddress + mask) & ~mask
                 size = self.memory.align_page(section.Misc_VirtualSize)
-                va = module.base + rva
+                va = base + rva
                 for page in range(va, va + size, PAGE_SIZE):
                     region = self.memory.find_commit(page)
                     if region is not None:
@@ -421,7 +425,7 @@ class Dumpulator(Architecture):
                     data = self.read(va, size)
                     mapped_data[rva:size] = data
                 except UcError:
-                    self.error(f"Failed to read section {name} from module {module.path}")
+                    self.error(f"Failed to read section {name} from module {path}")
             # Load the PE dumped from memory
             pe = PE(data=mapped_data, fast_load=True)
             # Hack to adjust pefile to accept in-memory modules
@@ -429,9 +433,7 @@ class Dumpulator(Architecture):
                 # Potentially interesting members: Misc_PhysicalAddress, Misc_VirtualSize, SizeOfRawData
                 section.PointerToRawData = section.VirtualAddress
                 section.PointerToRawData_adj = section.VirtualAddress
-            # Extract the relevant information from the PE
-            module.parse_pe(pe)
-
+            self.modules.add(pe, path)
 
     def _setup_syscalls(self):
         # Load the ntdll module from memory
@@ -816,9 +818,7 @@ rsp in KiUserExceptionDispatcher:
             self.write(va, data)
 
         # Add the module to the module manager
-        module = self.modules.add(image_base, image_size, file_path)
-        module.parse_pe(pe)
-        return module
+        return self.modules.add(pe, file_path)
 
     def load_dll(self, file_name: str, file_data: bytes):
         self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))
