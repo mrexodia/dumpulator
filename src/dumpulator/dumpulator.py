@@ -721,35 +721,89 @@ rsp in KiUserExceptionDispatcher:
     def NtCurrentThread(self):
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
 
-    def map_module(self, file_data: bytes, file_name: str = "", requested_base: int = 0):
-        print(f"Mapping module {file_name if file_name else '<unnamed>'}")
-        pe = PE(name=None, data=file_data)
+    def map_module(self, file_data: bytes, file_path: str = "", requested_base: int = 0):
+        if not file_path:
+            file_path = "<unnamed>"
+        print(f"Mapping module {file_path}")
+        pe = PE(name=None, data=bytearray(file_data))
         image_size = pe.OPTIONAL_HEADER.SizeOfImage
         section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
-        assert section_alignment == 0x1000  # TODO
+        assert section_alignment == 0x1000, f"Unsupported section alignment {hex(section_alignment)}"
+        bits = 64 if pe.PE_TYPE == OPTIONAL_HEADER_MAGIC_PE_PLUS else 32
+        assert bits == 8 * self.ptr_size(), f"PE architecture mismatch"
+
         if requested_base == 0:
             image_base = self.memory.find_free(image_size)
         else:
             image_base = requested_base
-        self.memory.reserve(image_base, image_size, MemoryProtect.PAGE_EXECUTE_WRITECOPY)
+        self.memory.reserve(image_base, image_size, MemoryProtect.PAGE_EXECUTE_WRITECOPY, MemoryType.MEM_MAPPED)
 
-        # TODO: map the header properly
-        header = pe.header
+        # Fix relocations, saves to pe.__data__ buffer
+        pe.relocate_image(image_base)
+        # NOTE: workaround for a bug in pefile where it doesn't set the image base if there are no relocations
+        pe.OPTIONAL_HEADER.ImageBase = image_base
+
+        # https://vtopan.wordpress.com/2019/04/12/patching-resolving-imports-in-a-pe-file-python-pefile/
+        # manually resolve imports
+        if hasattr(pe, "DIRECTORY_ENTRY_IMPORT"):
+            ordinal_flag = 2 ** (bits - 1)
+            for iid in pe.DIRECTORY_ENTRY_IMPORT:
+                dll_name = iid.dll.decode("utf-8").lower()
+                dll = self.modules.find(dll_name)
+                assert dll is not None, f"{dll_name} is not loaded"
+                self.info(f"resolving imports for {dll_name}")
+                ilt_rva = iid.struct.OriginalFirstThunk
+                ilt = pe.get_import_table(ilt_rva)
+                iat_rva = iid.struct.FirstThunk
+                iat = pe.get_import_table(iat_rva)
+                assert iat is not None, "iat is empty"
+                assert ilt is not None, "ilt is empty"
+                for idx in range(len(ilt)):
+                    hint_rva = ilt[idx].AddressOfData
+                    assert hint_rva is not None, "hint_rva is 0"
+                    if hint_rva & ordinal_flag:
+                        ordinal = f"#{hint_rva & 0xffff}"
+                        export = dll.find_export(ordinal)
+                        assert export is not None, f"Ordinal #{ordinal} not in {dll_name}"
+                        imp_va = export.address
+                        self.info(f"\t#{ordinal} = {hex(imp_va)}")
+                    else:
+                        hint = pe.get_word_from_data(pe.get_data(hint_rva, 2), 0)
+                        func_name = pe.get_string_at_rva(ilt[idx].AddressOfData + 2, MAX_IMPORT_NAME_LENGTH)
+                        func_name = func_name.decode("utf-8")
+                        export = dll.find_export(func_name)
+                        assert export is not None, f"Export {func_name} not in {dll_name}"
+                        imp_va = export.address
+                        self.info(f"\t{func_name} = {hex(imp_va)}")
+                    file_offset = iat[idx].get_field_absolute_offset("AddressOfData")
+                    if bits == 64:
+                        pe.__data__[file_offset:file_offset + 8] = struct.pack("<Q", imp_va)
+                    else:
+                        pe.__data__[file_offset:file_offset + 4] = struct.pack("<L", imp_va)
+
+        # HACK: apply the change to the ImageBase to the header bytes
+        file_offset = pe.OPTIONAL_HEADER.get_field_absolute_offset("ImageBase")
+        if bits == 64:
+            pe.__data__[file_offset:file_offset + 8] = struct.pack("<Q", image_base)
+        else:
+            pe.__data__[file_offset:file_offset + 4] = struct.pack("<L", image_base)
+        pe.header = pe.__data__[:len(pe.header)]
+        # TODO: map the header properly (figure out how the system assigns the size)
         header_size = pe.sections[0].VirtualAddress_adj
         print(f"Mapping header {hex(image_base)}[{hex(header_size)}]")
         self.memory.commit(image_base, header_size, MemoryProtect.PAGE_READONLY)
-        self.write(image_base, header)
+        self.write(image_base, bytes(pe.header))
 
         for section in pe.sections:
             name = section.Name.rstrip(b"\0")
-            rva = section.VirtualAddress_adj
-            va = image_base + rva
             mask = section_alignment - 1
-            size = (section.Misc_VirtualSize + mask) & ~mask
+            rva = (section.VirtualAddress_adj + mask) & ~mask
+            va = image_base + rva
+            size = self.memory.align_page(section.Misc_VirtualSize)
             flags = section.Characteristics
-            data = section.get_data()
-            assert flags & IMAGE_SCN_MEM_SHARED == 0
-            assert flags & IMAGE_SCN_MEM_READ != 0
+            data = bytes(section.get_data())
+            assert flags & IMAGE_SCN_MEM_SHARED == 0, "Shared sections are not supported"
+            assert flags & IMAGE_SCN_MEM_READ != 0, "Non-readable sections are not supported"
             execute = flags & IMAGE_SCN_MEM_EXECUTE
             write = flags & IMAGE_SCN_MEM_WRITE
             protect = MemoryProtect.PAGE_READONLY
@@ -757,16 +811,14 @@ rsp in KiUserExceptionDispatcher:
                 protect = MemoryProtect.PAGE_READWRITE
             if execute:
                 protect = MemoryProtect(protect.value << 4)
-            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)} as {protect}")
+            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)} as {protect.name}")
             self.memory.commit(va, size, protect)
             self.write(va, data)
 
-        # TODO: implement relocations
-        reloc_dir = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]
-        assert reloc_dir.VirtualAddress == 0 and reloc_dir.Size == 0
-        # TODO: set image base in header
-
-        return image_base, image_size, pe
+        # Add the module to the module manager
+        module = self.modules.add(image_base, image_size, file_path)
+        module.parse_pe(pe)
+        return module
 
     def load_dll(self, file_name: str, file_data: bytes):
         self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))

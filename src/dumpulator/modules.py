@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional, Type, Union, List
 
 import pefile
 from .memory import MemoryManager
@@ -17,7 +17,8 @@ class Module:
         self.path = path
         self.name = path.split('\\')[-1]
         self.pe: pefile.PE = None
-        self._exports_by_addr: Dict[int, int] = {}
+        self._exports_by_address: Dict[int, int] = {}
+        self._exports_by_ordinal: Dict[int, int] = {}
         self._exports_by_name: Dict[str, int] = {}
         self.exports: List[ModuleExport] = []
 
@@ -32,10 +33,26 @@ class Module:
             else:
                 name = None
             export = ModuleExport(va, pe_export.ordinal, name)
-            self._exports_by_addr[va] = len(self.exports)
+            self._exports_by_address[export.address] = len(self.exports)
+            self._exports_by_ordinal[export.ordinal] = len(self.exports)
             if name is not None:
                 self._exports_by_name[name] = len(self.exports)
             self.exports.append(export)
+
+    def find_export(self, key: Union[str, int]):
+        if isinstance(key, int):
+            index = self._exports_by_ordinal.get(key, None)
+            if index is None:
+                index = self._exports_by_address.get(key, None)
+            if index is None:
+                return None
+            return self.exports[index]
+        elif isinstance(key, str):
+            index = self._exports_by_name.get(key)
+            if index is None:
+                return None
+            return self.exports[index]
+        raise TypeError()
 
     def __repr__(self):
         return f"Module({hex(self.base)}, {hex(self.size)}, {repr(self.path)})"
@@ -71,6 +88,8 @@ class ModuleManager:
         if isinstance(key, str):
             base = self._name_lookup.get(key, None)
             if base is None:
+                base = self._name_lookup.get(key.lower(), None)
+            if base is None:
                 return None
             return self.find(base)
         raise TypeError()
@@ -80,6 +99,9 @@ class ModuleManager:
         if module is None:
             raise KeyError()
         return module
+
+    def __contains__(self, key: Union[str, int]):
+        return self.find(key) is not None
 
     def __iter__(self):
         for base in self._modules:
