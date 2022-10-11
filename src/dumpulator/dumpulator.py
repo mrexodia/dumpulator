@@ -74,6 +74,7 @@ class UnicornPageManager(PageManager):
 class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
         self._quiet = quiet
+        self._debug = False
 
         # Load the minidump
         self._minidump = minidump.MinidumpFile.parse(minidump_file)
@@ -119,6 +120,33 @@ class Dumpulator(Architecture):
         self.handles = HandleManager()
         self.exception = ExceptionInfo()
         self.last_exception: Optional[ExceptionInfo] = None
+        if not self._quiet:
+            print("Memory map:")
+            self.print_memory()
+
+    def print_memory(self):
+        regions = self.memory.map()
+        regions.pop()  # remove the last free region
+        table: List[List[str]] = []
+        header = ["Base", "Size", "State", "Protect", "Info"]
+        table.append(header)
+        for region in regions:
+            entry = [""] * len(header)
+            entry[0] = hex(region.base)
+            entry[1] = hex(region.region_size)
+            entry[2] = region.state.name
+            if region.state != MemoryState.MEM_FREE:
+                protect = region.protect
+                if region.state == MemoryState.MEM_RESERVE:
+                    protect = region.allocation_protect
+                entry[3] = protect.name
+                if isinstance(region.info, Module):
+                    module: Module = region.info
+                    entry[4] = f" {module.name}[{hex(module.size)}]"
+                elif region.info:
+                    entry[4] = str(region.info)
+            table.append(entry)
+        print(format_table(table))
 
     def _find_thread(self, thread_id):
         for i in range(0, len(self._minidump.threads.threads)):
@@ -126,6 +154,10 @@ class Dumpulator(Architecture):
             if thread.ThreadId == thread_id:
                 return thread
         raise Exception(f"Thread 0x{thread_id:x} ({thread_id}) not found!")
+
+    def debug(self, message: str):
+        if self._debug:
+            print(message)
 
     def info(self, message: str):
         if not self._quiet:
@@ -181,13 +213,13 @@ class Dumpulator(Architecture):
                 continue
             reserve_protect = MemoryProtect(info.AllocationProtect)
             reserve_type = MemoryType(info.Type.value)
-            print(f" reserved: {hex(reserve_addr)}, size: {hex(reserve_size)}, protect: {reserve_protect}, type: {reserve_type}")
+            self.debug(f" reserved: {hex(reserve_addr)}, size: {hex(reserve_size)}, protect: {reserve_protect}, type: {reserve_type}")
             self.memory.reserve(reserve_addr, reserve_size, reserve_protect, reserve_type)
             for info in region:
                 emu_addr = info.BaseAddress & self.addr_mask
                 if info.State == minidump.MemoryState.MEM_COMMIT:
                     protect = reserve_protect if info.Protect is None else MemoryProtect(info.Protect.value)
-                    print(f"committed: {hex(emu_addr)}, size: {hex(info.RegionSize)}, protect: {protect}")
+                    self.debug(f"committed: {hex(emu_addr)}, size: {hex(info.RegionSize)}, protect: {protect}")
                     self.memory.commit(info.BaseAddress, info.RegionSize, protect)
         self.memory._granularity = 0x10000
 
@@ -195,7 +227,7 @@ class Dumpulator(Architecture):
         seg: minidump.MinidumpMemorySegment
         for seg in self._minidump.memory_segments_64.memory_segments:
             emu_addr = seg.start_virtual_address & self.addr_mask
-            self.info(f"initialize base: 0x{emu_addr:x}, size: 0x{seg.size:x}")
+            self.debug(f"initialize base: 0x{emu_addr:x}, size: 0x{seg.size:x}")
             memory.move(seg.start_virtual_address)
             assert memory.current_position == seg.start_virtual_address
             data = memory.read(seg.size)

@@ -316,3 +316,12 @@ class MemoryManager:
                 else:
                     assert False  # unreachable
         return result
+
+    def map(self):
+        addr = self._minimum
+        regions: List[MemoryBasicInformation] = []
+        while addr < self._maximum:
+            info = self.query(addr)
+            regions.append(info)
+            addr += info.region_size
+        return regions
