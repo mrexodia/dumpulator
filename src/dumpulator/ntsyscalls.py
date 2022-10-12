@@ -630,7 +630,7 @@ def ZwCancelTimer(dp: Dumpulator,
                   TimerHandle: HANDLE,
                   CurrentState: P(BOOLEAN)
                   ):
-    raise NotImplementedError()
+    return STATUS_SUCCESS
 
 @syscall
 def ZwCancelTimer2(dp: Dumpulator,

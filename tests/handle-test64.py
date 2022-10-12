@@ -1,24 +1,20 @@
 from dumpulator import Dumpulator
 from dumpulator.native import *
 
-test_funcs = {
-    "console_output_test": 0x140001150,
-    "read_file_test": 0x140001170,
-    "write_file_test": 0x140001240,
-    "write_file_offset_test": 0x140001330,
-    "create_file_test": 0x140001420,
-}
-
-
 def main():
-    dp = Dumpulator("HandleTest_x64.dmp")
+    dp = Dumpulator("TestHarness_x64.dmp")
 
     dp.handles.create_file("test_file.txt", FILE_OPEN)
     dp.handles.create_file("nonexistant_file.txt", FILE_CREATE)
 
-    for name, addr in test_funcs.items():
-        print(f"\n---- calling {name} ----\n")
-        dp.call(addr)
+    with open("TestHarness/bin/HandleTest_x64.dll", "rb") as dll:
+        dll_data = dll.read()
+
+        dp.map_module(dll_data, "HandleTest_x64.dll")
+
+        for export in dp.modules["HandleTest_x64.dll"].exports:
+            print(f"\n---- calling {export.name} ----\n")
+            dp.call(export.address)
 
 
 if __name__ == '__main__':

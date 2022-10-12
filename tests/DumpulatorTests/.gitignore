@@ -1,0 +1,5 @@
+bin/
+_obj/
+.vs/
+*.user
+*.exp
