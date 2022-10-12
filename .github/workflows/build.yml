@@ -54,6 +54,9 @@ jobs:
         password: ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Release
-      uses: softprops/action-gh-release@v1
+      # https://github.com/softprops/action-gh-release/releases/tag/v0.1.14
+      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      with:
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
