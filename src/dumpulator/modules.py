@@ -1,14 +1,15 @@
-from typing import Dict, Optional, Type, Union, List
+from typing import Dict, Optional, Type, Union, List, Tuple
 
 import pefile
 from .memory import MemoryManager
 
-# TODO: support forwards
+# TODO: support forwarding to API sets
 class ModuleExport:
-    def __init__(self, address: int, ordinal: int, name: str):
+    def __init__(self, address: int, ordinal: int, name: str, forward: Tuple[str, str] = None):
         self.address = address
         self.ordinal = ordinal
         self.name = name
+        self.forward = forward
 
 class Module:
     def __init__(self, pe: pefile.PE, path: str):
@@ -27,13 +28,22 @@ class Module:
         self.entry: int = self.base + self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
         self.pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]])
         pe_exports = self.pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(self.pe, "DIRECTORY_ENTRY_EXPORT") else []
+
         for pe_export in pe_exports:
-            va = self.base + pe_export.address
             if pe_export.name:
                 name = pe_export.name.decode("ascii")
             else:
                 name = None
-            export = ModuleExport(va, pe_export.ordinal, name)
+
+            if pe_export.forwarder is not None:
+                va = 0
+                forward = pe_export.forwarder.decode().split(".")
+                forward = (f"{forward[0].lower()}.dll", str(forward[1]))
+                export = ModuleExport(va, pe_export.ordinal, name, forward)
+            else:
+                va = self.base + pe_export.address
+                export = ModuleExport(va, pe_export.ordinal, name)
+
             self._exports_by_address[export.address] = len(self.exports)
             self._exports_by_ordinal[export.ordinal] = len(self.exports)
             if name is not None:
@@ -94,6 +104,16 @@ class ModuleManager:
                 return None
             return self.find(base)
         raise TypeError()
+
+    def resolve_export(self, module_key: Union[str, int], function_key: Union[str, int]):
+        module = self.find(module_key)
+        assert module is not None, f"Could not find module: {module_key}"
+        export = module.find_export(function_key)
+        assert export is not None, f"Could not find function: {module_key}:{function_key}"
+        if export.forward is not None:
+            return self.resolve_export(export.forward[0], export.forward[1])
+        return export
+
 
     def __getitem__(self, key: Union[str, int]) -> Module:
         module = self.find(key)

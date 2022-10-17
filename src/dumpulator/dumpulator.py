@@ -765,7 +765,7 @@ rsp in KiUserExceptionDispatcher:
                     assert hint_rva is not None, "hint_rva is 0"
                     if hint_rva & ordinal_flag:
                         ordinal = f"#{hint_rva & 0xffff}"
-                        export = dll.find_export(ordinal)
+                        export = self.modules.resolve_export(dll.name, ordinal)
                         assert export is not None, f"Ordinal #{ordinal} not in {dll_name}"
                         imp_va = export.address
                         self.info(f"\t#{ordinal} = {hex(imp_va)}")
@@ -773,7 +773,7 @@ rsp in KiUserExceptionDispatcher:
                         hint = pe.get_word_from_data(pe.get_data(hint_rva, 2), 0)
                         func_name = pe.get_string_at_rva(ilt[idx].AddressOfData + 2, MAX_IMPORT_NAME_LENGTH)
                         func_name = func_name.decode("utf-8")
-                        export = dll.find_export(func_name)
+                        export = self.modules.resolve_export(dll.name, func_name)
                         assert export is not None, f"Export {func_name} not in {dll_name}"
                         imp_va = export.address
                         self.info(f"\t{func_name} = {hex(imp_va)}")
