@@ -434,6 +434,7 @@ class Dumpulator(Architecture):
                 section.PointerToRawData = section.VirtualAddress
                 section.PointerToRawData_adj = section.VirtualAddress
             self.modules.add(pe, path)
+        self.modules.parse_forwards()
 
     def _setup_syscalls(self):
         # Load the ntdll module from memory
