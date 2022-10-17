@@ -40,7 +40,7 @@ static int __try_filter(unsigned int code, struct _EXCEPTION_POINTERS* Exception
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-extern "C" __declspec(dllexport) bool ExceptionTest()
+extern "C" __declspec(dllexport) bool Exception_Test()
 {
 	DebugPrint(WIDEN(__FUNCTION__));
 	DebugPrint(L"Test VEH, SEH, VCH");

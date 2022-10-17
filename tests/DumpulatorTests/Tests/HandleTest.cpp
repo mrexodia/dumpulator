@@ -1,6 +1,6 @@
 #include "debug.h"
 
-extern "C" __declspec(dllexport) bool WriteAndCreateFileTest()
+extern "C" __declspec(dllexport) bool Handle_WriteAndCreateFileTest()
 {
 	DebugPrint(WIDEN(__FUNCTION__));
 
@@ -10,7 +10,7 @@ extern "C" __declspec(dllexport) bool WriteAndCreateFileTest()
 	BOOL ret_value = FALSE;
 
 	HANDLE file_handle = CreateFile(
-		L"nonexistant_file.txt",
+		L"nonexistent_file.txt",
 		GENERIC_WRITE,
 		0,
 		NULL,
@@ -38,7 +38,7 @@ extern "C" __declspec(dllexport) bool WriteAndCreateFileTest()
 	return ret_value;
 }
 
-extern "C" __declspec(dllexport) bool ReadFileTest()
+extern "C" __declspec(dllexport) bool Handle_ReadFileTest()
 {
 	DebugPrint(WIDEN(__FUNCTION__));
 
