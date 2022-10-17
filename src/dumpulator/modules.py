@@ -1,11 +1,11 @@
-from typing import Dict, Optional, Type, Union, List
+from typing import Dict, Optional, Type, Union, List, Tuple
 
 import pefile
 from .memory import MemoryManager
 
 # TODO: support forwarding to API sets
 class ModuleExport:
-    def __init__(self, address: int, ordinal: int, name: str, forward: str = ""):
+    def __init__(self, address: int, ordinal: int, name: str, forward: Tuple[str, str] = None):
         self.address = address
         self.ordinal = ordinal
         self.name = name
@@ -35,14 +35,10 @@ class Module:
             else:
                 name = None
 
-            section = self.pe.get_section_by_rva(pe_export.address)
-            section_name = section.Name.rstrip(b"\0").decode()
-
-            # if import points to rdata then export is a forwarder
-            # RtlNtdllName in x64 is the only function that breaks this rule
-            if section_name == ".rdata" and name != "RtlNtdllName":
+            if pe_export.forwarder is not None:
                 va = 0
-                forward = self.pe.get_string_at_rva(pe_export.address).decode()
+                forward = pe_export.forwarder.decode().split(".")
+                forward = (f"{forward[0].lower()}.dll", str(forward[1]))
                 export = ModuleExport(va, pe_export.ordinal, name, forward)
             else:
                 va = self.base + pe_export.address
@@ -61,16 +57,12 @@ class Module:
                 index = self._exports_by_address.get(key, None)
             if index is None:
                 return None
-            export = self.exports[index]
-            assert export.address != 0, f"export forward {self.name}:{export.name} is not resolved"
-            return export
+            return self.exports[index]
         elif isinstance(key, str):
             index = self._exports_by_name.get(key)
             if index is None:
                 return None
-            export = self.exports[index]
-            assert export.address != 0, f"export forward {self.name}:{export.name} is not resolved"
-            return export
+            return self.exports[index]
         raise TypeError()
 
     def __repr__(self):
@@ -113,18 +105,20 @@ class ModuleManager:
             return self.find(base)
         raise TypeError()
 
-    def parse_forwards(self):
-        for module in self._modules.values():
-            for export in module.exports:
-                if export.address == 0:
-                    forward = export.forward.split(".")
-                    fwd_module = self.find(f"{forward[0].lower()}.dll")
-                    if fwd_module is None:
-                        continue
-                    fwd_export = fwd_module.find_export(forward[1])
-                    if fwd_export is None:
-                        continue
-                    export.address = fwd_export.address
+    def resolve_export(self, module_key: Union[str, int], function_key: Union[str, int]):
+        module = self.find(module_key)
+        assert module is not None, f"Could not find module: {module_key}"
+        export = module.find_export(function_key)
+        assert export is not None, f"Could not find function: {module_key}:{function_key}"
+        if export.forward is None:
+            return export
+        else:
+            fwd_module_name, fwd_export_name = export.forward
+            fwd_module = self.find(fwd_module_name)
+            assert fwd_module is not None, f"Could not resolve export forwarder module: {fwd_module_name}"
+            fwd_export = fwd_module.find_export(fwd_export_name)
+            assert fwd_export is not None, f"Could not resolve export forwarder function: {fwd_export_name}"
+            return fwd_export
 
     def __getitem__(self, key: Union[str, int]) -> Module:
         module = self.find(key)
