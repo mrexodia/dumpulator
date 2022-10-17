@@ -110,15 +110,10 @@ class ModuleManager:
         assert module is not None, f"Could not find module: {module_key}"
         export = module.find_export(function_key)
         assert export is not None, f"Could not find function: {module_key}:{function_key}"
-        if export.forward is None:
-            return export
-        else:
-            fwd_module_name, fwd_export_name = export.forward
-            fwd_module = self.find(fwd_module_name)
-            assert fwd_module is not None, f"Could not resolve export forwarder module: {fwd_module_name}"
-            fwd_export = fwd_module.find_export(fwd_export_name)
-            assert fwd_export is not None, f"Could not resolve export forwarder function: {fwd_export_name}"
-            return fwd_export
+        if export.forward is not None:
+            return self.resolve_export(export.forward[0], export.forward[1])
+        return export
+
 
     def __getitem__(self, key: Union[str, int]) -> Module:
         module = self.find(key)
