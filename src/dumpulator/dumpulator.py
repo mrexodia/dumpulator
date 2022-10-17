@@ -855,8 +855,12 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
         raise err
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
+    fetch_accesses = [UC_MEM_FETCH, UC_MEM_FETCH_PROT, UC_MEM_FETCH_UNMAPPED]
     if access == UC_MEM_FETCH_UNMAPPED and address >= FORCE_KILL_ADDR - 0x10 and address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
         dp.error(f"forced exit memory operation {access} of {address:x}[{size:x}] = {value:X}")
+        return False
+    if dp.exception.final and access in fetch_accesses:
+        dp.info(f"fetch from {hex(address)}[{size}] already reported")
         return False
     # TODO: figure out why when you start executing at 0 this callback is triggered more than once
     try:
@@ -868,10 +872,11 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         exception.memory_size = size
         exception.memory_value = value
         exception.context = uc.context_save()
-        tb = uc.ctl_request_cache(dp.regs.cip)
-        exception.tb_start = tb.pc
-        exception.tb_size = tb.size
-        exception.tb_icount = tb.icount
+        if access not in fetch_accesses:
+            tb = uc.ctl_request_cache(dp.regs.cip)
+            exception.tb_start = tb.pc
+            exception.tb_size = tb.size
+            exception.tb_icount = tb.icount
 
         # Print exception info
         final = dp.trace or dp.exception.code_hook_h is not None
@@ -922,7 +927,8 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
 
         # Remove the translation block cache for this block
         # Without doing this single stepping the block won't work
-        uc.ctl_remove_cache(exception.tb_start, exception.tb_start + exception.tb_size)
+        if exception.tb_start != 0:
+            uc.ctl_remove_cache(exception.tb_start, exception.tb_start + exception.tb_size)
 
         # Install the code hook to single step the basic block again.
         # This will prevent translation block caching and give us the correct cip
@@ -1059,6 +1065,7 @@ def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
         exception.type = ExceptionType.Interrupt
         exception.interrupt_number = number
         exception.context = uc.context_save()
+        # TODO: this might crash if cip is not valid memory
         tb = uc.ctl_request_cache(dp.regs.cip)
         exception.tb_start = tb.pc
         exception.tb_size = tb.size
