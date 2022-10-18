@@ -14,6 +14,7 @@ class ModuleExport:
 class Module:
     def __init__(self, pe: pefile.PE, path: str):
         self.pe = pe
+        path = path.replace("/", "\\")
         self.path = path
         self.name = path.split("\\")[-1]
         self._exports_by_address: Dict[int, int] = {}
