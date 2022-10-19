@@ -1,3 +1,4 @@
+import re
 import sys
 import inspect
 from typing import Dict, List, Type
@@ -20,12 +21,10 @@ def collect_environments():
     environments: Dict[str, Type[TestEnvironment]] = {}
     for name, obj in inspect.getmembers(sys.modules[__name__], inspect.isclass):
         if issubclass(obj, TestEnvironment) and not obj is TestEnvironment:
-            prefix = ""
-            for i in range(len(name)):
-                ch = name[i]
-                if i > 0 and ch.isupper():
-                    break
-                prefix += ch
+            # Extract the first capital word from the class name
+            match = re.match(r"^([A-Z][a-z]+)", name)
+            assert match is not None
+            prefix = match.group(1)
             environments[prefix] = obj
     return environments
 
