@@ -524,7 +524,7 @@ class Dumpulator(Architecture):
         self.exception.handling = True
 
         if self.exception.type == ExceptionType.ContextSwitch:
-            self.info(f"switching context, cip: {self.regs.cip}")
+            self.info(f"switching context, cip: {hex(self.regs.cip)}")
             # Clear the pending exception
             self.last_exception = self.exception
             self.exception = ExceptionInfo()

@@ -312,20 +312,25 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
     protect = MemoryProtect(Protect)
     if AllocationType == MEM_COMMIT:
         if base == 0:
-            base = dp.allocate(size, True)
-        print(f"commit({hex(base)}[{hex(size)}])")
+            base = dp.memory.find_free(size)
+            dp.memory.reserve(base, size, protect)
+            BaseAddress.write_ptr(base)
+            RegionSize.write_ptr(size)
+        print(f"commit({hex(base)}[{hex(size)}], {protect})")
         dp.memory.commit(base, size, protect)
     elif AllocationType == MEM_RESERVE:
         if base == 0:
             base = dp.memory.find_free(size)
             BaseAddress.write_ptr(base)
-        print(f"reserve({hex(base)}[{hex(size)}])")
+            RegionSize.write_ptr(size)
+        print(f"reserve({hex(base)}[{hex(size)}], {protect})")
         dp.memory.reserve(base, size, protect)
     elif AllocationType == MEM_COMMIT | MEM_RESERVE:
         if base == 0:
             base = dp.memory.find_free(size)
             BaseAddress.write_ptr(base)
-        print(f"reserve+commit({hex(base)}[{hex(size)}])")
+            RegionSize.write_ptr(size)
+        print(f"reserve+commit({hex(base)}[{hex(size)}], {protect})")
         dp.memory.reserve(base, size, protect)
         dp.memory.commit(base, size)
     else:

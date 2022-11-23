@@ -4,7 +4,7 @@ from typing import Optional
 from enum import Enum
 
 class Architecture(object):
-    def __init__(self, x64):
+    def __init__(self, x64: bool):
         self._x64 = x64
 
     def ptr_size(self):
