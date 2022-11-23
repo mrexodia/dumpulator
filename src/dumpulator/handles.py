@@ -33,7 +33,7 @@ class FileObject:
         # TODO: store file access flags to handle access violations
 
         # currently overwrites data given offset and buffer size, does not overwrite with zeros with different
-        # creation options 
+        # creation options
         # incase input size differs from actual buffer size
         if self.data is None:
             if size is not None:
@@ -54,7 +54,7 @@ class FileObject:
 class SectionObject:
     def __init__(self, file: FileObject):
         self.file = file
-    
+
     def __str__(self):
         return f"{type(self).__name__}({self.file})"
 
@@ -77,11 +77,19 @@ class DeviceObject:
     def io_control(self, dp, code: int, data: bytes) -> bytes:
         raise NotImplementedError()
 
+class EventObject:
+    def __init__(self, type: EVENT_TYPE, signalled: bool):
+        self.type = type
+        self.signalled = signalled
+
+    def __str__(self):
+        return f"{type(self).__name__}(type: {self.type.name}, signalled: {self.signalled})"
+
 class RegistryKeyObject:
     def __init__(self, key: str, values: Dict[str, Any] = {}):
         self.key = key
         self.values = values
-    
+
     def __str__(self):
         return f"{type(self).__name__}({self.key})"
 
@@ -146,7 +154,7 @@ class HandleManager:
 
     def map_file(self, filename: str, handle_data: Any):
         self.mapped_files[filename] = handle_data
-    
+
     def open_file(self, filename: str):
         data = self.mapped_files.get(filename, None)
         if data is None:

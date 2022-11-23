@@ -835,7 +835,12 @@ def ZwCreateEvent(dp: Dumpulator,
                   EventType: EVENT_TYPE,
                   InitialState: BOOLEAN
                   ):
-    raise NotImplementedError()
+    assert DesiredAccess == 0x1f0003
+    assert ObjectAttributes == 0
+    event = EventObject(EventType, InitialState)
+    handle = dp.handles.new(event)
+    EventHandle.write_ptr(handle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwCreateEventPair(dp: Dumpulator,
