@@ -1100,6 +1100,9 @@ def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
     raise UcError(UC_ERR_EXCEPTION)
 
 def _hook_syscall(uc: Uc, dp: Dumpulator):
+    # Flush the trace for easier debugging
+    if dp.trace is not None:
+        dp.trace.flush()
     index = dp.regs.cax & 0xffff
     if index < len(dp.syscalls):
         name, syscall_impl, argcount = dp.syscalls[index]
