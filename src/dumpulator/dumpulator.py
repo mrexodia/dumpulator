@@ -18,7 +18,7 @@ from .details import *
 from .memory import *
 from .modules import *
 from capstone import *
-from capstone.x86_const import *
+from capstone.x86 import *
 
 syscall_functions = {}
 
@@ -1162,6 +1162,21 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
         dp.error(f"syscall index {index:x} out of range")
         dp.raise_kill(IndexError())
 
+def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
+    if instr.id == X86_INS_RDRAND:
+        op: X86Op = instr.operands[0]
+        regname = instr.reg_name(op.reg)
+        if dp._x64 and op.size * 8 == 32:
+            regname = "r" + regname[1:]
+        print(f"emulated rdrand {regname}:{op.size * 8}, cip = {hex(instr.address)}+{instr.size}")
+        dp.regs[regname] = 42  # TODO: PRNG based on dmp hash
+        dp.regs.cip += instr.size
+    else:
+        # Unsupported instruction
+        return False
+    # Resume execution
+    return True
+
 def _hook_invalid(uc: Uc, dp: Dumpulator):
     address = dp.regs.cip
     # HACK: unicorn cannot gracefully exit in all contexts
@@ -1169,4 +1184,20 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
         dp.error(f"terminating emulation...")
         return False
     dp.error(f"invalid instruction at {address:x}")
+    try:
+        code = dp.read(address, 15)
+        instr = next(dp.cs.disasm(code, address, 1))
+        if _emulate_unsupported_instruction(dp, instr):
+            # Resume execution with a context switch
+            assert dp.exception.type == ExceptionType.NoException
+            exception = ExceptionInfo()
+            exception.type = ExceptionType.ContextSwitch
+            exception.final = True
+            dp.exception = exception
+            return False  # NOTE: returning True would stop emulation
+    except StopIteration:
+        pass  # Unsupported instruction
+    except UcError:
+        pass  # Invalid memory access (NOTE: this should not be possible actually)
+    raise NotImplementedError("TODO: throw invalid instruction exception")
     return False
