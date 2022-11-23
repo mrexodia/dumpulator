@@ -726,7 +726,7 @@ rsp in KiUserExceptionDispatcher:
     def NtCurrentThread(self):
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
 
-    def map_module(self, file_data: bytes, file_path: str = "", requested_base: int = 0):
+    def map_module(self, file_data: bytes, file_path: str = "", requested_base: int = 0, resolve_imports = True):
         if not file_path:
             file_path = "<unnamed>"
         print(f"Mapping module {file_path}")

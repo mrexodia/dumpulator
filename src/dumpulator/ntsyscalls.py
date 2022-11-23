@@ -2147,7 +2147,7 @@ def ZwMapViewOfSection(dp: Dumpulator,
     assert requested_base == 0
     section = dp.handles.get(SectionHandle, SectionObject)
     data = section.file.read()
-    module = dp.map_module(data, section.file.path, requested_base)
+    module = dp.map_module(data, section.file.path, requested_base, False)
 
     # Handle out parameters
     BaseAddress.write_ptr(module.base)
