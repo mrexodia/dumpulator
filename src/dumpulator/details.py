@@ -11,6 +11,7 @@ def map_unicorn_perms(protect: MemoryProtect):
     if isinstance(protect, int):
         protect = MemoryProtect(protect)
     assert isinstance(protect, MemoryProtect)
+    baseprotect = protect & ~(MemoryProtect.PAGE_WRITECOMBINE | MemoryProtect.PAGE_NOCACHE | MemoryProtect.PAGE_GUARD)
     mapping = {
         MemoryProtect.PAGE_EXECUTE: UC_PROT_EXEC | UC_PROT_READ,
         MemoryProtect.PAGE_EXECUTE_READ: UC_PROT_EXEC | UC_PROT_READ,
@@ -21,7 +22,10 @@ def map_unicorn_perms(protect: MemoryProtect):
         MemoryProtect.PAGE_READWRITE: UC_PROT_READ | UC_PROT_WRITE,
         MemoryProtect.PAGE_WRITECOPY: UC_PROT_READ | UC_PROT_WRITE,
     }
-    return mapping[protect]
+    perms = mapping[baseprotect]
+    if protect & MemoryProtect.PAGE_GUARD:
+        perms = UC_PROT_NONE
+    return perms
 
 
 class Registers:
