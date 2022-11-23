@@ -191,7 +191,10 @@ class Dumpulator(Architecture):
     def _setup_memory(self):
         info: minidump.MinidumpMemoryInfo
         regions: List[List[minidump.MinidumpMemoryInfo]] = []
+        mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
         for info in self._minidump.memory_info.infos:
+            info.AllocationBase &= mask
+            info.BaseAddress &= mask
             if len(regions) == 0 or info.AllocationBase != regions[-1][0].AllocationBase or info.State == minidump.MemoryState.MEM_FREE:
                 regions.append([])
             regions[-1].append(info)
