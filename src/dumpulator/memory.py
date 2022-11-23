@@ -19,6 +19,12 @@ class MemoryProtect(Flag):
     PAGE_NOCACHE = 0x200
     PAGE_WRITECOMBINE = 0x400
 
+    def __str__(self):
+        result = self.name
+        if result is None:
+            result = super().__str__().replace(f"{self.__class__.__name__}.", "")
+        return result
+
 class MemoryType(Enum):
     UNDEFINED = 0
     MEM_IMAGE = 0x1000000

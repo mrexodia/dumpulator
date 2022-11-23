@@ -139,7 +139,7 @@ class Dumpulator(Architecture):
                 protect = region.protect
                 if region.state == MemoryState.MEM_RESERVE:
                     protect = region.allocation_protect
-                entry[3] = protect.name
+                entry[3] = str(protect)
                 if isinstance(region.info, Module):
                     module: Module = region.info
                     entry[4] = f" {module.name}[{hex(module.size)}]"
@@ -813,7 +813,7 @@ rsp in KiUserExceptionDispatcher:
                 protect = MemoryProtect.PAGE_READWRITE
             if execute:
                 protect = MemoryProtect(protect.value << 4)
-            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)} as {protect.name}")
+            print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)} as {protect}")
             self.memory.commit(va, size, protect)
             self.write(va, data)
 
