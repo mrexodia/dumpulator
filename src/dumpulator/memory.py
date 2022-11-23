@@ -45,6 +45,7 @@ class MemoryRegion:
         self.protect = protect
         self.type = type
         self.info = info
+        self.commit_count = 0
 
     @property
     def end(self):
@@ -193,11 +194,14 @@ class MemoryManager:
             self._page_manager.decommit(parent_region.start, parent_region.size)
             for page in parent_region.pages():
                 del self._committed[page]
+                parent_region.commit_count -= 1
         else:
             for page in parent_region.pages():
                 if page in self._committed:
                     self._page_manager.decommit(page, PAGE_SIZE)
                     del self._committed[page]
+                    parent_region.commit_count -= 1
+        assert parent_region.commit_count == 0
         self._regions.remove(parent_region)
 
     def commit(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.UNDEFINED):
@@ -212,10 +216,12 @@ class MemoryManager:
         if protect == MemoryProtect.UNDEFINED:
             protect = parent_region.protect
 
-        if all([page not in self._committed for page in region.pages()]):
+        if parent_region.commit_count == 0:
+            assert all([page not in self._committed for page in region.pages()])
             self._page_manager.commit(region.start, region.size, protect)
             for page in region.pages():
                 self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
+                parent_region.commit_count += 1
         else:
             for page in region.pages():
                 if page in self._committed:
@@ -226,6 +232,7 @@ class MemoryManager:
                 else:
                     self._page_manager.commit(page, PAGE_SIZE, protect)
                     self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
+                    parent_region.commit_count += 1
 
     def decommit(self, start: int, size: int):
         assert size > 0 and self.align_page(size) == size
@@ -239,11 +246,13 @@ class MemoryManager:
             self._page_manager.decommit(region.start, region.size)
             for page in self._committed:
                 del self._committed[page]
+                parent_region.commit_count -= 1
         else:
             for page in region.pages():
                 if page in self._committed:
                     self._page_manager.decommit(page, PAGE_SIZE)
                     del self._committed[page]
+                    parent_region.commit_count -= 1
 
     def protect(self, start: int, size: int, protect: MemoryProtect):
         assert isinstance(protect, MemoryProtect)
@@ -308,6 +317,10 @@ class MemoryManager:
                     result.state = MemoryState.MEM_RESERVE
                     result.protect = MemoryProtect.UNDEFINED
                     result.type = parent_region.type
+                    # If no pages are commited in this parent region we can bail early
+                    if parent_region.commit_count == 0:
+                        result.region_size = parent_region.size
+                        break
             else:
                 commited_page = self._committed.get(page, None)
                 if result.state == MemoryState.MEM_RESERVE:
