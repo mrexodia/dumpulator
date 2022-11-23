@@ -484,6 +484,10 @@ class Dumpulator(Architecture):
 
         # set up arguments
         if self._x64:
+            # Align the stack
+            # TODO: unalign the stack after?
+            if self.regs.rsp & 0xF != 0:
+                self.regs.rsp -= 8
             for index, value in enumerate(args):
                 self.args[index] = value
         else:

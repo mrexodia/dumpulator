@@ -52,6 +52,15 @@ def run_tests(dll_path: str, harness_dump: str):
         for export in exports:
             dp = Dumpulator(harness_dump, trace=True)
             module = dp.map_module(dll_data, dll_path, base)
+            # Register the EXCEPTION_DIRECTORY
+            if dp.ptr_size() == 8:
+                dir = module.pe.OPTIONAL_HEADER.DATA_DIRECTORY[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXCEPTION"]]
+                va = module.base + dir.VirtualAddress
+                size = dir.Size
+                assert size % 12 == 0
+                RtlAddFunctionTable = dp.modules.resolve_export("ntdll.dll", "RtlAddFunctionTable").address
+                success = dp.call(RtlAddFunctionTable, [va, size // 12, module.base])
+                print(f"RtlAddFunctionTable: {success}")
             environment().setup(dp)
             test = module.find_export(export)
             assert test is not None

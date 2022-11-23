@@ -36,5 +36,7 @@ static void DebugPrint(const wchar_t* str)
 	ustr.MaximumLength = (len + 1) * 2;
 	ustr.Buffer = (PWSTR)str;
 	NtDisplayString(&ustr);
+	//MessageBoxW(0, str, 0, MB_SYSTEMMODAL)
+		;
 }
 #endif // __cplusplus

@@ -836,7 +836,6 @@ def ZwCreateEvent(dp: Dumpulator,
                   InitialState: BOOLEAN
                   ):
     assert DesiredAccess == 0x1f0003
-    assert ObjectAttributes == 0
     event = EventObject(EventType, InitialState)
     handle = dp.handles.new(event)
     EventHandle.write_ptr(handle)
@@ -1846,6 +1845,7 @@ def ZwGetMUIRegistryInfo(dp: Dumpulator,
                          DataSize: P(ULONG),
                          Data: PVOID
                          ):
+    return STATUS_NOT_IMPLEMENTED
     raise NotImplementedError()
 
 @syscall
@@ -1981,6 +1981,7 @@ def ZwIsSystemResumeAutomatic(dp: Dumpulator
 @syscall
 def ZwIsUILanguageComitted(dp: Dumpulator
                            ):
+    return False
     raise NotImplementedError()
 
 @syscall
@@ -2686,6 +2687,7 @@ def ZwQueryDebugFilterState(dp: Dumpulator,
                             ComponentId: ULONG,
                             Level: ULONG
                             ):
+    return 0
     # STATUS_SUCCESS will print debug messages with RaiseException
     return STATUS_NOT_IMPLEMENTED
 
@@ -2906,12 +2908,18 @@ def ZwQueryInformationProcess(dp: Dumpulator,
                               ReturnLength: P(ULONG)
                               ):
     assert (ProcessHandle == dp.NtCurrentProcess())
-    if ProcessInformationClass in [PROCESSINFOCLASS.ProcessDebugPort, PROCESSINFOCLASS.ProcessDebugObjectHandle]:
+    if ProcessInformationClass == PROCESSINFOCLASS.ProcessDebugPort:
         assert ProcessInformationLength == dp.ptr_size()
         dp.write_ptr(ProcessInformation.ptr, 0)
         if ReturnLength != 0:
             dp.write_ulong(ReturnLength.ptr, dp.ptr_size())
         return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessDebugObjectHandle:
+        assert ProcessInformationLength == dp.ptr_size()
+        dp.write_ptr(ProcessInformation.ptr, 0)
+        if ReturnLength != 0:
+            dp.write_ulong(ReturnLength.ptr, dp.ptr_size())
+        return STATUS_PORT_NOT_SET
     elif ProcessInformationClass == PROCESSINFOCLASS.ProcessDefaultHardErrorMode:
         assert ProcessInformationLength == 4
         dp.write_ulong(ProcessInformation.ptr, 1)
@@ -2924,6 +2932,10 @@ def ZwQueryInformationProcess(dp: Dumpulator,
         if ReturnLength.ptr:
             dp.write_ulong(ReturnLength.ptr, 4)
         return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessImageInformation:
+        sii = SECTION_IMAGE_INFORMATION(dp)
+        assert ProcessInformationLength == ctypes.sizeof(sii)
+        return STATUS_NOT_IMPLEMENTED
     raise NotImplementedError()
 
 @syscall
@@ -2995,6 +3007,7 @@ def ZwQueryInformationWorkerFactory(dp: Dumpulator,
 def ZwQueryInstallUILanguage(dp: Dumpulator,
                              InstallUILanguageId: P(LANGID)
                              ):
+    return STATUS_ACCESS_DENIED
     raise NotImplementedError()
 
 @syscall
@@ -3032,6 +3045,7 @@ def ZwQueryLicenseValue(dp: Dumpulator,
                         DataSize: ULONG,
                         ResultDataSize: P(ULONG)
                         ):
+    return STATUS_NOT_FOUND
     raise NotImplementedError()
 
 @syscall
@@ -3130,7 +3144,7 @@ def ZwQuerySecurityAttributesToken(dp: Dumpulator,
                                    Length: ULONG,
                                    ReturnLength: P(ULONG)
                                    ):
-    raise NotImplementedError()
+    return STATUS_NOT_FOUND
 
 @syscall
 def ZwQuerySecurityObject(dp: Dumpulator,
