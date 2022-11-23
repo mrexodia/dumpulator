@@ -93,7 +93,7 @@ class ModuleManager:
     def find(self, key: Union[str, int]) -> Optional[Module]:
         if isinstance(key, int):
             region = self._memory.find_region(key)
-            if region.info:
+            if region is not None and region.info:
                 assert isinstance(region.info, Module)
                 return region.info
             return None
