@@ -86,8 +86,7 @@ class MemoryRegion:
         return f"MemoryRegion({hex(self.start)}, {hex(self.size)}, {self.protect}, {self.type}, {repr(self.info)})"
 
     def pages(self):
-        for page in range(self.start, self.end, PAGE_SIZE):
-            yield page
+        return range(self.start, self.end, PAGE_SIZE)
 
 class PageManager:
     def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
@@ -97,6 +96,12 @@ class PageManager:
         raise NotImplementedError()
 
     def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        raise NotImplementedError()
+
+    def read(self, addr: int, size: int) -> bytearray:
+        raise NotImplementedError()
+
+    def write(self, addr: int, data: bytes) -> None:
         raise NotImplementedError()
 
 class MemoryBasicInformation:
@@ -114,7 +119,7 @@ class MemoryBasicInformation:
         return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
 
 class MemoryManager:
-    def __init__(self, page_manager: PageManager, minimum = 0x10000, maximum = 0x7fffffff0000, granularity = 0x10000):
+    def __init__(self, page_manager: PageManager, minimum=0x10000, maximum=0x7fffffff0000, granularity=0x10000):
         self._page_manager = page_manager
         self._minimum = minimum
         self._maximum = maximum
@@ -344,3 +349,9 @@ class MemoryManager:
             regions.append(info)
             addr += info.region_size
         return regions
+
+    def read(self, addr: int, size: int) -> bytearray:
+        return self._page_manager.read(addr, size)
+
+    def write(self, addr: int, data: bytes):
+        return self._page_manager.write(addr, data)

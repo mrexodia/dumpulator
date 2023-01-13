@@ -58,7 +58,7 @@ class ExceptionInfo:
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
 
 class UnicornPageManager(PageManager):
-    def __init__(self, uc: Uc):
+    def __init__(self, uc: Uc) -> None:
         self._uc = uc
 
     def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
@@ -71,10 +71,186 @@ class UnicornPageManager(PageManager):
     def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
         self._uc.mem_protect(addr, size, map_unicorn_perms(protect))
 
+    def read(self, addr: int, size: int) -> bytearray:
+        return self._uc.mem_read(addr, size)
+
+    def write(self, addr: int, data: bytes) -> None:
+        if not isinstance(data, bytes):
+            data = bytes(data)
+        self._uc.mem_write(addr, data)
+
+class LazyPage:
+    def __init__(self, addr: int, protect: MemoryProtect, committed: bool):
+        self.addr = addr
+        self.protect = protect
+        self.committed = committed
+        self.data: Optional[bytearray] = None
+
+    @property
+    def size(self):
+        return PAGE_SIZE
+
+class LazyPageManager(PageManager):
+    def __init__(self, child: PageManager):
+        self.child = child
+        self.total_commit = 0
+        self.pages: Dict[int, LazyPage] = {}
+        self.lazy = True
+
+    def iter_pages(self, addr: int, size: int):
+        for i in range(0, size // PAGE_SIZE):
+            page_addr = addr + i * PAGE_SIZE
+            yield page_addr
+
+    def iter_chunks(self, addr: int, size: int):
+        # TODO: rewrite this to not be so disgusting
+        page = addr & ~0xFFF
+        index = addr & 0xFFF
+        while True:
+            if page >= addr + size:
+                break
+            length = min(PAGE_SIZE, (addr + size) - (page + index))
+            yield page, index, length
+            page += PAGE_SIZE
+            index = 0
+
+    def handle_lazy_page(self, addr: int, size: int) -> bool:
+        try:
+            result = False
+            for page_addr, index, length in self.iter_chunks(addr, size):
+                page = self.pages.get(page_addr, None)
+                if page is None:
+                    continue
+                if not page.committed:
+                    self.child.commit(page.addr, page.size, page.protect)
+                    page.committed = True
+                    if page.data is not None:
+                        self.child.write(page.addr, page.data)
+                        page.data = None
+                    result = True
+            return result
+        except UcError as err:
+            print(f"FATAL ERROR {err}: handle_lazy_page({hex(addr)}[{hex(size)}])")
+            return False
+
+    def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        assert addr & 0xFFF == 0
+        assert size & 0xFFF == 0
+        #print(f"commit({hex(addr)}, {hex(size)}, {protect})")
+        if not self.lazy:
+            self.child.commit(addr, size, protect)
+        for page_addr in self.iter_pages(addr, size):
+            assert page_addr not in self.pages
+            self.pages[page_addr] = LazyPage(page_addr, protect, not self.lazy)
+        self.total_commit += size
+
+    def decommit(self, addr: int, size: int) -> None:
+        assert addr & 0xFFF == 0
+        assert size & 0xFFF == 0
+        #print(f"decommit({hex(addr)}, {hex(size)})")
+        pages = []
+        for page_addr in self.iter_pages(addr, size):
+            assert page_addr in self.pages
+            pages.append(self.pages[page_addr])
+
+        if all(page.committed for page in pages):
+            self.child.decommit(addr, size)
+        else:
+            for page in pages:
+                if page.committed:
+                    self.child.decommit(page.addr, page.size)
+
+        for page_addr in self.iter_pages(addr, size):
+            del self.pages[page_addr]
+
+    def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
+        assert addr & 0xFFF == 0
+        assert size & 0xFFF == 0
+        #print(f"protect({hex(addr)}, {hex(size)}, {protect})")
+        pages = []
+        for page_addr in self.iter_pages(addr, size):
+            assert page_addr in self.pages
+            pages.append(self.pages[page_addr])
+
+        if all(page.committed for page in pages):
+            self.child.protect(addr, size, protect)
+        else:
+            for page in pages:
+                if page.committed:
+                    self.child.protect(page.addr, page.size, protect)
+
+        for page in pages:
+            page.protect = protect
+
+    def read(self, addr: int, size: int) -> bytearray:
+        #print(f"read({hex(addr)}, {hex(size)})")
+
+        pages = []
+        for page_addr, index, length in self.iter_chunks(addr, size):
+            page = self.pages.get(page_addr, None)
+            assert page is not None
+            pages.append((page, index, length))
+
+        if all([page.committed for page, _, _ in pages]):
+            return self.child.read(addr, size)
+        else:
+            data = bytearray(size)
+            for page, index, length in pages:
+                data_index = (page.addr + index) - addr
+                if page.committed:
+                    data[data_index:data_index + length] = self.child.read(page.addr + index, length)
+                else:
+                    if page.data is None:
+                        page.data = bytearray(page.size)
+                    data_chunk = page.data[index:index + length]
+                    data[data_index:data_index + length] = data_chunk
+            assert len(data) == size
+            return data
+
+    def write(self, addr: int, data: bytes) -> None:
+        #print(f"write({hex(addr)}, size: {hex(len(data))})")
+
+        pages = []
+        for page_addr, index, length in self.iter_chunks(addr, len(data)):
+            page = self.pages.get(page_addr, None)
+            assert page is not None
+            pages.append((page, index, length))
+
+        if all([page.committed for page, _, _ in pages]):
+            self.child.write(addr, data)
+        else:
+            for page, index, length in pages:
+                data_index = (page.addr + index) - addr
+                data_chunk = data[data_index:data_index + length]
+                assert len(data_chunk) == length
+                if page.committed:
+                    self.child.write(page.addr + index, data_chunk)
+                else:
+                    if page.data is None:
+                        page.data = bytearray(page.size)
+                    page.data[index:index + length] = data_chunk
+                    assert len(page.data) == page.size
+
+class SimpleTimer:
+    def __init__(self):
+        self.time = 0
+        self.start()
+
+    def start(self):
+        import time
+        self.time = time.perf_counter()
+
+    def __call__(self, name: str):
+        prev = self.time
+        self.start()
+        diff = self.time - prev
+        print(f"{name}: {diff*1000:.0f}ms")
+
 class Dumpulator(Architecture):
-    def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None):
+    def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None, debug_logs=False):
         self._quiet = quiet
-        self._debug = False
+        self._debug = debug_logs
+
 
         # Load the minidump
         self._minidump = minidump.MinidumpFile.parse(minidump_file)
@@ -103,8 +279,9 @@ class Dumpulator(Architecture):
         self.cs.detail = True
 
         self.regs = Registers(self._uc, self._x64)
-        self.args = Arguments(self._uc, self.regs, self._x64)
-        self.memory = MemoryManager(UnicornPageManager(self._uc))
+        self._pages = LazyPageManager(UnicornPageManager(self._uc))
+        self.memory = MemoryManager(self._pages)
+        self.args = Arguments(self._uc, self._pages, self.regs, self._x64)
         self.modules = ModuleManager(self.memory)
         self._allocate_base = None
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
@@ -181,9 +358,8 @@ class Dumpulator(Architecture):
 
     def _setup_gdt(self):
         # TODO: is the TSS actually necessary?
-        self._uc.mem_map(TSS_BASE, PAGE_SIZE, UC_PROT_READ | UC_PROT_WRITE)
-
-        self._uc.mem_map(GDT_BASE, PAGE_SIZE, UC_PROT_READ | UC_PROT_WRITE)
+        self._pages.commit(TSS_BASE, PAGE_SIZE, MemoryProtect.PAGE_READWRITE)
+        self._pages.commit(GDT_BASE, PAGE_SIZE, MemoryProtect.PAGE_READWRITE)
         for i in range(0, len(windows_gdt)):
             self.write(GDT_BASE + 8 * i, struct.pack("<Q", windows_gdt[i]))
         self.regs.gdtr = (0, GDT_BASE, 8 * len(windows_gdt) - 1, 0x0)
@@ -234,18 +410,19 @@ class Dumpulator(Architecture):
             memory.move(seg.start_virtual_address)
             assert memory.current_position == seg.start_virtual_address
             data = memory.read(seg.size)
-            self._uc.mem_write(emu_addr, data)
+            self._pages.write(emu_addr, data)
+        self._pages.lazy = False
 
     def _setup_emulator(self, thread):
         # TODO: map these using self.memory instead
         # map in codecaves (TODO: can be mapped as UC_PROT_NONE unless used)
-        self._uc.mem_map(USER_CAVE, PAGE_SIZE)
-        self._uc.mem_write(USER_CAVE, b"\xCC" * PAGE_SIZE)
-        self._uc.mem_map(KERNEL_CAVE, PAGE_SIZE)
+        self._pages.commit(USER_CAVE, PAGE_SIZE, MemoryProtect.PAGE_EXECUTE_WRITECOPY)
+        self._pages.write(USER_CAVE, b"\xCC" * PAGE_SIZE)
+        self._pages.commit(KERNEL_CAVE, PAGE_SIZE, MemoryProtect.PAGE_EXECUTE_WRITECOPY)
         kernel_code = bytearray(b"\xCC" * (PAGE_SIZE // 2) + b"\x00" * (PAGE_SIZE // 2))
         kernel_code[IRETQ_OFFSET] = 0x48
         kernel_code[IRETD_OFFSET] = 0xCF
-        self._uc.mem_write(KERNEL_CAVE, bytes(kernel_code))
+        self._pages.write(KERNEL_CAVE, bytes(kernel_code))
 
         # Set up context
         self._setup_gdt()
@@ -472,12 +649,18 @@ class Dumpulator(Architecture):
         self.regs.csp = csp
 
     def read(self, addr, size):
-        return self._uc.mem_read(addr, size)
+        if not isinstance(addr, int):
+            addr = int(addr)
+        return self._pages.read(addr, size)
 
     def write(self, addr, data):
-        self._uc.mem_write(addr, data)
+        if not isinstance(addr, int):
+            addr = int(addr)
+        self._pages.write(addr, data)
 
     def call(self, addr, args: List[int] = [], regs: dict = {}, count=0):
+        if not isinstance(addr, int):
+            addr = int(addr)
         # allow passing custom registers
         for name, value in regs.items():
             self.regs.__setattr__(name, value)
@@ -825,7 +1008,7 @@ rsp in KiUserExceptionDispatcher:
 
     def load_dll(self, file_name: str, file_data: bytes):
         self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))
-        argument_ptr = self.allocate(0x1000)
+        argument_ptr = self.allocate(PAGE_SIZE)
         utf16 = file_name.encode("utf-16-le")
         if self._x64:
             argument_data = struct.pack("<IIQHHIQ", 0, 0, 0, len(utf16), len(utf16) + 2, 0, argument_ptr + 32)
@@ -858,6 +1041,10 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
         raise err
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
+    if dp._pages.handle_lazy_page(address, min(size, PAGE_SIZE)):
+        dp.debug(f"committed lazy page {hex(address)}[{hex(size)}]")
+        return True
+
     fetch_accesses = [UC_MEM_FETCH, UC_MEM_FETCH_PROT, UC_MEM_FETCH_UNMAPPED]
     if access == UC_MEM_FETCH_UNMAPPED and address >= FORCE_KILL_ADDR - 0x10 and address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
         dp.error(f"forced exit memory operation {access} of {address:x}[{size:x}] = {value:X}")

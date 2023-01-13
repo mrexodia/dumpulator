@@ -5,7 +5,7 @@ from typing import List
 from unicorn import *
 from unicorn.x86_const import *
 
-from dumpulator.memory import MemoryProtect
+from dumpulator.memory import MemoryProtect, PageManager
 
 def map_unicorn_perms(protect: MemoryProtect):
     if isinstance(protect, int):
@@ -385,8 +385,9 @@ class Registers:
 
 
 class Arguments:
-    def __init__(self, uc: Uc, regs: Registers, x64):
+    def __init__(self, uc: Uc, memory: PageManager, regs: Registers, x64):
         self._uc = uc
+        self._memory = memory
         self._regs = regs
         self._x64 = x64
 
@@ -395,7 +396,7 @@ class Arguments:
 
         if not self._x64:
             arg_addr = regs.esp + (index + 2) * 4
-            data = self._uc.mem_read(arg_addr, 4)
+            data = self._memory.read(arg_addr, 4)
             return struct.unpack("<I", data)[0]
 
         if index == 0:
@@ -408,7 +409,7 @@ class Arguments:
             return regs.r9
         elif index < 20:
             arg_addr = regs.rsp + (index + 1) * 8
-            data = self._uc.mem_read(arg_addr, 8)
+            data = self._memory.read(arg_addr, 8)
             return struct.unpack("<Q", data)[0]
         else:
             raise Exception("not implemented!")
