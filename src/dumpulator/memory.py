@@ -152,15 +152,21 @@ class MemoryManager:
         mask = self._granularity - 1
         return (addr + mask) & ~mask
 
-    def find_free(self, size: int):
+    def find_free(self, size: int, allocation_align=True):
         assert size > 0 and self.align_page(size) == size
         base = self._minimum
         while base < self._maximum:
             info = self.query(base)
             assert info.base == base
-            if info.state == MemoryState.MEM_FREE and info.region_size >= size and self.align_allocation(base) == base:
-                return info.base
             base += info.region_size
+            if info.state == MemoryState.MEM_FREE:
+                if allocation_align:
+                    aligned_base = self.align_allocation(info.base)
+                    diff = aligned_base - info.base
+                    info.base = aligned_base
+                    info.region_size -= diff
+                if info.region_size >= size:
+                    return info.base
         return None
 
     def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None):

@@ -681,6 +681,7 @@ class Dumpulator(Architecture):
     def allocate(self, size, page_align=False):
         if not self._allocate_ptr:
             self._allocate_base = self.memory.find_free(self._allocate_size)
+            assert self._allocate_base is not None, "Failed to find free memory"
             self.memory.reserve(
                 start=self._allocate_base,
                 size=self._allocate_size,
