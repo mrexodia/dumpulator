@@ -70,7 +70,7 @@ from dumpulator import Dumpulator
 
 prolog_start = 0x00007FFFC81C06C0
 # we want to stop the instruction after the prolog
-prolog_end = 00007FFFC81C06D6 + 7
+prolog_end = 0x00007FFFC81C06D6 + 7
 
 dp = Dumpulator("my.dmp", quiet=True)
 dp.regs.rcx = 0x1337
