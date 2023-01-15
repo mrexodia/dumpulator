@@ -123,7 +123,7 @@ class MinidumpMemorySegment:
 		return mms		
 		
 	def inrange(self, virt_addr):
-		if virt_addr >= self.start_virtual_address and virt_addr < self.end_virtual_address:
+		if self.start_virtual_address <= virt_addr < self.end_virtual_address:
 			return True
 		return False
 	
