@@ -251,7 +251,6 @@ class Dumpulator(Architecture):
         self._quiet = quiet
         self._debug = debug_logs
 
-
         # Load the minidump
         self._minidump = minidump.MinidumpFile.parse(minidump_file)
         if thread_id is None and self._minidump.exception is not None:
@@ -287,12 +286,13 @@ class Dumpulator(Architecture):
         self._allocate_size = 1024 * 1024 * 10  # NOTE: 10 megs
         self._allocate_ptr = None
         self._setup_memory()
+        self.debug(f"total commit: {hex(self._pages.total_commit)}, pages: {self._pages.total_commit // PAGE_SIZE}")
         self._setup_modules()
+        self.syscalls = []
+        self._setup_syscalls()
         self._setup_emulator(thread)
         self.kill_me = None
         self.exit_code = None
-        self.syscalls = []
-        self._setup_syscalls()
         self.exports = self._all_exports()
         self.handles = HandleManager()
         self.exception = ExceptionInfo()
@@ -376,6 +376,8 @@ class Dumpulator(Architecture):
                 regions.append([])
             regions[-1].append(info)
         # NOTE: The HYPERVISOR_SHARED_DATA does not respect the allocation granularity
+        potential_hv = []
+        old_granularity = self.memory._granularity
         self.memory._granularity = PAGE_SIZE
         for i in range(len(regions)):
             region = regions[i]
@@ -395,14 +397,15 @@ class Dumpulator(Architecture):
             reserve_type = MemoryType(info.Type.value)
             self.debug(f" reserved: {hex(reserve_addr)}, size: {hex(reserve_size)}, protect: {reserve_protect}, type: {reserve_type}")
             self.memory.reserve(reserve_addr, reserve_size, reserve_protect, reserve_type)
+            if reserve_addr & (old_granularity - 1) != 0:
+                potential_hv.append(reserve_addr)
             for info in region:
                 emu_addr = info.BaseAddress & self.addr_mask
                 if info.State == minidump.MemoryState.MEM_COMMIT:
                     protect = reserve_protect if info.Protect is None else MemoryProtect(info.Protect.value)
                     self.debug(f"committed: {hex(emu_addr)}, size: {hex(info.RegionSize)}, protect: {protect}")
                     self.memory.commit(info.BaseAddress, info.RegionSize, protect)
-        self.memory._granularity = 0x10000
-
+        self.memory._granularity = old_granularity
         memory = self._minidump.get_reader().get_buffered_reader()
         seg: minidump.MinidumpMemorySegment
         for seg in self._minidump.memory_segments_64.memory_segments:
@@ -414,7 +417,109 @@ class Dumpulator(Architecture):
             self._pages.write(emu_addr, data)
         self._pages.lazy = False
 
+        self.memory.set_region_info(0x7ffe0000, "KUSER_SHARED_DATA")
+        if len(potential_hv) == 1:
+            self.memory.set_region_info(potential_hv[0], "HYPERVISOR_SHARED_DATA")
+        elif len(potential_hv) > 1:
+            self.debug(f"Unexpected unaligned addresses: {' '.join([hex(x) for x in potential_hv])}")
+
+    def _setup_pebteb(self, thread):
+        self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
+        is_wow64 = self.modules["ntdll.dll"].find_export("Wow64Transition") is not None
+
+        for i in range(0, len(self._minidump.threads.threads)):
+            thread = self._minidump.threads.threads[i]
+            teb = thread.Teb & 0xFFFFFFFFFFFFF000
+            tid = thread.ThreadId
+            if self._x64:
+                # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_NT_TIB
+                stack_base = self.read_ptr(teb + 0x8)
+                stack_limit = self.read_ptr(teb + 0x10)
+                deallocation_stack = self.read_ptr(teb + 0x1478)
+            else:
+                # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_NT_TIB
+                stack_base = self.read_ptr(teb + 0x4)
+                stack_limit = self.read_ptr(teb + 0x8)
+                deallocation_stack = self.read_ptr(teb + 0xe0c)
+            # The stack grows from base (the higher address) to limit (the lower address)
+            self.memory.set_region_info(stack_base - 1, f"Stack (thread {tid})")
+
+            teb_size = 2 * PAGE_SIZE
+            self.memory.set_region_info(teb, f"TEB (thread {tid})", size=teb_size)
+            if is_wow64:
+                self.memory.set_region_info(teb - teb_size, f"WoW64 TEB (thread {tid})", size=teb_size)
+
+        # https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+        # Handle PEB
+        # Retrieve console handle
+        if self._x64:
+            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_TEB
+            self.peb = self.read_ptr(self.teb + 0x60)
+            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_PEB
+            process_parameters = self.read_ptr(self.peb + 0x20)
+            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_RTL_USER_PROCESS_PARAMETERS
+            self.console_handle = self.read_ptr(process_parameters + 0x10)
+            self.stdin_handle = self.read_ptr(process_parameters + 0x20)
+            self.stdout_handle = self.read_ptr(process_parameters + 0x28)
+            self.stderr_handle = self.read_ptr(process_parameters + 0x30)
+            number_of_heaps = self.read_ulong(self.peb + 0xe8)
+            process_heaps_ptr = self.read_ptr(self.peb + 0xf0)
+            api_set_map = self.read_ptr(self.peb + 0x68)
+            csr_shared_memory = self.read_ptr(self.peb + 0x88)
+            codepage_data = self.read_ptr(self.peb + 0xa0)
+            gdi_handle_table = self.read_ptr(self.peb + 0xf8)
+            shim_data = self.read_ptr(self.peb + 0x2d8)
+            activation_context_data = self.read_ptr(self.peb + 0x2f8)
+            default_activation_context_data = self.read_ptr(self.peb + 0x308)
+            leap_second_data = self.read_ptr(self.peb + 0x7b8)
+        else:
+            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_TEB
+            self.peb = self.read_ptr(self.teb + 0x30)
+            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_PEB
+            process_parameters = self.read_ptr(self.peb + 0x10)
+            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_RTL_USER_PROCESS_PARAMETERS
+            self.console_handle = self.read_ptr(process_parameters + 0x10)
+            self.stdin_handle = self.read_ptr(process_parameters + 0x18)
+            self.stdout_handle = self.read_ptr(process_parameters + 0x1c)
+            self.stderr_handle = self.read_ptr(process_parameters + 0x20)
+            number_of_heaps = self.read_ulong(self.peb + 0x88)
+            process_heaps_ptr = self.read_ptr(self.peb + 0x90)
+            api_set_map = self.read_ptr(self.peb + 0x38)
+            csr_shared_memory = self.read_ptr(self.peb + 0x4c)
+            codepage_data = self.read_ptr(self.peb + 0x58)
+            gdi_handle_table = self.read_ptr(self.peb + 0x94)
+            shim_data = self.read_ptr(self.peb + 0x1e8)
+            activation_context_data = self.read_ptr(self.peb + 0x1f8)
+            default_activation_context_data = self.read_ptr(self.peb + 0x200)
+            leap_second_data = self.read_ptr(self.peb + 0x470)
+
+        self.memory.set_region_info(self.peb, "PEB", size=PAGE_SIZE)
+        if is_wow64:
+            self.memory.set_region_info(self.peb - PAGE_SIZE, "WoW64 PEB", size=PAGE_SIZE)
+
+        self.info(f"TEB: 0x{self.teb:x}, PEB: 0x{self.peb:x}")
+        self.info(f"  ConsoleHandle: 0x{self.console_handle:x}")
+        self.info(f"  StandardInput: 0x{self.stdin_handle:x}")
+        self.info(f"  StandardOutput: 0x{self.stdout_handle:x}")
+        self.info(f"  StandardError: 0x{self.stderr_handle:x}")
+
+        process_heaps = []
+        for i in range(0, min(number_of_heaps, 0x1000)):
+            heap_ptr = self.read_ptr(process_heaps_ptr + self.ptr_size() * i)
+            process_heaps.append(heap_ptr)
+            self.memory.set_region_info(heap_ptr, f"Heap (ID {i})")
+
+        self.memory.set_region_info(api_set_map, "ApiSetMap")
+        self.memory.set_region_info(csr_shared_memory, "CSR shared memory")
+        self.memory.set_region_info(codepage_data, "CodePage data")
+        self.memory.set_region_info(gdi_handle_table, "GDI shared handle table")
+        self.memory.set_region_info(shim_data, "Shim data")
+        self.memory.set_region_info(activation_context_data, "Activation context data")
+        self.memory.set_region_info(default_activation_context_data, "Default activation context data")
+        self.memory.set_region_info(leap_second_data, "Leap second data")
+
     def _setup_emulator(self, thread):
+        self._setup_pebteb(thread)
         # TODO: map these using self.memory instead
         # map in codecaves (TODO: can be mapped as UC_PROT_NONE unless used)
         self._pages.commit(USER_CAVE, PAGE_SIZE, MemoryProtect.PAGE_EXECUTE_WRITECOPY)
@@ -427,7 +532,6 @@ class Dumpulator(Architecture):
 
         # Set up context
         self._setup_gdt()
-        self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
         if self._x64:
             self.regs.cs = windows_user_segment.cs
             self.regs.ss = windows_user_segment.ss
@@ -521,35 +625,6 @@ class Dumpulator(Architecture):
         self._uc.hook_add(UC_HOOK_INSN_INVALID, _hook_invalid, user_data=self)
         if self.trace:
             self._uc.hook_add(UC_HOOK_CODE, _hook_code, user_data=self)
-
-        # https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
-        # Handle PEB
-        # Retrieve console handle
-        if self._x64:
-            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_TEB
-            self.peb = self.read_ptr(self.teb + 0x60)
-            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_PEB
-            process_parameters = self.read_ptr(self.peb + 0x20)
-            # https://www.vergiliusproject.com/kernels/x64/Windows%2011/21H2%20(RTM)/_RTL_USER_PROCESS_PARAMETERS
-            self.console_handle = self.read_ptr(process_parameters + 0x10)
-            self.stdin_handle = self.read_ptr(process_parameters + 0x20)
-            self.stdout_handle = self.read_ptr(process_parameters + 0x28)
-            self.stderr_handle = self.read_ptr(process_parameters + 0x30)
-        else:
-            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_TEB
-            self.peb = self.read_ptr(self.teb + 0x30)
-            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_PEB
-            process_parameters = self.read_ptr(self.peb + 0x10)
-            # https://www.vergiliusproject.com/kernels/x86/Windows%2010/2110%2021H2%20(November%202021%20Update)/_RTL_USER_PROCESS_PARAMETERS
-            self.console_handle = self.read_ptr(process_parameters + 0x10)
-            self.stdin_handle = self.read_ptr(process_parameters + 0x18)
-            self.stdout_handle = self.read_ptr(process_parameters + 0x1c)
-            self.stderr_handle = self.read_ptr(process_parameters + 0x20)
-        self.info(f"TEB: 0x{self.teb:x}, PEB: 0x{self.peb:x}")
-        self.info(f"  ConsoleHandle: 0x{self.console_handle:x}")
-        self.info(f"  StandardInput: 0x{self.stdin_handle:x}")
-        self.info(f"  StandardOutput: 0x{self.stdout_handle:x}")
-        self.info(f"  StandardError: 0x{self.stderr_handle:x}")
 
     def _all_exports(self):
         exports: Dict[int, str] = {}
