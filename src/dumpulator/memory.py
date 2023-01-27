@@ -358,11 +358,15 @@ class MemoryManager:
                         break
                 else:
                     assert False  # unreachable
+        # Only keep information starting from the current page, or the parent page if none
         if result is not None:
             result.info = []
             for info, start_addr in result_info.items():
                 if start_addr >= result.base:
                     result.info.append(info)
+            if len(result.info) == 0 and len(result_info) > 0:
+                result.info = list(result_info.keys())[:1]
+
         return result
 
     def map(self) -> List[MemoryBasicInformation]:
