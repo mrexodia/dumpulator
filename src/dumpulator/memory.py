@@ -127,9 +127,9 @@ class MemoryManager:
         self._regions: List[MemoryRegion] = []
         self._committed: Dict[int, MemoryRegion] = {}
 
-    def find_region(self, region: Union[MemoryRegion, int]):
+    def find_region(self, region: Union[MemoryRegion, int]) -> Optional[MemoryRegion]:
         if isinstance(region, int):
-            region = MemoryRegion(self.align_page(region), 0)
+            region = MemoryRegion(self.containing_page(region), 0)
         index = bisect.bisect_right(self._regions, region)
         if index == 0:
             return None
@@ -140,19 +140,26 @@ class MemoryManager:
             else:
                 return None
 
-    def find_commit(self, addr: int):
-        addr = self.align_page(addr)
+    def find_commit(self, addr: int) -> Optional[MemoryRegion]:
+        addr = self.containing_page(addr)
         return self._committed.get(addr, None)
 
-    def align_page(self, addr: int):
+    # Rounds down to the page containing this address
+    def containing_page(self, addr: int) -> int:
+        mask = PAGE_SIZE - 1
+        return addr & ~mask
+
+    # Rounds up to the nearest page size
+    def align_page(self, addr: int) -> int:
         mask = PAGE_SIZE - 1
         return (addr + mask) & ~mask
 
-    def align_allocation(self, addr: int):
+    # Rounds up to the nearest allocation granularity
+    def align_allocation(self, addr: int) -> int:
         mask = self._granularity - 1
         return (addr + mask) & ~mask
 
-    def find_free(self, size: int, allocation_align=True):
+    def find_free(self, size: int, allocation_align=True) -> Optional[int]:
         assert size > 0 and self.align_page(size) == size
         base = self._minimum
         while base < self._maximum:
@@ -169,7 +176,7 @@ class MemoryManager:
                     return info.base
         return None
 
-    def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None):
+    def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None) -> None:
         assert isinstance(protect, MemoryProtect)
         assert isinstance(type, MemoryType)
         assert size > 0 and self.align_page(size) == size
@@ -192,7 +199,7 @@ class MemoryManager:
             check_overlaps(index)
         self._regions.insert(index, region)
 
-    def release(self, start: int):
+    def release(self, start: int) -> None:
         assert self.align_allocation(start) == start
 
         parent_region = self.find_region(start)
@@ -215,10 +222,10 @@ class MemoryManager:
         assert parent_region.commit_count == 0
         self._regions.remove(parent_region)
 
-    def commit(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.UNDEFINED):
+    def commit(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.UNDEFINED) -> None:
         assert isinstance(protect, MemoryProtect)
         assert size > 0 and self.align_page(size) == size
-        assert self.align_page(start) == start
+        assert self.containing_page(start) == start
         region = MemoryRegion(start, size)
         parent_region = self.find_region(region)
         if parent_region is None:
@@ -245,9 +252,9 @@ class MemoryManager:
                     self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
                     parent_region.commit_count += 1
 
-    def decommit(self, start: int, size: int):
+    def decommit(self, start: int, size: int) -> None:
         assert size > 0 and self.align_page(size) == size
-        assert self.align_page(start) == start
+        assert self.containing_page(start) == start
         region = MemoryRegion(start, size)
         parent_region = self.find_region(region)
         if parent_region is None:
@@ -265,10 +272,10 @@ class MemoryManager:
                     del self._committed[page]
                     parent_region.commit_count -= 1
 
-    def protect(self, start: int, size: int, protect: MemoryProtect):
+    def protect(self, start: int, size: int, protect: MemoryProtect) -> MemoryProtect:
         assert isinstance(protect, MemoryProtect)
         assert size > 0 and self.align_page(size) == size
-        assert self.align_page(start) == start
+        assert self.containing_page(start) == start
         region = MemoryRegion(start, size)
         parent_region = self.find_region(region)
         if parent_region is None:
@@ -289,8 +296,8 @@ class MemoryManager:
 
         return old_protect
 
-    def query(self, start: int):
-        start = self.align_page(start)
+    def query(self, start: int) -> MemoryBasicInformation:
+        start = self.containing_page(start)
 
         region = MemoryRegion(start, 0)
         parent_region = self.find_region(region)
@@ -361,3 +368,23 @@ class MemoryManager:
 
     def write(self, addr: int, data: bytes):
         return self._page_manager.write(addr, data)
+
+    def set_region_info(self, addr: int, info: Any, *, size=0):
+        region = self.find_region(addr)
+        if region is None:
+            return False
+
+        if size > 0:
+            for page in region.pages():
+                if page < addr:
+                    continue
+                if page >= addr + size:
+                    break
+                commit = self._committed.get(page)
+                if commit is not None and commit.info is None:
+                    commit.info = info
+        else:
+            if region.info is not None:
+                return False
+            region.info = info
+        return True

@@ -70,7 +70,7 @@ class Module:
         return f"Module({hex(self.base)}, {hex(self.size)}, {repr(self.path)})"
 
     def __contains__(self, addr: int):
-        return addr >= self.base and addr < self.base + self.size
+        return self.base <= addr < self.base + self.size
 
 class ModuleManager:
     def __init__(self, memory: MemoryManager):
@@ -113,7 +113,6 @@ class ModuleManager:
         if export.forward is not None:
             return self.resolve_export(export.forward[0], export.forward[1])
         return export
-
 
     def __getitem__(self, key: Union[str, int]) -> Module:
         module = self.find(key)
