@@ -16,49 +16,49 @@ class Architecture(object):
     def write(self, addr: int, data: bytes):
         raise NotImplementedError()
 
-    def read_char(self, addr):
+    def read_char(self, addr: int) -> int:
         return struct.unpack("<b", self.read(addr, 1))[0]
 
-    def read_short(self, addr):
+    def read_short(self, addr: int) -> int:
         return struct.unpack("<h", self.read(addr, 2))[0]
 
-    def read_long(self, addr):
+    def read_long(self, addr: int) -> int:
         return struct.unpack("<i", self.read(addr, 4))[0]
 
-    def read_byte(self, addr):
+    def read_byte(self, addr: int) -> int:
         return struct.unpack("<B", self.read(addr, 1))[0]
 
-    def read_ushort(self, addr):
+    def read_ushort(self, addr: int) -> int:
         return struct.unpack("<H", self.read(addr, 2))[0]
 
-    def read_ulong(self, addr):
+    def read_ulong(self, addr: int) -> int:
         return struct.unpack("<I", self.read(addr, 4))[0]
 
-    def read_ptr(self, addr):
+    def read_ptr(self, addr: int) -> int:
         return struct.unpack("<Q" if self._x64 else "<I", self.read(addr, self.ptr_size()))[0]
 
-    def write_char(self, addr, value):
+    def write_char(self, addr: int, value: int):
         self.write(addr, struct.pack("<b", value))
 
-    def write_short(self, addr, value):
+    def write_short(self, addr: int, value: int):
         self.write(addr, struct.pack("<h", value))
 
-    def write_long(self, addr, value):
+    def write_long(self, addr: int, value: int):
         self.write(addr, struct.pack("<i", value))
 
-    def write_byte(self, addr, value):
+    def write_byte(self, addr: int, value: int):
         self.write(addr, struct.pack("<B", value))
 
-    def write_ushort(self, addr, value):
+    def write_ushort(self, addr: int, value: int):
         self.write(addr, struct.pack("<H", value))
 
-    def write_ulong(self, addr, value):
+    def write_ulong(self, addr: int, value: int):
         self.write(addr, struct.pack("<I", value))
 
-    def write_ptr(self, addr, value):
+    def write_ptr(self, addr: int, value: int):
         self.write(addr, struct.pack("<Q" if self._x64 else "<I", value))
 
-    def read_str(self, addr, encoding="utf-8"):
+    def read_str(self, addr: int, encoding="utf-8") -> str:
         data = self.read(addr, 512)
 
         # Note: this is awful
