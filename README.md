@@ -8,6 +8,7 @@ An easy-to-use library for emulating code in minidump files. Here are some links
 - [Emulating malware with Dumpulator](https://rioasmara.com/2022/07/23/emulating-malware-with-dumpulator/)
 - [Emotet x64 Stack Strings Config Emulation | OALABS Research](https://research.openanalysis.net/emotet/emulation/config/dumpulator/malware/2022/05/19/emotet_x64_emulation.html)
 - [Native function and Assembly Code Invocation](https://research.checkpoint.com/2022/native-function-and-assembly-code-invocation/)
+- [Guloader string decryption (VEH)](https://research.openanalysis.net/guloader/emulation/dumpulator/veh/exceptions/2023/01/15/dumpulator-veh.html)
 
 ## Examples
 
