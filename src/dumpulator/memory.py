@@ -1,5 +1,5 @@
 from enum import Enum, IntFlag, Flag
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict, Union, Optional, Set
 import bisect
 
 PAGE_SIZE = 0x1000
@@ -113,7 +113,7 @@ class MemoryBasicInformation:
         self.state: MemoryState = None
         self.protect: MemoryProtect = None
         self.type: MemoryType = None
-        self.info: Any = None
+        self.info: List[Any] = []
 
     def __str__(self):
         return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
@@ -316,20 +316,25 @@ class MemoryManager:
 
         # Reference: https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualquery#remarks
         result: MemoryBasicInformation = None
+        result_info = {}
+        def add_info(region: MemoryRegion):
+            if region.info is None:
+                return
+            if region.info in result_info:
+                return
+            result_info[region.info] = region.start
         for page in parent_region.pages():
             if page < start:
                 continue
             elif result is None:
                 result = MemoryBasicInformation(page, parent_region.start, parent_region.protect)
-                if page == parent_region.start:
-                    result.info = parent_region.info
+                add_info(parent_region)
                 if page in self._committed:
                     result.state = MemoryState.MEM_COMMIT
                     commited_page = self._committed[page]
                     result.protect = commited_page.protect
                     result.type = commited_page.type
-                    if commited_page.info:
-                        result.info = commited_page.info
+                    add_info(commited_page)
                     assert commited_page.type == parent_region.type
                 else:
                     result.state = MemoryState.MEM_RESERVE
@@ -348,13 +353,19 @@ class MemoryManager:
                 elif result.state == MemoryState.MEM_COMMIT:
                     if commited_page is not None and commited_page.type == result.type and commited_page.protect == result.protect:
                         result.region_size += PAGE_SIZE
+                        add_info(commited_page)
                     else:
                         break
                 else:
                     assert False  # unreachable
+        if result is not None:
+            result.info = []
+            for info, start_addr in result_info.items():
+                if start_addr >= result.base:
+                    result.info.append(info)
         return result
 
-    def map(self):
+    def map(self) -> List[MemoryBasicInformation]:
         addr = self._minimum
         regions: List[MemoryBasicInformation] = []
         while addr < self._maximum:

@@ -317,11 +317,12 @@ class Dumpulator(Architecture):
                 if region.state == MemoryState.MEM_RESERVE:
                     protect = region.allocation_protect
                 entry[3] = str(protect)
-                if isinstance(region.info, Module):
-                    module: Module = region.info
-                    entry[4] = f" {module.name}[{hex(module.size)}]"
-                elif region.info:
-                    entry[4] = str(region.info)
+                def pretty_info(info: Any):
+                    if isinstance(info, Module):
+                        return f"{info.name}[{hex(info.size)}]"
+                    else:
+                        return str(info)
+                entry[4] = ", ".join(map(pretty_info, region.info))
             table.append(entry)
         print(format_table(table))
 
