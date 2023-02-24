@@ -136,7 +136,7 @@ class LazyPageManager(PageManager):
     def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
         assert addr & 0xFFF == 0
         assert size & 0xFFF == 0
-        #print(f"commit({hex(addr)}, {hex(size)}, {protect})")
+
         if not self.lazy:
             self.child.commit(addr, size, protect)
         for page_addr in self.iter_pages(addr, size):
@@ -147,7 +147,7 @@ class LazyPageManager(PageManager):
     def decommit(self, addr: int, size: int) -> None:
         assert addr & 0xFFF == 0
         assert size & 0xFFF == 0
-        #print(f"decommit({hex(addr)}, {hex(size)})")
+
         pages = []
         for page_addr in self.iter_pages(addr, size):
             assert page_addr in self.pages
@@ -166,7 +166,7 @@ class LazyPageManager(PageManager):
     def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
         assert addr & 0xFFF == 0
         assert size & 0xFFF == 0
-        #print(f"protect({hex(addr)}, {hex(size)}, {protect})")
+
         pages = []
         for page_addr in self.iter_pages(addr, size):
             assert page_addr in self.pages
@@ -183,8 +183,6 @@ class LazyPageManager(PageManager):
             page.protect = protect
 
     def read(self, addr: int, size: int) -> bytearray:
-        #print(f"read({hex(addr)}, {hex(size)})")
-
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, size):
             page = self.pages.get(page_addr, None)
@@ -208,8 +206,6 @@ class LazyPageManager(PageManager):
             return data
 
     def write(self, addr: int, data: bytes) -> None:
-        #print(f"write({hex(addr)}, size: {hex(len(data))})")
-
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, len(data)):
             page = self.pages.get(page_addr, None)
