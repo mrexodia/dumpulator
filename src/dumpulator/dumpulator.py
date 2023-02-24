@@ -38,22 +38,21 @@ class ExceptionType(Enum):
     Interrupt = 2
     ContextSwitch = 3
 
+@dataclass
 class ExceptionInfo:
-    def __init__(self):
-        self.type = ExceptionType.NoException
-        self.memory_access = 0
-        self.memory_address = 0
-        self.memory_size = 0
-        self.memory_value = 0
-        self.interrupt_number = 0
-        self.code_hook_h: Optional[int] = None  # TODO: should be unicorn.uc_hook_h, but type error
-        self.context: Optional[unicorn.UcContext] = None
-        self.tb_start = 0
-        self.tb_size = 0
-        self.tb_icount = 0
-        self.step_count = 0
-        self.final = False
-        self.handling = False
+    type: ExceptionType = ExceptionType.NoException
+    memory_access: int = 0  # refers to UC_MEM_* values
+    memory_address: int = 0
+    memory_size: int = 0
+    interrupt_number: int = 0
+    code_hook_h: Optional[int] = None  # TODO(printup): should be unicorn.uc_hook_h, but type error
+    context: Optional[unicorn.UcContext] = None
+    tb_start: int = 0
+    tb_size: int = 0
+    tb_icount: int = 0
+    step_count: int = 0
+    final: bool = False
+    handling: bool = False
 
     def __str__(self):
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
