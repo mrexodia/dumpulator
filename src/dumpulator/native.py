@@ -1,7 +1,5 @@
-import struct
 import ctypes
 import traceback
-from typing import Optional
 
 from .ntenums import *
 from .ntprimitives import *
@@ -243,16 +241,14 @@ class CONTEXT(ctypes.Structure):
                     if key.startswith("Seg"):
                         dpname = key[3:].lower()
                     setattr(self, key, regs[dpname])
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_INTEGER) == CONTEXT_INTEGER:
             for key in CONTEXT._integer:
                 try:
                     setattr(self, key, regs[key.lower()])
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_SEGMENTS) == CONTEXT_SEGMENTS:
             for key in CONTEXT._segments:
                 try:
@@ -260,17 +256,15 @@ class CONTEXT(ctypes.Structure):
                     if key.startswith("Seg"):
                         dpname = key[3:].lower()
                     setattr(self, key, regs[dpname])
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_DEBUG_REGISTERS) == CONTEXT_DEBUG_REGISTERS:
             for key in CONTEXT._debug:
                 try:
                     value = regs[key.lower()] if key.startswith("Dr") else 0
                     setattr(self, key, value)
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_MMX_REGISTERS) == CONTEXT_MMX_REGISTERS:
             xmm = self.FltSave.Xmm
             for key in CONTEXT._mmx:
@@ -280,9 +274,8 @@ class CONTEXT(ctypes.Structure):
                 y.Low = x - (x >> 64)
                 try:
                     setattr(xmm, key, y)
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
 
     def to_regs(self, regs):
         setattr(self, "MxCsr", regs["mxcsr"])
@@ -295,16 +288,14 @@ class CONTEXT(ctypes.Structure):
                     if key.startswith("Seg"):
                         dpname = key[3:].lower()
                     setattr(regs, dpname, getattr(self, key))
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_INTEGER) == CONTEXT_INTEGER:
             for key in CONTEXT._integer:
                 try:
                     setattr(regs, key.lower(), getattr(self, key))
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_SEGMENTS) == CONTEXT_SEGMENTS:
             for key in CONTEXT._segments:
                 try:
@@ -312,17 +303,15 @@ class CONTEXT(ctypes.Structure):
                     if key.startswith("Seg"):
                         dpname = key[3:].lower()
                     setattr(regs, dpname, getattr(self, key))
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_DEBUG_REGISTERS) == CONTEXT_DEBUG_REGISTERS:
             for key in CONTEXT._debug:
                 try:
                     if key.startswith("Dr"):
                         setattr(regs, key.lower(), getattr(self, key))
-                except Exception as x:
+                except Exception:
                     traceback.print_exc()
-                    pass
         if (ContextFlags & CONTEXT_MMX_REGISTERS) == CONTEXT_MMX_REGISTERS:
             # TODO implement
             pass
