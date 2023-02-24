@@ -1079,7 +1079,7 @@ rsp in KiUserExceptionDispatcher:
             if write:
                 protect = MemoryProtect.PAGE_READWRITE
             if execute:
-                protect = MemoryProtect.PAGE_EXECUTE_READ
+                protect = MemoryProtect(protect.value << 4)
             print(f"Mapping section '{name.decode()}' {hex(rva)}[{hex(rva)}] -> {hex(va)} as {protect}")
             self.memory.commit(va, size, protect)
             self.write(va, data)
