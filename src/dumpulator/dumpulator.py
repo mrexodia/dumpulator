@@ -1465,4 +1465,3 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
     except UcError:
         pass  # Invalid memory access (NOTE: this should not be possible actually)
     raise NotImplementedError("TODO: throw invalid instruction exception")
-    return False
