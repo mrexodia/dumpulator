@@ -124,9 +124,9 @@ class MemoryBasicInformation:
 @dataclass
 class MemoryManager:
     _page_manager: PageManager
-    _minimum: int = 0x000000010000
+    _minimum: int = 0x10000
     _maximum: int = 0x7fffffff0000
-    _granularity: int = 0x000000010000
+    _granularity: int = 0x10000
     _regions: List[MemoryRegion] = field(default_factory=list)
     _committed: Dict[int, MemoryRegion] = field(default_factory=dict)
 
