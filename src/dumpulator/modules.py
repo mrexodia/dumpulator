@@ -21,6 +21,9 @@ class Module:
     _exports_by_address: Dict[int, int] = field(default_factory=dict)
     _exports_by_ordinal: Dict[int, int] = field(default_factory=dict)
     _exports_by_name: Dict[str, int] = field(default_factory=dict)
+    base: int = field(init=False)
+    size: int = field(init=False)
+    entry: int = field(init=False)
 
     def __post_init__(self):
         self.path = self.path.replace("/", "\\")
@@ -28,9 +31,9 @@ class Module:
         self._parse_pe()
 
     def _parse_pe(self):
-        self.base: int = self.pe.OPTIONAL_HEADER.ImageBase
-        self.size: int = self.pe.OPTIONAL_HEADER.SizeOfImage
-        self.entry: int = self.base + self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        self.base = self.pe.OPTIONAL_HEADER.ImageBase
+        self.size = self.pe.OPTIONAL_HEADER.SizeOfImage
+        self.entry = self.base + self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
         self.pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]])
         pe_exports = self.pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(self.pe, "DIRECTORY_ENTRY_EXPORT") else []
 
