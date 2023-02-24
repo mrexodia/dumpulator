@@ -46,7 +46,7 @@ class ExceptionInfo:
     memory_size: int = 0
     memory_value: int = 0
     interrupt_number: int = 0
-    code_hook_h: Optional[unicorn.uc_hook_h] = None
+    code_hook_h: Optional[int] = None  # represents a `unicorn.uc_hook_h` value (from uc.hook_add)
     context: Optional[unicorn.UcContext] = None
     tb_start: int = 0
     tb_size: int = 0
@@ -1181,7 +1181,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
                 assert value == dp.exception.memory_value
 
                 # Delete the code hook
-                uc.hook_del(dp.exception.code_hook_h.value)
+                uc.hook_del(dp.exception.code_hook_h)
                 dp.exception.code_hook_h = None
 
             # At this point we know for sure the context is correct so we can report the exception
@@ -1202,7 +1202,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
 
         # Install the code hook to single step the basic block again.
         # This will prevent translation block caching and give us the correct cip
-        exception.code_hook_h = unicorn.uc_hook_h(uc.hook_add(UC_HOOK_CODE, _hook_code_exception, user_data=dp))
+        exception.code_hook_h = uc.hook_add(UC_HOOK_CODE, _hook_code_exception, user_data=dp)
 
         # Store the exception info
         dp.exception = exception
