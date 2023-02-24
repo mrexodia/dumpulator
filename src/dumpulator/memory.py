@@ -63,7 +63,7 @@ class MemoryRegion:
 
     def __contains__(self, other: object) -> bool:
         if isinstance(other, int):
-            return self.start <= other < self.end
+            return other >= self.start and other < self.end
         elif isinstance(other, MemoryRegion):
             if other.size == 0:
                 return other.start >= self.start and other.end < self.end
@@ -165,7 +165,7 @@ class MemoryManager:
         return (addr + mask) & ~mask
 
     def find_free(self, size: int, allocation_align=True) -> Optional[int]:
-        assert 0 < size == self.align_page(size)
+        assert size > 0 and self.align_page(size) == size
         base = self._minimum
         while base < self._maximum:
             info = self.query(base)
@@ -184,7 +184,7 @@ class MemoryManager:
     def reserve(self, start: int, size: int, protect: MemoryProtect, memory_type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None) -> None:
         assert isinstance(protect, MemoryProtect)
         assert isinstance(memory_type, MemoryType)
-        assert 0 < size == self.align_page(size)
+        assert size > 0 and self.align_page(size) == size
         assert self.align_allocation(start) == start
         region = MemoryRegion(start, size, protect, memory_type, info)
         if region.start < self._minimum or region.end > self._maximum:
@@ -229,7 +229,7 @@ class MemoryManager:
 
     def commit(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.UNDEFINED) -> None:
         assert isinstance(protect, MemoryProtect)
-        assert 0 < size == self.align_page(size)
+        assert size > 0 and self.align_page(size) == size
         assert self.containing_page(start) == start
         region = MemoryRegion(start, size)
         parent_region = self.find_region(region)
@@ -258,7 +258,7 @@ class MemoryManager:
                     parent_region.commit_count += 1
 
     def decommit(self, start: int, size: int) -> None:
-        assert 0 < size == self.align_page(size)
+        assert size > 0 and self.align_page(size) == size
         assert self.containing_page(start) == start
         region = MemoryRegion(start, size)
         parent_region = self.find_region(region)
@@ -279,7 +279,7 @@ class MemoryManager:
 
     def protect(self, start: int, size: int, protect: MemoryProtect) -> MemoryProtect:
         assert isinstance(protect, MemoryProtect)
-        assert 0 < size == self.align_page(size)
+        assert size > 0 and self.align_page(size) == size
         assert self.containing_page(start) == start
         region = MemoryRegion(start, size)
         parent_region = self.find_region(region)

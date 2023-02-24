@@ -1126,7 +1126,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         return True
 
     fetch_accesses = [UC_MEM_FETCH, UC_MEM_FETCH_PROT, UC_MEM_FETCH_UNMAPPED]
-    if access == UC_MEM_FETCH_UNMAPPED and FORCE_KILL_ADDR - 0x10 <= address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
+    if access == UC_MEM_FETCH_UNMAPPED and address >= FORCE_KILL_ADDR - 0x10 and address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
         dp.error(f"forced exit memory operation {access} of {address:x}[{size:x}] = {value:X}")
         return False
     if dp.exception.final and access in fetch_accesses:
