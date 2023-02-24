@@ -1,6 +1,6 @@
+import bisect
 from enum import Enum, Flag
 from typing import Any, List, Dict, Union, Optional
-import bisect
 
 PAGE_SIZE = 0x1000
 
@@ -145,12 +145,14 @@ class MemoryManager:
         return self._committed.get(addr, None)
 
     # Rounds down to the page containing this address
-    def containing_page(self, addr: int) -> int:
+    @staticmethod
+    def containing_page(addr: int) -> int:
         mask = PAGE_SIZE - 1
         return addr & ~mask
 
     # Rounds up to the nearest page size
-    def align_page(self, addr: int) -> int:
+    @staticmethod
+    def align_page(addr: int) -> int:
         mask = PAGE_SIZE - 1
         return (addr + mask) & ~mask
 
