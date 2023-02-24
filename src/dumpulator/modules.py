@@ -73,6 +73,9 @@ class Module:
     def __repr__(self):
         return f"Module({hex(self.base)}, {hex(self.size)}, {repr(self.path)})"
 
+    def __hash__(self):
+        return hash((self.base, self.size, self.path))
+
     def __contains__(self, addr: int):
         return self.base <= addr < self.base + self.size
 
