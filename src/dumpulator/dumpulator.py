@@ -58,9 +58,9 @@ class ExceptionInfo:
     def __str__(self):
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
 
+@dataclass
 class UnicornPageManager(PageManager):
-    def __init__(self, uc: Uc) -> None:
-        self._uc = uc
+    _uc: Uc
 
     def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
         perms = map_unicorn_perms(protect)
