@@ -731,7 +731,12 @@ class Dumpulator(Architecture):
             addr = int(addr)
         self._pages.write(addr, data)
 
-    def call(self, addr, args: List[int] = [], regs: dict = {}, count=0):
+    def call(self, addr, args: List[int] = None, regs: dict = None, count=0):
+        if args is None:
+            args = []
+        if regs is None:
+            regs = {}
+
         if not isinstance(addr, int):
             addr = int(addr)
         # allow passing custom registers
