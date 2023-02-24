@@ -98,12 +98,14 @@ class LazyPageManager(PageManager):
     pages: Dict[int, LazyPage] = field(default_factory=dict)
     lazy: bool = True
 
-    def iter_pages(self, addr: int, size: int):
+    @staticmethod
+    def iter_pages(addr: int, size: int):
         for i in range(0, size // PAGE_SIZE):
             page_addr = addr + i * PAGE_SIZE
             yield page_addr
 
-    def iter_chunks(self, addr: int, size: int):
+    @staticmethod
+    def iter_chunks(addr: int, size: int):
         # TODO: rewrite this to not be so disgusting
         page = addr & ~0xFFF
         index = addr & 0xFFF
@@ -338,7 +340,8 @@ class Dumpulator(Architecture):
         if not self._quiet:
             print(message)
 
-    def error(self, message: str):
+    @staticmethod
+    def error(message: str):
         print(message)
 
     def _switch_segment(self, segment: SegmentRegisters, gs_base: Optional[int] = None, fs_base: Optional[int] = None):
