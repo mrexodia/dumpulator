@@ -6,6 +6,7 @@ from enum import Enum
 from typing import List, Union, NamedTuple
 import inspect
 from collections import OrderedDict
+from dataclasses import dataclass
 
 import minidump.minidumpfile as minidump
 from unicorn import *
@@ -79,12 +80,12 @@ class UnicornPageManager(PageManager):
             data = bytes(data)
         self._uc.mem_write(addr, data)
 
+@dataclass
 class LazyPage:
-    def __init__(self, addr: int, protect: MemoryProtect, committed: bool):
-        self.addr = addr
-        self.protect = protect
-        self.committed = committed
-        self.data: Optional[bytearray] = None
+    addr: int
+    protect: MemoryProtect
+    committed: bool
+    data: Optional[bytearray] = None
 
     @property
     def size(self):
