@@ -1114,7 +1114,6 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
         ex.step_count += 1
         if ex.step_count >= ex.tb_icount:
             raise Exception("Stepped past the basic block without reaching exception")
-
     except UcError as err:
         dp.error(f"Exception during unicorn hook, please report this as a bug")
         raise err
