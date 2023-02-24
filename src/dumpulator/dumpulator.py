@@ -6,7 +6,7 @@ from enum import Enum
 from typing import List, Union, NamedTuple
 import inspect
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import minidump.minidumpfile as minidump
 from unicorn import *
@@ -90,12 +90,12 @@ class LazyPage:
     def size(self):
         return PAGE_SIZE
 
+@dataclass
 class LazyPageManager(PageManager):
-    def __init__(self, child: PageManager):
-        self.child = child
-        self.total_commit = 0
-        self.pages: Dict[int, LazyPage] = {}
-        self.lazy = True
+    child: PageManager
+    total_commit: int = 0
+    pages: Dict[int, LazyPage] = field(default_factory=dict)
+    lazy: bool = True
 
     def iter_pages(self, addr: int, size: int):
         for i in range(0, size // PAGE_SIZE):
