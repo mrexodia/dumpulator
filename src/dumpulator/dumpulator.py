@@ -229,7 +229,7 @@ class LazyPageManager(PageManager):
 
 class SimpleTimer:
     def __init__(self):
-        self.time = 0
+        self.time = 0.0
         self.start()
 
     def start(self):
