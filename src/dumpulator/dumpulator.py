@@ -1284,8 +1284,7 @@ def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
     try:
         return arg[0].read_str()
     except UcError:
-        pass
-    return None
+        return None
 
 def _object_attributes_to_string(dp: Dumpulator, arg: P(OBJECT_ATTRIBUTES)):
     try:
