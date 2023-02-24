@@ -44,6 +44,7 @@ class ExceptionInfo:
     memory_access: int = 0  # refers to UC_MEM_* values
     memory_address: int = 0
     memory_size: int = 0
+    memory_value: int = 0
     interrupt_number: int = 0
     code_hook_h: Optional[int] = None  # TODO(printup): should be unicorn.uc_hook_h, but type error
     context: Optional[unicorn.UcContext] = None
