@@ -390,7 +390,6 @@ class Dumpulator(Architecture):
                     reserve_addr = info.BaseAddress
                 reserve_size += info.RegionSize
             info = region[0]
-            emu_addr = info.BaseAddress & self.addr_mask
             if info.State == minidump.MemoryState.MEM_FREE:
                 continue
             reserve_protect = MemoryProtect(info.AllocationProtect)
