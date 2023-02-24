@@ -1,26 +1,30 @@
-from typing import Dict, Optional, Type, Union, List, Tuple
+from dataclasses import dataclass, field
+from typing import Dict, Optional, Union, List, Tuple
 
 import pefile
 from .memory import MemoryManager
 
 # TODO: support forwarding to API sets
+@dataclass
 class ModuleExport:
-    def __init__(self, address: int, ordinal: int, name: str, forward: Tuple[str, str] = None):
-        self.address = address
-        self.ordinal = ordinal
-        self.name = name
-        self.forward = forward
+    address: int
+    ordinal: int
+    name: str
+    forward: Optional[Tuple[str, str]] = None
 
+@dataclass
 class Module:
-    def __init__(self, pe: pefile.PE, path: str):
-        self.pe = pe
-        path = path.replace("/", "\\")
-        self.path = path
-        self.name = path.split("\\")[-1]
-        self._exports_by_address: Dict[int, int] = {}
-        self._exports_by_ordinal: Dict[int, int] = {}
-        self._exports_by_name: Dict[str, int] = {}
-        self.exports: List[ModuleExport] = []
+    pe: pefile.PE
+    path: str  # TODO(printup): use pathlib.Path
+    name: str = field(init=False)
+    exports: List[ModuleExport] = field(default_factory=list)
+    _exports_by_address: Dict[int, int] = field(default_factory=dict)
+    _exports_by_ordinal: Dict[int, int] = field(default_factory=dict)
+    _exports_by_name: Dict[str, int] = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.path = self.path.replace("/", "\\")
+        self.name = self.path.split("\\")[-1]
         self._parse_pe()
 
     def _parse_pe(self):
@@ -72,11 +76,11 @@ class Module:
     def __contains__(self, addr: int):
         return self.base <= addr < self.base + self.size
 
+@dataclass
 class ModuleManager:
-    def __init__(self, memory: MemoryManager):
-        self._memory = memory
-        self._name_lookup: Dict[str, int] = {}
-        self._modules: Dict[int, Module] = {}
+    _memory: MemoryManager
+    _name_lookup: Dict[str, int] = field(default_factory=dict)
+    _modules: Dict[int, Module] = field(default_factory=dict)
 
     def add(self, pe: pefile.PE, path: str):
         module = Module(pe, path)
