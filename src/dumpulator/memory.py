@@ -1,5 +1,6 @@
 import bisect
 from enum import Enum, Flag
+from dataclasses import dataclass, field
 from typing import Any, List, Dict, Union, Optional
 
 PAGE_SIZE = 0x1000
@@ -36,16 +37,18 @@ class MemoryState(Enum):
     MEM_RESERVE = 0x2000
     MEM_FREE = 0x10000
 
+@dataclass
 class MemoryRegion:
-    def __init__(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS, memory_type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None):
-        assert start & 0xFFF == 0
-        assert size & 0xFFF == 0
-        self.start = start
-        self.size = size
-        self.protect = protect
-        self.type = memory_type
-        self.info = info
-        self.commit_count = 0
+    start: int
+    size: int
+    protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS
+    type: MemoryType = MemoryType.MEM_PRIVATE
+    info: Optional[Any] = None
+    commit_count: int = 0
+
+    def __post_init__(self):
+        assert self.start & 0xFFF == 0
+        assert self.size & 0xFFF == 0
 
     @property
     def end(self):
@@ -104,28 +107,28 @@ class PageManager:
     def write(self, addr: int, data: bytes) -> None:
         raise NotImplementedError()
 
+@dataclass
 class MemoryBasicInformation:
-    def __init__(self, base: int, allocation_base: int, allocation_protect: MemoryProtect):
-        self.base = base
-        self.allocation_base = allocation_base
-        self.allocation_protect = allocation_protect
-        self.region_size: int = PAGE_SIZE
-        self.state: MemoryState = None
-        self.protect: MemoryProtect = None
-        self.type: MemoryType = None
-        self.info: List[Any] = []
+    base: int
+    allocation_base: int
+    allocation_protect: MemoryProtect
+    region_size: int = PAGE_SIZE
+    state: Optional[MemoryState] = None
+    protect: Optional[MemoryProtect] = None
+    type: Optional[MemoryType] = None
+    info: List[Any] = field(default_factory=list)
 
     def __str__(self):
         return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
 
+@dataclass
 class MemoryManager:
-    def __init__(self, page_manager: PageManager, minimum=0x10000, maximum=0x7fffffff0000, granularity=0x10000):
-        self._page_manager = page_manager
-        self._minimum = minimum
-        self._maximum = maximum
-        self._granularity = granularity
-        self._regions: List[MemoryRegion] = []
-        self._committed: Dict[int, MemoryRegion] = {}
+    _page_manager: PageManager
+    _minimum: int = 0x000000010000
+    _maximum: int = 0x7fffffff0000
+    _granularity: int = 0x000000010000
+    _regions: List[MemoryRegion] = field(default_factory=list)
+    _committed: Dict[int, MemoryRegion] = field(default_factory=dict)
 
     def find_region(self, region: Union[MemoryRegion, int]) -> Optional[MemoryRegion]:
         if isinstance(region, int):
