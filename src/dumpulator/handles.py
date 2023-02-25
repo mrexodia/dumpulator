@@ -6,7 +6,7 @@ from .native import *
 T = TypeVar('T')
 
 class FileObject:
-    def __init__(self, path: str, data: bytes = None):
+    def __init__(self, path: str, data: Optional[bytes] = None):
         self.path = path
         self.data = data
         self.file_offset = 0
@@ -78,15 +78,17 @@ class DeviceObject:
         raise NotImplementedError()
 
 class EventObject:
-    def __init__(self, type: EVENT_TYPE, signalled: bool):
-        self.type = type
+    def __init__(self, event_type: EVENT_TYPE, signalled: bool):
+        self.type = event_type
         self.signalled = signalled
 
     def __str__(self):
         return f"{type(self).__name__}(type: {self.type.name}, signalled: {self.signalled})"
 
 class RegistryKeyObject:
-    def __init__(self, key: str, values: Dict[str, Any] = {}):
+    def __init__(self, key: str, values: Dict[str, Any] = None):
+        if values is None:
+            values = {}
         self.key = key
         self.values = values
 
@@ -198,7 +200,9 @@ class HandleManager:
                 return True
         return False
 
-    def create_key(self, key: str, values: Dict[str, Any] = {}):
+    def create_key(self, key: str, values: Dict[str, Any] = None):
+        if values is None:
+            values = {}
         data = RegistryKeyObject(key, values)
         self.mapped_files[key] = data
         return data

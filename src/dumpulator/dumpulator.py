@@ -6,6 +6,7 @@ from enum import Enum
 from typing import List, Union, NamedTuple
 import inspect
 from collections import OrderedDict
+from dataclasses import dataclass, field
 
 import minidump.minidumpfile as minidump
 from unicorn import *
@@ -37,29 +38,29 @@ class ExceptionType(Enum):
     Interrupt = 2
     ContextSwitch = 3
 
+@dataclass
 class ExceptionInfo:
-    def __init__(self):
-        self.type = ExceptionType.NoException
-        self.memory_access = 0
-        self.memory_address = 0
-        self.memory_size = 0
-        self.memory_value = 0
-        self.interrupt_number = 0
-        self.code_hook_h: Optional[int] = None  # TODO: should be unicorn.uc_hook_h, but type error
-        self.context: Optional[unicorn.UcContext] = None
-        self.tb_start = 0
-        self.tb_size = 0
-        self.tb_icount = 0
-        self.step_count = 0
-        self.final = False
-        self.handling = False
+    type: ExceptionType = ExceptionType.NoException
+    memory_access: int = 0  # refers to UC_MEM_* values
+    memory_address: int = 0
+    memory_size: int = 0
+    memory_value: int = 0
+    interrupt_number: int = 0
+    code_hook_h: Optional[int] = None  # represents a `unicorn.uc_hook_h` value (from uc.hook_add)
+    context: Optional[unicorn.UcContext] = None
+    tb_start: int = 0
+    tb_size: int = 0
+    tb_icount: int = 0
+    step_count: int = 0
+    final: bool = False
+    handling: bool = False
 
     def __str__(self):
         return f"{self.type}, ({hex(self.tb_start)}, {hex(self.tb_size)}, {self.tb_icount})"
 
+@dataclass
 class UnicornPageManager(PageManager):
-    def __init__(self, uc: Uc) -> None:
-        self._uc = uc
+    _uc: Uc
 
     def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
         perms = map_unicorn_perms(protect)
@@ -79,30 +80,32 @@ class UnicornPageManager(PageManager):
             data = bytes(data)
         self._uc.mem_write(addr, data)
 
+@dataclass
 class LazyPage:
-    def __init__(self, addr: int, protect: MemoryProtect, committed: bool):
-        self.addr = addr
-        self.protect = protect
-        self.committed = committed
-        self.data: Optional[bytearray] = None
+    addr: int
+    protect: MemoryProtect
+    committed: bool
+    data: Optional[bytearray] = None
 
     @property
     def size(self):
         return PAGE_SIZE
 
+@dataclass
 class LazyPageManager(PageManager):
-    def __init__(self, child: PageManager):
-        self.child = child
-        self.total_commit = 0
-        self.pages: Dict[int, LazyPage] = {}
-        self.lazy = True
+    child: PageManager
+    total_commit: int = 0
+    pages: Dict[int, LazyPage] = field(default_factory=dict)
+    lazy: bool = True
 
-    def iter_pages(self, addr: int, size: int):
+    @staticmethod
+    def iter_pages(addr: int, size: int):
         for i in range(0, size // PAGE_SIZE):
             page_addr = addr + i * PAGE_SIZE
             yield page_addr
 
-    def iter_chunks(self, addr: int, size: int):
+    @staticmethod
+    def iter_chunks(addr: int, size: int):
         # TODO: rewrite this to not be so disgusting
         page = addr & ~0xFFF
         index = addr & 0xFFF
@@ -136,7 +139,7 @@ class LazyPageManager(PageManager):
     def commit(self, addr: int, size: int, protect: MemoryProtect) -> None:
         assert addr & 0xFFF == 0
         assert size & 0xFFF == 0
-        #print(f"commit({hex(addr)}, {hex(size)}, {protect})")
+
         if not self.lazy:
             self.child.commit(addr, size, protect)
         for page_addr in self.iter_pages(addr, size):
@@ -147,7 +150,7 @@ class LazyPageManager(PageManager):
     def decommit(self, addr: int, size: int) -> None:
         assert addr & 0xFFF == 0
         assert size & 0xFFF == 0
-        #print(f"decommit({hex(addr)}, {hex(size)})")
+
         pages = []
         for page_addr in self.iter_pages(addr, size):
             assert page_addr in self.pages
@@ -166,7 +169,7 @@ class LazyPageManager(PageManager):
     def protect(self, addr: int, size: int, protect: MemoryProtect) -> None:
         assert addr & 0xFFF == 0
         assert size & 0xFFF == 0
-        #print(f"protect({hex(addr)}, {hex(size)}, {protect})")
+
         pages = []
         for page_addr in self.iter_pages(addr, size):
             assert page_addr in self.pages
@@ -183,8 +186,6 @@ class LazyPageManager(PageManager):
             page.protect = protect
 
     def read(self, addr: int, size: int) -> bytearray:
-        #print(f"read({hex(addr)}, {hex(size)})")
-
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, size):
             page = self.pages.get(page_addr, None)
@@ -208,8 +209,6 @@ class LazyPageManager(PageManager):
             return data
 
     def write(self, addr: int, data: bytes) -> None:
-        #print(f"write({hex(addr)}, size: {hex(len(data))})")
-
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, len(data)):
             page = self.pages.get(page_addr, None)
@@ -233,7 +232,7 @@ class LazyPageManager(PageManager):
 
 class SimpleTimer:
     def __init__(self):
-        self.time = 0
+        self.time = 0.0
         self.start()
 
     def start(self):
@@ -341,7 +340,8 @@ class Dumpulator(Architecture):
         if not self._quiet:
             print(message)
 
-    def error(self, message: str):
+    @staticmethod
+    def error(message: str):
         print(message)
 
     def _switch_segment(self, segment: SegmentRegisters, gs_base: Optional[int] = None, fs_base: Optional[int] = None):
@@ -390,7 +390,6 @@ class Dumpulator(Architecture):
                     reserve_addr = info.BaseAddress
                 reserve_size += info.RegionSize
             info = region[0]
-            emu_addr = info.BaseAddress & self.addr_mask
             if info.State == minidump.MemoryState.MEM_FREE:
                 continue
             reserve_protect = MemoryProtect(info.AllocationProtect)
@@ -734,7 +733,12 @@ class Dumpulator(Architecture):
             addr = int(addr)
         self._pages.write(addr, data)
 
-    def call(self, addr, args: List[int] = [], regs: dict = {}, count=0):
+    def call(self, addr, args: List[int] = None, regs: dict = None, count=0):
+        if args is None:
+            args = []
+        if regs is None:
+            regs = {}
+
         if not isinstance(addr, int):
             addr = int(addr)
         # allow passing custom registers
@@ -762,7 +766,7 @@ class Dumpulator(Architecture):
                 start=self._allocate_base,
                 size=self._allocate_size,
                 protect=MemoryProtect.PAGE_EXECUTE_READWRITE,
-                type=MemoryType.MEM_PRIVATE,
+                memory_type=MemoryType.MEM_PRIVATE,
                 info="allocated region"
             )
             self._allocate_ptr = self._allocate_base
@@ -1112,7 +1116,6 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
         ex.step_count += 1
         if ex.step_count >= ex.tb_icount:
             raise Exception("Stepped past the basic block without reaching exception")
-
     except UcError as err:
         dp.error(f"Exception during unicorn hook, please report this as a bug")
         raise err
@@ -1178,7 +1181,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
                 assert value == dp.exception.memory_value
 
                 # Delete the code hook
-                uc.hook_del(int(dp.exception.code_hook_h))
+                uc.hook_del(dp.exception.code_hook_h)
                 dp.exception.code_hook_h = None
 
             # At this point we know for sure the context is correct so we can report the exception
@@ -1281,8 +1284,7 @@ def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
     try:
         return arg[0].read_str()
     except UcError:
-        pass
-    return None
+        return None
 
 def _object_attributes_to_string(dp: Dumpulator, arg: P(OBJECT_ATTRIBUTES)):
     try:
@@ -1464,4 +1466,3 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
     except UcError:
         pass  # Invalid memory access (NOTE: this should not be possible actually)
     raise NotImplementedError("TODO: throw invalid instruction exception")
-    return False

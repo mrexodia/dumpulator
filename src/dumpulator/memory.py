@@ -1,6 +1,7 @@
-from enum import Enum, IntFlag, Flag
-from typing import Any, List, Dict, Union, Optional, Set
 import bisect
+from enum import Enum, Flag
+from dataclasses import dataclass, field
+from typing import Any, List, Dict, Union, Optional
 
 PAGE_SIZE = 0x1000
 
@@ -36,16 +37,18 @@ class MemoryState(Enum):
     MEM_RESERVE = 0x2000
     MEM_FREE = 0x10000
 
+@dataclass
 class MemoryRegion:
-    def __init__(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None):
-        assert start & 0xFFF == 0
-        assert size & 0xFFF == 0
-        self.start = start
-        self.size = size
-        self.protect = protect
-        self.type = type
-        self.info = info
-        self.commit_count = 0
+    start: int
+    size: int
+    protect: MemoryProtect = MemoryProtect.PAGE_NOACCESS
+    type: MemoryType = MemoryType.MEM_PRIVATE
+    info: Optional[Any] = None
+    commit_count: int = 0
+
+    def __post_init__(self):
+        assert self.start & 0xFFF == 0
+        assert self.size & 0xFFF == 0
 
     @property
     def end(self):
@@ -104,28 +107,28 @@ class PageManager:
     def write(self, addr: int, data: bytes) -> None:
         raise NotImplementedError()
 
+@dataclass
 class MemoryBasicInformation:
-    def __init__(self, base: int, allocation_base: int, allocation_protect: MemoryProtect):
-        self.base = base
-        self.allocation_base = allocation_base
-        self.allocation_protect = allocation_protect
-        self.region_size: int = PAGE_SIZE
-        self.state: MemoryState = None
-        self.protect: MemoryProtect = None
-        self.type: MemoryType = None
-        self.info: List[Any] = []
+    base: int
+    allocation_base: int
+    allocation_protect: MemoryProtect
+    region_size: int = PAGE_SIZE
+    state: Optional[MemoryState] = None
+    protect: Optional[MemoryProtect] = None
+    type: Optional[MemoryType] = None
+    info: List[Any] = field(default_factory=list)
 
     def __str__(self):
         return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
 
+@dataclass
 class MemoryManager:
-    def __init__(self, page_manager: PageManager, minimum=0x10000, maximum=0x7fffffff0000, granularity=0x10000):
-        self._page_manager = page_manager
-        self._minimum = minimum
-        self._maximum = maximum
-        self._granularity = granularity
-        self._regions: List[MemoryRegion] = []
-        self._committed: Dict[int, MemoryRegion] = {}
+    _page_manager: PageManager
+    _minimum: int = 0x10000
+    _maximum: int = 0x7fffffff0000
+    _granularity: int = 0x10000
+    _regions: List[MemoryRegion] = field(default_factory=list)
+    _committed: Dict[int, MemoryRegion] = field(default_factory=dict)
 
     def find_region(self, region: Union[MemoryRegion, int]) -> Optional[MemoryRegion]:
         if isinstance(region, int):
@@ -145,12 +148,14 @@ class MemoryManager:
         return self._committed.get(addr, None)
 
     # Rounds down to the page containing this address
-    def containing_page(self, addr: int) -> int:
+    @staticmethod
+    def containing_page(addr: int) -> int:
         mask = PAGE_SIZE - 1
         return addr & ~mask
 
     # Rounds up to the nearest page size
-    def align_page(self, addr: int) -> int:
+    @staticmethod
+    def align_page(addr: int) -> int:
         mask = PAGE_SIZE - 1
         return (addr + mask) & ~mask
 
@@ -176,18 +181,18 @@ class MemoryManager:
                     return info.base
         return None
 
-    def reserve(self, start: int, size: int, protect: MemoryProtect, type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None) -> None:
+    def reserve(self, start: int, size: int, protect: MemoryProtect, memory_type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None) -> None:
         assert isinstance(protect, MemoryProtect)
-        assert isinstance(type, MemoryType)
+        assert isinstance(memory_type, MemoryType)
         assert size > 0 and self.align_page(size) == size
         assert self.align_allocation(start) == start
-        region = MemoryRegion(start, size, protect, type, info)
+        region = MemoryRegion(start, size, protect, memory_type, info)
         if region.start < self._minimum or region.end > self._maximum:
             raise KeyError(f"Requested region {region} is out of bounds")
 
-        def check_overlaps(index):
-            if index >= 0 and index < len(self._regions):
-                value = self._regions[index]
+        def check_overlaps(idx):
+            if 0 <= idx < len(self._regions):
+                value = self._regions[idx]
                 if region.overlaps(value):
                     raise KeyError(f"Requested region {region} overlaps with {value}")
 
@@ -281,10 +286,10 @@ class MemoryManager:
         if parent_region is None:
             raise KeyError(f"Could not find parent for {region}")
 
-        # Make sure all pages in the region are commited
+        # Make sure all pages in the region are committed
         for page in region.pages():
             if not self._committed[page]:
-                raise KeyError(f"Could not protect uncommited page {hex(page)}")
+                raise KeyError(f"Could not protect uncommitted page {hex(page)}")
 
         # Change the protection
         old_protect = self._committed[region.start].protect
@@ -317,12 +322,12 @@ class MemoryManager:
         # Reference: https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualquery#remarks
         result: MemoryBasicInformation = None
         result_info = {}
-        def add_info(region: MemoryRegion):
-            if region.info is None:
+        def add_info(memory_region: MemoryRegion):
+            if memory_region.info is None:
                 return
-            if region.info in result_info:
+            if memory_region.info in result_info:
                 return
-            result_info[region.info] = region.start
+            result_info[memory_region.info] = memory_region.start
         for page in parent_region.pages():
             if page < start:
                 continue
@@ -331,29 +336,29 @@ class MemoryManager:
                 add_info(parent_region)
                 if page in self._committed:
                     result.state = MemoryState.MEM_COMMIT
-                    commited_page = self._committed[page]
-                    result.protect = commited_page.protect
-                    result.type = commited_page.type
-                    add_info(commited_page)
-                    assert commited_page.type == parent_region.type
+                    committed_page = self._committed[page]
+                    result.protect = committed_page.protect
+                    result.type = committed_page.type
+                    add_info(committed_page)
+                    assert committed_page.type == parent_region.type
                 else:
                     result.state = MemoryState.MEM_RESERVE
                     result.protect = MemoryProtect.UNDEFINED
                     result.type = parent_region.type
-                    # If no pages are commited in this parent region we can bail early
+                    # If no pages are committed in this parent region we can bail early
                     if parent_region.commit_count == 0:
                         result.region_size = parent_region.size
                         break
             else:
-                commited_page = self._committed.get(page, None)
+                committed_page = self._committed.get(page, None)
                 if result.state == MemoryState.MEM_RESERVE:
-                    if commited_page is not None:
+                    if committed_page is not None:
                         break
                     result.region_size += PAGE_SIZE
                 elif result.state == MemoryState.MEM_COMMIT:
-                    if commited_page is not None and commited_page.type == result.type and commited_page.protect == result.protect:
+                    if committed_page is not None and committed_page.type == result.type and committed_page.protect == result.protect:
                         result.region_size += PAGE_SIZE
-                        add_info(commited_page)
+                        add_info(committed_page)
                     else:
                         break
                 else:
