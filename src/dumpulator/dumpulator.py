@@ -189,7 +189,8 @@ class LazyPageManager(PageManager):
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, size):
             page = self.pages.get(page_addr, None)
-            assert page is not None
+            if page is None:
+                raise IndexError(f"Could not find page {hex(page_addr)} while reading {hex(addr)}[{hex(size)}]")
             pages.append((page, index, length))
 
         if all([page.committed for page, _, _ in pages]):
@@ -212,7 +213,8 @@ class LazyPageManager(PageManager):
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, len(data)):
             page = self.pages.get(page_addr, None)
-            assert page is not None
+            if page is None:
+                raise IndexError(f"Could not find page {hex(page_addr)} while writing {hex(addr)}[{hex(len(data))}]")
             pages.append((page, index, length))
 
         if all([page.committed for page, _, _ in pages]):
