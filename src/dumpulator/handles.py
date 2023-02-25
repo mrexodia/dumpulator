@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 from pathlib import Path
 
 from .native import *
@@ -86,7 +86,7 @@ class EventObject:
         return f"{type(self).__name__}(type: {self.type.name}, signalled: {self.signalled})"
 
 class RegistryKeyObject:
-    def __init__(self, key: str, values: Dict[str, Any] = None):
+    def __init__(self, key: str, values: dict[str, Any] = None):
         if values is None:
             values = {}
         self.key = key
@@ -200,7 +200,7 @@ class HandleManager:
                 return True
         return False
 
-    def create_key(self, key: str, values: Dict[str, Any] = None):
+    def create_key(self, key: str, values: dict[str, Any] = None):
         if values is None:
             values = {}
         data = RegistryKeyObject(key, values)

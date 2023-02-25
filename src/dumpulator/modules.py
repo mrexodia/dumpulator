@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Union, List, Tuple
+from typing import Optional, Union
 
 import pefile
 from .memory import MemoryManager
@@ -10,17 +10,17 @@ class ModuleExport:
     address: int
     ordinal: int
     name: str
-    forward: Optional[Tuple[str, str]] = None
+    forward: Optional[tuple[str, str]] = None
 
 @dataclass
 class Module:
     pe: pefile.PE
     path: str  # TODO(printup): use pathlib.Path
     name: str = field(init=False)
-    exports: List[ModuleExport] = field(default_factory=list)
-    _exports_by_address: Dict[int, int] = field(default_factory=dict)
-    _exports_by_ordinal: Dict[int, int] = field(default_factory=dict)
-    _exports_by_name: Dict[str, int] = field(default_factory=dict)
+    exports: list[ModuleExport] = field(default_factory=list)
+    _exports_by_address: dict[int, int] = field(default_factory=dict)
+    _exports_by_ordinal: dict[int, int] = field(default_factory=dict)
+    _exports_by_name: dict[str, int] = field(default_factory=dict)
     base: int = field(init=False)
     size: int = field(init=False)
     entry: int = field(init=False)
@@ -85,8 +85,8 @@ class Module:
 @dataclass
 class ModuleManager:
     _memory: MemoryManager
-    _name_lookup: Dict[str, int] = field(default_factory=dict)
-    _modules: Dict[int, Module] = field(default_factory=dict)
+    _name_lookup: dict[str, int] = field(default_factory=dict)
+    _modules: dict[int, Module] = field(default_factory=dict)
 
     def add(self, pe: pefile.PE, path: str):
         module = Module(pe, path)

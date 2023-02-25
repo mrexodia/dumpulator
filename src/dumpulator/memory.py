@@ -1,7 +1,7 @@
 import bisect
 from enum import Enum, Flag
 from dataclasses import dataclass, field
-from typing import Any, List, Dict, Union, Optional
+from typing import Any, Union, Optional
 
 PAGE_SIZE = 0x1000
 
@@ -116,7 +116,7 @@ class MemoryBasicInformation:
     state: Optional[MemoryState] = None
     protect: Optional[MemoryProtect] = None
     type: Optional[MemoryType] = None
-    info: List[Any] = field(default_factory=list)
+    info: list[Any] = field(default_factory=list)
 
     def __str__(self):
         return f"MemoryBasicInformation(base: {hex(self.base)}, allocation_base: {hex(self.allocation_base)}, region_size: {hex(self.region_size)}, state: {self.state}, protect: {self.protect}, type: {self.type})"
@@ -127,8 +127,8 @@ class MemoryManager:
     _minimum: int = 0x10000
     _maximum: int = 0x7fffffff0000
     _granularity: int = 0x10000
-    _regions: List[MemoryRegion] = field(default_factory=list)
-    _committed: Dict[int, MemoryRegion] = field(default_factory=dict)
+    _regions: list[MemoryRegion] = field(default_factory=list)
+    _committed: dict[int, MemoryRegion] = field(default_factory=dict)
 
     def find_region(self, region: Union[MemoryRegion, int]) -> Optional[MemoryRegion]:
         if isinstance(region, int):
@@ -374,9 +374,9 @@ class MemoryManager:
 
         return result
 
-    def map(self) -> List[MemoryBasicInformation]:
+    def map(self) -> list[MemoryBasicInformation]:
         addr = self._minimum
-        regions: List[MemoryBasicInformation] = []
+        regions: list[MemoryBasicInformation] = []
         while addr < self._maximum:
             info = self.query(addr)
             regions.append(info)

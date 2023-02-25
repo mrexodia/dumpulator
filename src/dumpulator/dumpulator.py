@@ -3,7 +3,7 @@ import struct
 import sys
 import traceback
 from enum import Enum
-from typing import List, Union, NamedTuple
+from typing import Union, NamedTuple
 import inspect
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -95,7 +95,7 @@ class LazyPage:
 class LazyPageManager(PageManager):
     child: PageManager
     total_commit: int = 0
-    pages: Dict[int, LazyPage] = field(default_factory=dict)
+    pages: dict[int, LazyPage] = field(default_factory=dict)
     lazy: bool = True
 
     @staticmethod
@@ -303,7 +303,7 @@ class Dumpulator(Architecture):
     def print_memory(self):
         regions = self.memory.map()
         regions.pop()  # remove the last free region
-        table: List[List[str]] = []
+        table: list[list[str]] = []
         header = ["Base", "Size", "State", "Protect", "Info"]
         table.append(header)
         for region in regions:
@@ -367,7 +367,7 @@ class Dumpulator(Architecture):
 
     def _setup_memory(self):
         info: minidump.MinidumpMemoryInfo
-        regions: List[List[minidump.MinidumpMemoryInfo]] = []
+        regions: list[list[minidump.MinidumpMemoryInfo]] = []
         mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
         for info in self._minidump.memory_info.infos:
             info.AllocationBase &= mask
@@ -626,7 +626,7 @@ class Dumpulator(Architecture):
             self._uc.hook_add(UC_HOOK_CODE, _hook_code, user_data=self)
 
     def _all_exports(self):
-        exports: Dict[int, str] = {}
+        exports: dict[int, str] = {}
         for module in self.modules:
             for export in module.exports:
                 if export.name:
@@ -733,7 +733,7 @@ class Dumpulator(Architecture):
             addr = int(addr)
         self._pages.write(addr, data)
 
-    def call(self, addr, args: List[int] = None, regs: dict = None, count=0):
+    def call(self, addr, args: list[int] = None, regs: dict = None, count=0):
         if args is None:
             args = []
         if regs is None:

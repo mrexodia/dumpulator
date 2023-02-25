@@ -1,6 +1,5 @@
 import struct
 from collections import namedtuple
-from typing import List
 
 from unicorn import *
 from unicorn.x86_const import *
@@ -570,7 +569,7 @@ interrupt_names = [
 ]
 assert len(interrupt_names) == 32
 
-def format_table(table: List[List[str]]):
+def format_table(table: list[list[str]]):
     result = ""
     header = table[0]
     lengths = [0] * len(header)
