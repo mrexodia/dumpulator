@@ -2,6 +2,9 @@
 import json
 import sys
 from typing import *
+from enum import Enum
+
+import clang.cindex
 from clang.cindex import *
 from collections import OrderedDict
 
@@ -27,15 +30,24 @@ def filter_by_kind(
         if i.kind in kinds:
             yield i
 
+class EnumValue:
+    def __init__(self, name: str, value: int):
+        self.name = name
+        self.value = value
+        self.comment = ""
+
 class EnumType:
     def __init__(self, name: str):
-        self.name = name.lstrip('_')
-        self.values: [(str, int)] = []
+        self.name: str = name.lstrip("_")
+        self.values: List[EnumValue] = []
 
     def format_python(self):
         r = f"class {self.name}(Enum):\n"
-        for name, value in self.values:
-            r += f"    {name} = {value}\n"
+        for evalue in self.values:
+            r += f"    {evalue.name} = {evalue.value}"
+            if evalue.comment:
+                r += f"  # {evalue.comment}"
+            r += "\n"
         r += f"make_global({self.name})\n"
         return r
 
@@ -44,27 +56,140 @@ class FunctionArgument:
         self.name = name
         self.typename = ""
         self.is_ptr = False
-
+        self.sal = ""
+        self.comment = ""
 
 class FunctionType:
     def __init__(self, name: str):
         self.name = name
         self.arguments: [FunctionArgument] = []
 
-    def format_python(self):
+    def format_python(self, body: Optional[str]):
         r = "@syscall\n"
         r += f"def {self.name}(dp: Dumpulator"
-        indent = (len(self.name) + 5) * ' '
+        indent = (len(self.name) + 5) * " "
         a: FunctionArgument
         for i, a in enumerate(self.arguments):
             r += ",\n"
             pytype = f"P({a.typename})" if a.is_ptr else a.typename
-            r += f"{indent}{a.name}: {pytype}"
+            if len(a.sal) > 0:
+                assert "\"" not in a.sal and "\\" not in a.sal
+                sal = f"SAL(\"{a.sal}\""
+                if a.comment:
+                    assert "\"" not in a.comment and "\\" not in a.comment
+                    sal += f", \"{a.comment}\""
+                sal += ")"
+                r += f"{indent}{a.name}: Annotated[{pytype}, {sal}]"
+            else:
+                r += f"{indent}{a.name}: {pytype}"
         r += "\n"
         r += f"{indent}):\n"
-        r += "    raise NotImplementedError()\n"
+        if body is None:
+            r += "    raise NotImplementedError()\n"
+        else:
+            r += body
 
         return r
+
+class FunctionBodies:
+    def __init__(self, impl_file: Optional[str] = None):
+        self.functions: Dict[str, str] = {}
+
+        if impl_file is None:
+            return
+
+        with open(impl_file, "r") as f:
+            self.lines = [line.rstrip("\n") for line in f.readlines()]
+
+        class State(Enum):
+            Imports = 0
+            Neutral = 1
+            FnType = 2
+            FnBody = 3
+
+        self.imports = ""
+        current_name = ""
+        current_body: List[str] = []
+        state = State.Imports
+        for line in self.lines:
+            if state == State.Imports:
+                if line == "@syscall":
+                    state = State.Neutral
+                else:
+                    self.imports += line
+                    self.imports += "\n"
+            elif state == State.Neutral:
+                if line.startswith("def Zw"):
+                    assert len(current_body) == 0
+                    current_name = line[4:line.index("(")]
+                    state = State.FnType
+            elif state == State.FnType:
+                if line.strip() == "):":
+                    state = State.FnBody
+            elif state == State.FnBody:
+                assert not line.startswith("def Zw")
+                if line.startswith("@syscall"):
+                    self.add_function_body(current_name, current_body)
+                    current_body = []
+                    state = State.Neutral
+                else:
+                    current_body.append(line)
+
+        if len(current_body) > 0:
+            self.add_function_body(current_name, current_body)
+
+    def add_function_body(self, name: str, body: List[str]):
+        assert len(body) > 0
+        if body[-1] == "":
+            body.pop()
+
+        # Skip unimplemented functions
+        if body == ["    raise NotImplementedError()"]:
+            return
+
+        final_body = ""
+        for line in body:
+            final_body += line
+            final_body += "\n"
+
+        assert name not in self.functions
+        self.functions[name] = final_body
+
+    def get(self, name) -> Optional[str]:
+        return self.functions.get(name, None)
+
+class FileState:
+    def __init__(self):
+        self.files: Dict[str, List[str]] = {}
+
+    def lines(self, file_name: str):
+        if file_name not in self.files:
+            with open(file_name, "r") as fp:
+                self.files[file_name] = [line.rstrip("\n") for line in fp.readlines()]
+        return self.files[file_name]
+
+def extract_line_comment(file_state: FileState, cursor: Cursor):
+    end: clang.cindex.SourceLocation = cursor.extent.end
+    line = file_state.lines(cursor.location.file.name)[end.line - 1]
+    if end.column - 1 < len(line):
+        comment = line[end.column - 1:]
+        if comment.startswith(","):
+            comment = comment[1:]
+        comment = comment.strip()
+        if comment.startswith("//"):
+            return comment[2:].strip()
+    return ""
+
+def add_enum(file_state: FileState, enums : Dict[str, EnumType], edecl: Cursor):
+    if edecl.spelling:
+        et = EnumType(edecl.spelling)
+        v: Cursor
+        for v in edecl.get_children():
+            ev = EnumValue(v.spelling, v.enum_value)
+            ev.comment = extract_line_comment(file_state, v)
+            et.values.append(ev)
+        if len(et.values) > 0:
+            enums[et.name] = et
 
 # This script was only tested on Windows, Visual Studio 2019
 # phnt version: https://github.com/processhacker/phnt/commit/49539260245f4291b699884a9ef4552530c8cfa4
@@ -73,6 +198,7 @@ def main():
         print("Usage: parse_phnt.py c:\\projects\\phnt")
         sys.exit(1)
 
+    file_state = FileState()
     phnt_dir = sys.argv[1]
     index = Index.create()
     tu = index.parse("phnt.c", args=[f"-I{phnt_dir}"], options=TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
@@ -87,29 +213,18 @@ def main():
 
     cursor: Cursor = tu.cursor
     phnt_nodes = list(filter_by_folder(cursor.get_children(), phnt_dir))
-    e: Cursor
-    system_enums = OrderedDict()
+    system_enums: Dict[str, EnumType] = OrderedDict()
 
     # This is bad, these CursorKind.XXX are added in cindex.py, no autocomplete possible :(
-    for e in filter_by_kind(cursor.get_children(), [CursorKind.ENUM_DECL]):
-        if phnt_dir not in str(e.location.file):
-            if e.spelling:
-                et = EnumType(e.spelling)
-                v: Cursor
-                for v in e.get_children():
-                    et.values.append((v.spelling, v.enum_value))
-                if len(et.values) > 0:
-                    system_enums[et.name] = et
+    edecl: Cursor
+    for edecl in filter_by_kind(cursor.get_children(), [CursorKind.ENUM_DECL]):
+        if phnt_dir not in str(edecl.location.file):
+            add_enum(file_state, system_enums, edecl)
 
-    phnt_enums = OrderedDict()
-    for e in filter_by_kind(phnt_nodes, [CursorKind.ENUM_DECL]):
-        if e.spelling:
-            et = EnumType(e.spelling)
-            v: Cursor
-            for v in e.get_children():
-                et.values.append((v.spelling, v.enum_value))
-            if len(et.values) > 0:
-                phnt_enums[et.name] = et
+    phnt_enums: Dict[str, EnumType] = OrderedDict()
+    for edecl in filter_by_kind(phnt_nodes, [CursorKind.ENUM_DECL]):
+        if edecl.spelling:
+            add_enum(file_state, phnt_enums, edecl)
 
     primitive_types = {
         "PVOID",
@@ -143,14 +258,26 @@ def main():
         "PWSTR",  # PVOID
     }
 
-    f: Cursor
-    functions = []
-    for f in filter_by_kind(phnt_nodes, [CursorKind.FUNCTION_DECL]):
-        if f.spelling.startswith("Zw"):
-            ft = FunctionType(f.spelling)
+    fdecl: Cursor
+    functions: List[FunctionType] = []
+    for fdecl in filter_by_kind(phnt_nodes, [CursorKind.FUNCTION_DECL]):
+        if fdecl.spelling.startswith("Zw"):
+            loc: clang.cindex.SourceLocation = fdecl.location
+            file_lines = file_state.lines(loc.file.name)
+            ft = FunctionType(fdecl.spelling)
             a: Cursor
-            for a in f.get_arguments():
+            for a in fdecl.get_arguments():
                 at = FunctionArgument(a.spelling)
+
+                # Extract argument SAL annotation
+                loc = a.location
+                extent: clang.cindex.SourceRange = a.extent
+                start: clang.cindex.SourceLocation = extent.start
+                line = file_lines[loc.line - 1]
+                at.sal = line[:start.column - 1].strip()
+                at.comment = extract_line_comment(file_state, a)
+
+                # Extract argument type
                 at.typename = str(a.type.spelling) \
                     .replace("volatile ", "") \
                     .replace("const ", "")
@@ -177,6 +304,10 @@ def main():
                     assert not at.is_ptr
                     at.is_ptr = True
                     at.typename = at.typename[:-3]
+                elif at.typename.endswith("[]"):
+                    assert not at.is_ptr
+                    at.is_ptr = True
+                    at.typename = at.typename[:-2]
 
                 # Make sure the typename is a valid identifier
                 if " " in at.typename:
@@ -205,6 +336,8 @@ def main():
                     phnt_enums[at.typename] = system_enums[at.typename]
                 else:
                     struct_types.add(at.typename)
+
+    # Anything printed here needs to be adjusted earlier on
     print(f"Found {len(unknown_types)} unknown primitive types:")
     for t in unknown_types:
         print("  " + t + ";")
@@ -217,8 +350,10 @@ def main():
                 arg: FunctionArgument
                 for arg in fn.arguments:
                     args.append({
-                        'name': arg.name,
-                        'type': arg.typename + ("*" if arg.is_ptr else "")
+                        "name": arg.name,
+                        "type": arg.typename + ("*" if arg.is_ptr else ""),
+                        "sal": arg.sal,
+                        "comment": arg.comment
                     })
                 data[fn.name] = args
             f.write(json.dumps(data, indent=2))
@@ -227,17 +362,24 @@ def main():
             e: EnumType
             for e in phnt_enums.values():
                 values = []
-                for name, value in e.values:
+                for evalue in e.values:
                     values.append({
-                        'name': name,
-                        'value': value
+                        "name": evalue.name,
+                        "value": evalue.value,
+                        "comment": evalue.comment
                     })
                 data[e.name] = values
             f.write(json.dumps(data, indent=2))
     else:
+        if len(sys.argv) > 2 and sys.argv[2].endswith(".py"):
+            bodies = FunctionBodies(sys.argv[2])
+        else:
+            bodies = FunctionBodies()
+
         with open("ntsyscalls.py", "w") as f:
+            f.write(bodies.imports)
             for fn in functions:
-                f.write(fn.format_python())
+                f.write(fn.format_python(bodies.get(fn.name)))
                 f.write("\n")
 
         with open("ntenums.py", "w") as f:
@@ -260,10 +402,10 @@ from .ntprimitives import make_global
 
             for t in sorted(struct_types):
                 if t == "CONTEXT":
-                    pass
+                    continue
                 f.write(f"class {t}:\n")
                 f.write("    pass\n")
                 f.write("\n")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

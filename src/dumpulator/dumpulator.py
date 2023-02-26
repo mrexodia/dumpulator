@@ -189,7 +189,8 @@ class LazyPageManager(PageManager):
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, size):
             page = self.pages.get(page_addr, None)
-            assert page is not None
+            if page is None:
+                raise IndexError(f"Could not find page {hex(page_addr)} while reading {hex(addr)}[{hex(size)}]")
             pages.append((page, index, length))
 
         if all([page.committed for page, _, _ in pages]):
@@ -212,7 +213,8 @@ class LazyPageManager(PageManager):
         pages = []
         for page_addr, index, length in self.iter_chunks(addr, len(data)):
             page = self.pages.get(page_addr, None)
-            assert page is not None
+            if page is None:
+                raise IndexError(f"Could not find page {hex(page_addr)} while writing {hex(addr)}[{hex(len(data))}]")
             pages.append((page, index, length))
 
         if all([page.committed for page, _, _ in pages]):
@@ -1385,6 +1387,20 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             for i in range(0, argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
+                # Extract the type information from the annotation
+                # Reference: https://github.com/python/cpython/issues/89543
+                # It looks like the python designers did an oopsie, so we're going
+                # the fully-undocumented route.
+                sal = None
+                if argtype.__name__ == "Annotated":
+                    sal, = argtype.__metadata__
+                    argtype = argtype.__origin__
+
+                if sal is None:
+                    sal_pretty = ""
+                else:
+                    sal_pretty = str(sal) + " "
+
                 argvalue = syscall_arg(i)
                 if issubclass(argtype, PVOID):
                     argvalue = argtype(argvalue, dp)
@@ -1401,7 +1417,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 if i + 1 == argcount:
                     comma = ""
 
-                dp.info(f"    {_arg_type_string(argvalue)} {argname} = {_arg_to_string(dp, argvalue)}{comma}")
+                dp.info(f"    {sal_pretty}{_arg_type_string(argvalue)} {argname} = {_arg_to_string(dp, argvalue)}{comma}")
             dp.info(")")
             try:
                 status = syscall_impl(dp, *args)
