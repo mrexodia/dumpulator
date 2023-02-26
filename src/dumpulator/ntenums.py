@@ -66,11 +66,11 @@ class KHETERO_CPU_POLICY(Enum):
     KHeteroCpuPolicySmall = 3
     KHeteroCpuPolicySmallOrIdle = 4
     KHeteroCpuPolicyDynamic = 5
-    KHeteroCpuPolicyStaticMax = 6
-    KHeteroCpuPolicyBiasedSmall = 7
-    KHeteroCpuPolicyBiasedLarge = 8
-    KHeteroCpuPolicyDefault = 9
-    KHeteroCpuPolicyMax = 10
+    KHeteroCpuPolicyStaticMax = 5  # valid
+    KHeteroCpuPolicyBiasedSmall = 6
+    KHeteroCpuPolicyBiasedLarge = 7
+    KHeteroCpuPolicyDefault = 8
+    KHeteroCpuPolicyMax = 9
 make_global(KHETERO_CPU_POLICY)
 
 class KWAIT_REASON(Enum):
@@ -114,7 +114,9 @@ class KWAIT_REASON(Enum):
     WrAlertByThreadId = 37
     WrDeferredPreempt = 38
     WrPhysicalFault = 39
-    MaximumWaitReason = 40
+    WrIoRing = 40
+    WrMdlCache = 41
+    MaximumWaitReason = 42
 make_global(KWAIT_REASON)
 
 class KPROFILE_SOURCE(Enum):
@@ -171,10 +173,26 @@ class LDR_DLL_LOAD_REASON(Enum):
     LoadReasonDynamicLoad = 4
     LoadReasonAsImageLoad = 5
     LoadReasonAsDataLoad = 6
-    LoadReasonEnclavePrimary = 7
+    LoadReasonEnclavePrimary = 7  # since REDSTONE3
     LoadReasonEnclaveDependency = 8
+    LoadReasonPatchImage = 9  # since WIN11
     LoadReasonUnknown = -1
 make_global(LDR_DLL_LOAD_REASON)
+
+class LDR_HOT_PATCH_STATE(Enum):
+    LdrHotPatchBaseImage = 0
+    LdrHotPatchNotApplied = 1
+    LdrHotPatchAppliedReverse = 2
+    LdrHotPatchAppliedForward = 3
+    LdrHotPatchFailedToPatch = 4
+    LdrHotPatchStateMax = 5
+make_global(LDR_HOT_PATCH_STATE)
+
+class SYSTEM_ENVIRONMENT_INFORMATION_CLASS(Enum):
+    SystemEnvironmentNameInformation = 1  # q: VARIABLE_NAME
+    SystemEnvironmentValueInformation = 2  # q: VARIABLE_NAME_AND_VALUE
+    MaxSystemEnvironmentInfoClass = 3
+make_global(SYSTEM_ENVIRONMENT_INFORMATION_CLASS)
 
 class FILTER_BOOT_OPTION_OPERATION(Enum):
     FilterBootOptionOperationOpenSystemStore = 0
@@ -188,8 +206,8 @@ class EVENT_INFORMATION_CLASS(Enum):
 make_global(EVENT_INFORMATION_CLASS)
 
 class MUTANT_INFORMATION_CLASS(Enum):
-    MutantBasicInformation = 0
-    MutantOwnerInformation = 1
+    MutantBasicInformation = 0  # MUTANT_BASIC_INFORMATION
+    MutantOwnerInformation = 1  # MUTANT_OWNER_INFORMATION
 make_global(MUTANT_INFORMATION_CLASS)
 
 class SEMAPHORE_INFORMATION_CLASS(Enum):
@@ -197,11 +215,11 @@ class SEMAPHORE_INFORMATION_CLASS(Enum):
 make_global(SEMAPHORE_INFORMATION_CLASS)
 
 class TIMER_INFORMATION_CLASS(Enum):
-    TimerBasicInformation = 0
+    TimerBasicInformation = 0  # TIMER_BASIC_INFORMATION
 make_global(TIMER_INFORMATION_CLASS)
 
 class TIMER_SET_INFORMATION_CLASS(Enum):
-    TimerSetCoalescableTimer = 0
+    TimerSetCoalescableTimer = 0  # TIMER_SET_COALESCABLE_TIMER_INFO
     MaxTimerInfoClass = 1
 make_global(TIMER_SET_INFORMATION_CLASS)
 
@@ -223,289 +241,301 @@ class WNF_DATA_SCOPE(Enum):
     WnfDataScopeSession = 1
     WnfDataScopeUser = 2
     WnfDataScopeProcess = 3
-    WnfDataScopeMachine = 4
+    WnfDataScopeMachine = 4  # REDSTONE3
+    WnfDataScopePhysicalMachine = 5  # WIN11
 make_global(WNF_DATA_SCOPE)
 
 class WORKERFACTORYINFOCLASS(Enum):
-    WorkerFactoryTimeout = 0
-    WorkerFactoryRetryTimeout = 1
-    WorkerFactoryIdleTimeout = 2
-    WorkerFactoryBindingCount = 3
-    WorkerFactoryThreadMinimum = 4
-    WorkerFactoryThreadMaximum = 5
-    WorkerFactoryPaused = 6
-    WorkerFactoryBasicInformation = 7
+    WorkerFactoryTimeout = 0  # LARGE_INTEGER
+    WorkerFactoryRetryTimeout = 1  # LARGE_INTEGER
+    WorkerFactoryIdleTimeout = 2  # s: LARGE_INTEGER
+    WorkerFactoryBindingCount = 3  # s: ULONG
+    WorkerFactoryThreadMinimum = 4  # s: ULONG
+    WorkerFactoryThreadMaximum = 5  # s: ULONG
+    WorkerFactoryPaused = 6  # ULONG or BOOLEAN
+    WorkerFactoryBasicInformation = 7  # q: WORKER_FACTORY_BASIC_INFORMATION
     WorkerFactoryAdjustThreadGoal = 8
     WorkerFactoryCallbackType = 9
-    WorkerFactoryStackInformation = 10
-    WorkerFactoryThreadBasePriority = 11
-    WorkerFactoryTimeoutWaiters = 12
-    WorkerFactoryFlags = 13
-    WorkerFactoryThreadSoftMaximum = 14
-    WorkerFactoryThreadCpuSets = 15
+    WorkerFactoryStackInformation = 10  # 10
+    WorkerFactoryThreadBasePriority = 11  # s: ULONG
+    WorkerFactoryTimeoutWaiters = 12  # s: ULONG, since THRESHOLD
+    WorkerFactoryFlags = 13  # s: ULONG
+    WorkerFactoryThreadSoftMaximum = 14  # s: ULONG
+    WorkerFactoryThreadCpuSets = 15  # since REDSTONE5
     MaxWorkerFactoryInfoClass = 16
 make_global(WORKERFACTORYINFOCLASS)
 
 class SYSTEM_INFORMATION_CLASS(Enum):
-    SystemBasicInformation = 0
-    SystemProcessorInformation = 1
-    SystemPerformanceInformation = 2
-    SystemTimeOfDayInformation = 3
-    SystemPathInformation = 4
-    SystemProcessInformation = 5
-    SystemCallCountInformation = 6
-    SystemDeviceInformation = 7
-    SystemProcessorPerformanceInformation = 8
-    SystemFlagsInformation = 9
-    SystemCallTimeInformation = 10
-    SystemModuleInformation = 11
-    SystemLocksInformation = 12
-    SystemStackTraceInformation = 13
-    SystemPagedPoolInformation = 14
-    SystemNonPagedPoolInformation = 15
-    SystemHandleInformation = 16
-    SystemObjectInformation = 17
-    SystemPageFileInformation = 18
-    SystemVdmInstemulInformation = 19
-    SystemVdmBopInformation = 20
-    SystemFileCacheInformation = 21
-    SystemPoolTagInformation = 22
-    SystemInterruptInformation = 23
-    SystemDpcBehaviorInformation = 24
-    SystemFullMemoryInformation = 25
-    SystemLoadGdiDriverInformation = 26
-    SystemUnloadGdiDriverInformation = 27
-    SystemTimeAdjustmentInformation = 28
-    SystemSummaryMemoryInformation = 29
-    SystemMirrorMemoryInformation = 30
-    SystemPerformanceTraceInformation = 31
-    SystemObsolete0 = 32
-    SystemExceptionInformation = 33
-    SystemCrashDumpStateInformation = 34
-    SystemKernelDebuggerInformation = 35
-    SystemContextSwitchInformation = 36
-    SystemRegistryQuotaInformation = 37
-    SystemExtendServiceTableInformation = 38
-    SystemPrioritySeperation = 39
-    SystemVerifierAddDriverInformation = 40
-    SystemVerifierRemoveDriverInformation = 41
-    SystemProcessorIdleInformation = 42
-    SystemLegacyDriverInformation = 43
-    SystemCurrentTimeZoneInformation = 44
-    SystemLookasideInformation = 45
-    SystemTimeSlipNotification = 46
-    SystemSessionCreate = 47
-    SystemSessionDetach = 48
-    SystemSessionInformation = 49
-    SystemRangeStartInformation = 50
-    SystemVerifierInformation = 51
-    SystemVerifierThunkExtend = 52
-    SystemSessionProcessInformation = 53
-    SystemLoadGdiDriverInSystemSpace = 54
-    SystemNumaProcessorMap = 55
-    SystemPrefetcherInformation = 56
-    SystemExtendedProcessInformation = 57
-    SystemRecommendedSharedDataAlignment = 58
-    SystemComPlusPackage = 59
-    SystemNumaAvailableMemory = 60
-    SystemProcessorPowerInformation = 61
-    SystemEmulationBasicInformation = 62
-    SystemEmulationProcessorInformation = 63
-    SystemExtendedHandleInformation = 64
-    SystemLostDelayedWriteInformation = 65
-    SystemBigPoolInformation = 66
-    SystemSessionPoolTagInformation = 67
-    SystemSessionMappedViewInformation = 68
-    SystemHotpatchInformation = 69
-    SystemObjectSecurityMode = 70
-    SystemWatchdogTimerHandler = 71
-    SystemWatchdogTimerInformation = 72
-    SystemLogicalProcessorInformation = 73
-    SystemWow64SharedInformationObsolete = 74
-    SystemRegisterFirmwareTableInformationHandler = 75
-    SystemFirmwareTableInformation = 76
-    SystemModuleInformationEx = 77
-    SystemVerifierTriageInformation = 78
-    SystemSuperfetchInformation = 79
-    SystemMemoryListInformation = 80
-    SystemFileCacheInformationEx = 81
-    SystemThreadPriorityClientIdInformation = 82
-    SystemProcessorIdleCycleTimeInformation = 83
-    SystemVerifierCancellationInformation = 84
-    SystemProcessorPowerInformationEx = 85
-    SystemRefTraceInformation = 86
-    SystemSpecialPoolInformation = 87
-    SystemProcessIdInformation = 88
-    SystemErrorPortInformation = 89
-    SystemBootEnvironmentInformation = 90
-    SystemHypervisorInformation = 91
-    SystemVerifierInformationEx = 92
-    SystemTimeZoneInformation = 93
-    SystemImageFileExecutionOptionsInformation = 94
-    SystemCoverageInformation = 95
-    SystemPrefetchPatchInformation = 96
-    SystemVerifierFaultsInformation = 97
-    SystemSystemPartitionInformation = 98
-    SystemSystemDiskInformation = 99
-    SystemProcessorPerformanceDistribution = 100
-    SystemNumaProximityNodeInformation = 101
-    SystemDynamicTimeZoneInformation = 102
-    SystemCodeIntegrityInformation = 103
-    SystemProcessorMicrocodeUpdateInformation = 104
-    SystemProcessorBrandString = 105
-    SystemVirtualAddressInformation = 106
-    SystemLogicalProcessorAndGroupInformation = 107
-    SystemProcessorCycleTimeInformation = 108
-    SystemStoreInformation = 109
-    SystemRegistryAppendString = 110
-    SystemAitSamplingValue = 111
-    SystemVhdBootInformation = 112
-    SystemCpuQuotaInformation = 113
-    SystemNativeBasicInformation = 114
-    SystemErrorPortTimeouts = 115
-    SystemLowPriorityIoInformation = 116
-    SystemTpmBootEntropyInformation = 117
-    SystemVerifierCountersInformation = 118
-    SystemPagedPoolInformationEx = 119
-    SystemSystemPtesInformationEx = 120
-    SystemNodeDistanceInformation = 121
-    SystemAcpiAuditInformation = 122
-    SystemBasicPerformanceInformation = 123
-    SystemQueryPerformanceCounterInformation = 124
-    SystemSessionBigPoolInformation = 125
-    SystemBootGraphicsInformation = 126
-    SystemScrubPhysicalMemoryInformation = 127
+    SystemBasicInformation = 0  # q: SYSTEM_BASIC_INFORMATION
+    SystemProcessorInformation = 1  # q: SYSTEM_PROCESSOR_INFORMATION
+    SystemPerformanceInformation = 2  # q: SYSTEM_PERFORMANCE_INFORMATION
+    SystemTimeOfDayInformation = 3  # q: SYSTEM_TIMEOFDAY_INFORMATION
+    SystemPathInformation = 4  # not implemented
+    SystemProcessInformation = 5  # q: SYSTEM_PROCESS_INFORMATION
+    SystemCallCountInformation = 6  # q: SYSTEM_CALL_COUNT_INFORMATION
+    SystemDeviceInformation = 7  # q: SYSTEM_DEVICE_INFORMATION
+    SystemProcessorPerformanceInformation = 8  # q: SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION (EX in: USHORT ProcessorGroup)
+    SystemFlagsInformation = 9  # q: SYSTEM_FLAGS_INFORMATION
+    SystemCallTimeInformation = 10  # not implemented // SYSTEM_CALL_TIME_INFORMATION // 10
+    SystemModuleInformation = 11  # q: RTL_PROCESS_MODULES
+    SystemLocksInformation = 12  # q: RTL_PROCESS_LOCKS
+    SystemStackTraceInformation = 13  # q: RTL_PROCESS_BACKTRACES
+    SystemPagedPoolInformation = 14  # not implemented
+    SystemNonPagedPoolInformation = 15  # not implemented
+    SystemHandleInformation = 16  # q: SYSTEM_HANDLE_INFORMATION
+    SystemObjectInformation = 17  # q: SYSTEM_OBJECTTYPE_INFORMATION mixed with SYSTEM_OBJECT_INFORMATION
+    SystemPageFileInformation = 18  # q: SYSTEM_PAGEFILE_INFORMATION
+    SystemVdmInstemulInformation = 19  # q: SYSTEM_VDM_INSTEMUL_INFO
+    SystemVdmBopInformation = 20  # not implemented // 20
+    SystemFileCacheInformation = 21  # q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (info for WorkingSetTypeSystemCache)
+    SystemPoolTagInformation = 22  # q: SYSTEM_POOLTAG_INFORMATION
+    SystemInterruptInformation = 23  # q: SYSTEM_INTERRUPT_INFORMATION (EX in: USHORT ProcessorGroup)
+    SystemDpcBehaviorInformation = 24  # q: SYSTEM_DPC_BEHAVIOR_INFORMATION; s: SYSTEM_DPC_BEHAVIOR_INFORMATION (requires SeLoadDriverPrivilege)
+    SystemFullMemoryInformation = 25  # not implemented // SYSTEM_MEMORY_USAGE_INFORMATION
+    SystemLoadGdiDriverInformation = 26  # s (kernel-mode only)
+    SystemUnloadGdiDriverInformation = 27  # s (kernel-mode only)
+    SystemTimeAdjustmentInformation = 28  # q: SYSTEM_QUERY_TIME_ADJUST_INFORMATION; s: SYSTEM_SET_TIME_ADJUST_INFORMATION (requires SeSystemtimePrivilege)
+    SystemSummaryMemoryInformation = 29  # not implemented // SYSTEM_MEMORY_USAGE_INFORMATION
+    SystemMirrorMemoryInformation = 30  # s (requires license value "Kernel-MemoryMirroringSupported") (requires SeShutdownPrivilege) // 30
+    SystemPerformanceTraceInformation = 31  # q; s: (type depends on EVENT_TRACE_INFORMATION_CLASS)
+    SystemObsolete0 = 32  # not implemented
+    SystemExceptionInformation = 33  # q: SYSTEM_EXCEPTION_INFORMATION
+    SystemCrashDumpStateInformation = 34  # s: SYSTEM_CRASH_DUMP_STATE_INFORMATION (requires SeDebugPrivilege)
+    SystemKernelDebuggerInformation = 35  # q: SYSTEM_KERNEL_DEBUGGER_INFORMATION
+    SystemContextSwitchInformation = 36  # q: SYSTEM_CONTEXT_SWITCH_INFORMATION
+    SystemRegistryQuotaInformation = 37  # q: SYSTEM_REGISTRY_QUOTA_INFORMATION; s (requires SeIncreaseQuotaPrivilege)
+    SystemExtendServiceTableInformation = 38  # s (requires SeLoadDriverPrivilege) // loads win32k only
+    SystemPrioritySeperation = 39  # s (requires SeTcbPrivilege)
+    SystemVerifierAddDriverInformation = 40  # s (requires SeDebugPrivilege) // 40
+    SystemVerifierRemoveDriverInformation = 41  # s (requires SeDebugPrivilege)
+    SystemProcessorIdleInformation = 42  # q: SYSTEM_PROCESSOR_IDLE_INFORMATION (EX in: USHORT ProcessorGroup)
+    SystemLegacyDriverInformation = 43  # q: SYSTEM_LEGACY_DRIVER_INFORMATION
+    SystemCurrentTimeZoneInformation = 44  # q; s: RTL_TIME_ZONE_INFORMATION
+    SystemLookasideInformation = 45  # q: SYSTEM_LOOKASIDE_INFORMATION
+    SystemTimeSlipNotification = 46  # s: HANDLE (NtCreateEvent) (requires SeSystemtimePrivilege)
+    SystemSessionCreate = 47  # not implemented
+    SystemSessionDetach = 48  # not implemented
+    SystemSessionInformation = 49  # not implemented (SYSTEM_SESSION_INFORMATION)
+    SystemRangeStartInformation = 50  # q: SYSTEM_RANGE_START_INFORMATION // 50
+    SystemVerifierInformation = 51  # q: SYSTEM_VERIFIER_INFORMATION; s (requires SeDebugPrivilege)
+    SystemVerifierThunkExtend = 52  # s (kernel-mode only)
+    SystemSessionProcessInformation = 53  # q: SYSTEM_SESSION_PROCESS_INFORMATION
+    SystemLoadGdiDriverInSystemSpace = 54  # s: SYSTEM_GDI_DRIVER_INFORMATION (kernel-mode only) (same as SystemLoadGdiDriverInformation)
+    SystemNumaProcessorMap = 55  # q: SYSTEM_NUMA_INFORMATION
+    SystemPrefetcherInformation = 56  # q; s: PREFETCHER_INFORMATION // PfSnQueryPrefetcherInformation
+    SystemExtendedProcessInformation = 57  # q: SYSTEM_PROCESS_INFORMATION
+    SystemRecommendedSharedDataAlignment = 58  # q: ULONG // KeGetRecommendedSharedDataAlignment
+    SystemComPlusPackage = 59  # q; s: ULONG
+    SystemNumaAvailableMemory = 60  # q: SYSTEM_NUMA_INFORMATION // 60
+    SystemProcessorPowerInformation = 61  # q: SYSTEM_PROCESSOR_POWER_INFORMATION (EX in: USHORT ProcessorGroup)
+    SystemEmulationBasicInformation = 62  # q: SYSTEM_BASIC_INFORMATION
+    SystemEmulationProcessorInformation = 63  # q: SYSTEM_PROCESSOR_INFORMATION
+    SystemExtendedHandleInformation = 64  # q: SYSTEM_HANDLE_INFORMATION_EX
+    SystemLostDelayedWriteInformation = 65  # q: ULONG
+    SystemBigPoolInformation = 66  # q: SYSTEM_BIGPOOL_INFORMATION
+    SystemSessionPoolTagInformation = 67  # q: SYSTEM_SESSION_POOLTAG_INFORMATION
+    SystemSessionMappedViewInformation = 68  # q: SYSTEM_SESSION_MAPPED_VIEW_INFORMATION
+    SystemHotpatchInformation = 69  # q; s: SYSTEM_HOTPATCH_CODE_INFORMATION
+    SystemObjectSecurityMode = 70  # q: ULONG // 70
+    SystemWatchdogTimerHandler = 71  # s: SYSTEM_WATCHDOG_HANDLER_INFORMATION // (kernel-mode only)
+    SystemWatchdogTimerInformation = 72  # q: SYSTEM_WATCHDOG_TIMER_INFORMATION // (kernel-mode only)
+    SystemLogicalProcessorInformation = 73  # q: SYSTEM_LOGICAL_PROCESSOR_INFORMATION (EX in: USHORT ProcessorGroup)
+    SystemWow64SharedInformationObsolete = 74  # not implemented
+    SystemRegisterFirmwareTableInformationHandler = 75  # s: SYSTEM_FIRMWARE_TABLE_HANDLER // (kernel-mode only)
+    SystemFirmwareTableInformation = 76  # SYSTEM_FIRMWARE_TABLE_INFORMATION
+    SystemModuleInformationEx = 77  # q: RTL_PROCESS_MODULE_INFORMATION_EX
+    SystemVerifierTriageInformation = 78  # not implemented
+    SystemSuperfetchInformation = 79  # q; s: SUPERFETCH_INFORMATION // PfQuerySuperfetchInformation
+    SystemMemoryListInformation = 80  # q: SYSTEM_MEMORY_LIST_INFORMATION; s: SYSTEM_MEMORY_LIST_COMMAND (requires SeProfileSingleProcessPrivilege) // 80
+    SystemFileCacheInformationEx = 81  # q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (same as SystemFileCacheInformation)
+    SystemThreadPriorityClientIdInformation = 82  # s: SYSTEM_THREAD_CID_PRIORITY_INFORMATION (requires SeIncreaseBasePriorityPrivilege)
+    SystemProcessorIdleCycleTimeInformation = 83  # q: SYSTEM_PROCESSOR_IDLE_CYCLE_TIME_INFORMATION[] (EX in: USHORT ProcessorGroup)
+    SystemVerifierCancellationInformation = 84  # SYSTEM_VERIFIER_CANCELLATION_INFORMATION // name:wow64:whNT32QuerySystemVerifierCancellationInformation
+    SystemProcessorPowerInformationEx = 85  # not implemented
+    SystemRefTraceInformation = 86  # q; s: SYSTEM_REF_TRACE_INFORMATION // ObQueryRefTraceInformation
+    SystemSpecialPoolInformation = 87  # q; s: SYSTEM_SPECIAL_POOL_INFORMATION (requires SeDebugPrivilege) // MmSpecialPoolTag, then MmSpecialPoolCatchOverruns != 0
+    SystemProcessIdInformation = 88  # q: SYSTEM_PROCESS_ID_INFORMATION
+    SystemErrorPortInformation = 89  # s (requires SeTcbPrivilege)
+    SystemBootEnvironmentInformation = 90  # q: SYSTEM_BOOT_ENVIRONMENT_INFORMATION // 90
+    SystemHypervisorInformation = 91  # q: SYSTEM_HYPERVISOR_QUERY_INFORMATION
+    SystemVerifierInformationEx = 92  # q; s: SYSTEM_VERIFIER_INFORMATION_EX
+    SystemTimeZoneInformation = 93  # q; s: RTL_TIME_ZONE_INFORMATION (requires SeTimeZonePrivilege)
+    SystemImageFileExecutionOptionsInformation = 94  # s: SYSTEM_IMAGE_FILE_EXECUTION_OPTIONS_INFORMATION (requires SeTcbPrivilege)
+    SystemCoverageInformation = 95  # q: COVERAGE_MODULES s: COVERAGE_MODULE_REQUEST // ExpCovQueryInformation (requires SeDebugPrivilege)
+    SystemPrefetchPatchInformation = 96  # SYSTEM_PREFETCH_PATCH_INFORMATION
+    SystemVerifierFaultsInformation = 97  # s: SYSTEM_VERIFIER_FAULTS_INFORMATION (requires SeDebugPrivilege)
+    SystemSystemPartitionInformation = 98  # q: SYSTEM_SYSTEM_PARTITION_INFORMATION
+    SystemSystemDiskInformation = 99  # q: SYSTEM_SYSTEM_DISK_INFORMATION
+    SystemProcessorPerformanceDistribution = 100  # q: SYSTEM_PROCESSOR_PERFORMANCE_DISTRIBUTION (EX in: USHORT ProcessorGroup) // 100
+    SystemNumaProximityNodeInformation = 101  # q; s: SYSTEM_NUMA_PROXIMITY_MAP
+    SystemDynamicTimeZoneInformation = 102  # q; s: RTL_DYNAMIC_TIME_ZONE_INFORMATION (requires SeTimeZonePrivilege)
+    SystemCodeIntegrityInformation = 103  # q: SYSTEM_CODEINTEGRITY_INFORMATION // SeCodeIntegrityQueryInformation
+    SystemProcessorMicrocodeUpdateInformation = 104  # s: SYSTEM_PROCESSOR_MICROCODE_UPDATE_INFORMATION
+    SystemProcessorBrandString = 105  # q: CHAR[] // HaliQuerySystemInformation -> HalpGetProcessorBrandString, info class 23
+    SystemVirtualAddressInformation = 106  # q: SYSTEM_VA_LIST_INFORMATION[]; s: SYSTEM_VA_LIST_INFORMATION[] (requires SeIncreaseQuotaPrivilege) // MmQuerySystemVaInformation
+    SystemLogicalProcessorAndGroupInformation = 107  # q: SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX (EX in: LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType) // since WIN7 // KeQueryLogicalProcessorRelationship
+    SystemProcessorCycleTimeInformation = 108  # q: SYSTEM_PROCESSOR_CYCLE_TIME_INFORMATION[] (EX in: USHORT ProcessorGroup)
+    SystemStoreInformation = 109  # q; s: SYSTEM_STORE_INFORMATION (requires SeProfileSingleProcessPrivilege) // SmQueryStoreInformation
+    SystemRegistryAppendString = 110  # s: SYSTEM_REGISTRY_APPEND_STRING_PARAMETERS // 110
+    SystemAitSamplingValue = 111  # s: ULONG (requires SeProfileSingleProcessPrivilege)
+    SystemVhdBootInformation = 112  # q: SYSTEM_VHD_BOOT_INFORMATION
+    SystemCpuQuotaInformation = 113  # q; s: PS_CPU_QUOTA_QUERY_INFORMATION
+    SystemNativeBasicInformation = 114  # q: SYSTEM_BASIC_INFORMATION
+    SystemErrorPortTimeouts = 115  # SYSTEM_ERROR_PORT_TIMEOUTS
+    SystemLowPriorityIoInformation = 116  # q: SYSTEM_LOW_PRIORITY_IO_INFORMATION
+    SystemTpmBootEntropyInformation = 117  # q: TPM_BOOT_ENTROPY_NT_RESULT // ExQueryTpmBootEntropyInformation
+    SystemVerifierCountersInformation = 118  # q: SYSTEM_VERIFIER_COUNTERS_INFORMATION
+    SystemPagedPoolInformationEx = 119  # q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (info for WorkingSetTypePagedPool)
+    SystemSystemPtesInformationEx = 120  # q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (info for WorkingSetTypeSystemPtes) // 120
+    SystemNodeDistanceInformation = 121  # q: USHORT[4*NumaNodes] // (EX in: USHORT NodeNumber)
+    SystemAcpiAuditInformation = 122  # q: SYSTEM_ACPI_AUDIT_INFORMATION // HaliQuerySystemInformation -> HalpAuditQueryResults, info class 26
+    SystemBasicPerformanceInformation = 123  # q: SYSTEM_BASIC_PERFORMANCE_INFORMATION // name:wow64:whNtQuerySystemInformation_SystemBasicPerformanceInformation
+    SystemQueryPerformanceCounterInformation = 124  # q: SYSTEM_QUERY_PERFORMANCE_COUNTER_INFORMATION // since WIN7 SP1
+    SystemSessionBigPoolInformation = 125  # q: SYSTEM_SESSION_POOLTAG_INFORMATION // since WIN8
+    SystemBootGraphicsInformation = 126  # q; s: SYSTEM_BOOT_GRAPHICS_INFORMATION (kernel-mode only)
+    SystemScrubPhysicalMemoryInformation = 127  # q; s: MEMORY_SCRUB_INFORMATION
     SystemBadPageInformation = 128
-    SystemProcessorProfileControlArea = 129
-    SystemCombinePhysicalMemoryInformation = 130
-    SystemEntropyInterruptTimingInformation = 131
-    SystemConsoleInformation = 132
-    SystemPlatformBinaryInformation = 133
-    SystemPolicyInformation = 134
-    SystemHypervisorProcessorCountInformation = 135
-    SystemDeviceDataInformation = 136
-    SystemDeviceDataEnumerationInformation = 137
-    SystemMemoryTopologyInformation = 138
-    SystemMemoryChannelInformation = 139
-    SystemBootLogoInformation = 140
-    SystemProcessorPerformanceInformationEx = 141
+    SystemProcessorProfileControlArea = 129  # q; s: SYSTEM_PROCESSOR_PROFILE_CONTROL_AREA
+    SystemCombinePhysicalMemoryInformation = 130  # s: MEMORY_COMBINE_INFORMATION, MEMORY_COMBINE_INFORMATION_EX, MEMORY_COMBINE_INFORMATION_EX2 // 130
+    SystemEntropyInterruptTimingInformation = 131  # q; s: SYSTEM_ENTROPY_TIMING_INFORMATION
+    SystemConsoleInformation = 132  # q; s: SYSTEM_CONSOLE_INFORMATION
+    SystemPlatformBinaryInformation = 133  # q: SYSTEM_PLATFORM_BINARY_INFORMATION (requires SeTcbPrivilege)
+    SystemPolicyInformation = 134  # q: SYSTEM_POLICY_INFORMATION
+    SystemHypervisorProcessorCountInformation = 135  # q: SYSTEM_HYPERVISOR_PROCESSOR_COUNT_INFORMATION
+    SystemDeviceDataInformation = 136  # q: SYSTEM_DEVICE_DATA_INFORMATION
+    SystemDeviceDataEnumerationInformation = 137  # q: SYSTEM_DEVICE_DATA_INFORMATION
+    SystemMemoryTopologyInformation = 138  # q: SYSTEM_MEMORY_TOPOLOGY_INFORMATION
+    SystemMemoryChannelInformation = 139  # q: SYSTEM_MEMORY_CHANNEL_INFORMATION
+    SystemBootLogoInformation = 140  # q: SYSTEM_BOOT_LOGO_INFORMATION // 140
+    SystemProcessorPerformanceInformationEx = 141  # q: SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION_EX // (EX in: USHORT ProcessorGroup) // since WINBLUE
     SystemCriticalProcessErrorLogInformation = 142
-    SystemSecureBootPolicyInformation = 143
-    SystemPageFileInformationEx = 144
-    SystemSecureBootInformation = 145
+    SystemSecureBootPolicyInformation = 143  # q: SYSTEM_SECUREBOOT_POLICY_INFORMATION
+    SystemPageFileInformationEx = 144  # q: SYSTEM_PAGEFILE_INFORMATION_EX
+    SystemSecureBootInformation = 145  # q: SYSTEM_SECUREBOOT_INFORMATION
     SystemEntropyInterruptTimingRawInformation = 146
-    SystemPortableWorkspaceEfiLauncherInformation = 147
-    SystemFullProcessInformation = 148
-    SystemKernelDebuggerInformationEx = 149
-    SystemBootMetadataInformation = 150
-    SystemSoftRebootInformation = 151
-    SystemElamCertificateInformation = 152
-    SystemOfflineDumpConfigInformation = 153
-    SystemProcessorFeaturesInformation = 154
-    SystemRegistryReconciliationInformation = 155
-    SystemEdidInformation = 156
-    SystemManufacturingInformation = 157
-    SystemEnergyEstimationConfigInformation = 158
-    SystemHypervisorDetailInformation = 159
-    SystemProcessorCycleStatsInformation = 160
+    SystemPortableWorkspaceEfiLauncherInformation = 147  # q: SYSTEM_PORTABLE_WORKSPACE_EFI_LAUNCHER_INFORMATION
+    SystemFullProcessInformation = 148  # q: SYSTEM_PROCESS_INFORMATION with SYSTEM_PROCESS_INFORMATION_EXTENSION (requires admin)
+    SystemKernelDebuggerInformationEx = 149  # q: SYSTEM_KERNEL_DEBUGGER_INFORMATION_EX
+    SystemBootMetadataInformation = 150  # 150
+    SystemSoftRebootInformation = 151  # q: ULONG
+    SystemElamCertificateInformation = 152  # s: SYSTEM_ELAM_CERTIFICATE_INFORMATION
+    SystemOfflineDumpConfigInformation = 153  # q: OFFLINE_CRASHDUMP_CONFIGURATION_TABLE_V2
+    SystemProcessorFeaturesInformation = 154  # q: SYSTEM_PROCESSOR_FEATURES_INFORMATION
+    SystemRegistryReconciliationInformation = 155  # s: NULL (requires admin) (flushes registry hives)
+    SystemEdidInformation = 156  # q: SYSTEM_EDID_INFORMATION
+    SystemManufacturingInformation = 157  # q: SYSTEM_MANUFACTURING_INFORMATION // since THRESHOLD
+    SystemEnergyEstimationConfigInformation = 158  # q: SYSTEM_ENERGY_ESTIMATION_CONFIG_INFORMATION
+    SystemHypervisorDetailInformation = 159  # q: SYSTEM_HYPERVISOR_DETAIL_INFORMATION
+    SystemProcessorCycleStatsInformation = 160  # q: SYSTEM_PROCESSOR_CYCLE_STATS_INFORMATION (EX in: USHORT ProcessorGroup) // 160
     SystemVmGenerationCountInformation = 161
-    SystemTrustedPlatformModuleInformation = 162
-    SystemKernelDebuggerFlags = 163
-    SystemCodeIntegrityPolicyInformation = 164
-    SystemIsolatedUserModeInformation = 165
+    SystemTrustedPlatformModuleInformation = 162  # q: SYSTEM_TPM_INFORMATION
+    SystemKernelDebuggerFlags = 163  # SYSTEM_KERNEL_DEBUGGER_FLAGS
+    SystemCodeIntegrityPolicyInformation = 164  # q: SYSTEM_CODEINTEGRITYPOLICY_INFORMATION
+    SystemIsolatedUserModeInformation = 165  # q: SYSTEM_ISOLATED_USER_MODE_INFORMATION
     SystemHardwareSecurityTestInterfaceResultsInformation = 166
-    SystemSingleModuleInformation = 167
+    SystemSingleModuleInformation = 167  # q: SYSTEM_SINGLE_MODULE_INFORMATION
     SystemAllowedCpuSetsInformation = 168
-    SystemVsmProtectionInformation = 169
-    SystemInterruptCpuSetsInformation = 170
-    SystemSecureBootPolicyFullInformation = 171
+    SystemVsmProtectionInformation = 169  # q: SYSTEM_VSM_PROTECTION_INFORMATION (previously SystemDmaProtectionInformation)
+    SystemInterruptCpuSetsInformation = 170  # q: SYSTEM_INTERRUPT_CPU_SET_INFORMATION // 170
+    SystemSecureBootPolicyFullInformation = 171  # q: SYSTEM_SECUREBOOT_POLICY_FULL_INFORMATION
     SystemCodeIntegrityPolicyFullInformation = 172
-    SystemAffinitizedInterruptProcessorInformation = 173
-    SystemRootSiloInformation = 174
-    SystemCpuSetInformation = 175
-    SystemCpuSetTagInformation = 176
+    SystemAffinitizedInterruptProcessorInformation = 173  # (requires SeIncreaseBasePriorityPrivilege)
+    SystemRootSiloInformation = 174  # q: SYSTEM_ROOT_SILO_INFORMATION
+    SystemCpuSetInformation = 175  # q: SYSTEM_CPU_SET_INFORMATION // since THRESHOLD2
+    SystemCpuSetTagInformation = 176  # q: SYSTEM_CPU_SET_TAG_INFORMATION
     SystemWin32WerStartCallout = 177
-    SystemSecureKernelProfileInformation = 178
-    SystemCodeIntegrityPlatformManifestInformation = 179
-    SystemInterruptSteeringInformation = 180
-    SystemSupportedProcessorArchitectures = 181
-    SystemMemoryUsageInformation = 182
-    SystemCodeIntegrityCertificateInformation = 183
-    SystemPhysicalMemoryInformation = 184
+    SystemSecureKernelProfileInformation = 178  # q: SYSTEM_SECURE_KERNEL_HYPERGUARD_PROFILE_INFORMATION
+    SystemCodeIntegrityPlatformManifestInformation = 179  # q: SYSTEM_SECUREBOOT_PLATFORM_MANIFEST_INFORMATION // since REDSTONE
+    SystemInterruptSteeringInformation = 180  # SYSTEM_INTERRUPT_STEERING_INFORMATION_INPUT // 180
+    SystemSupportedProcessorArchitectures = 181  # p: in opt: HANDLE, out: SYSTEM_SUPPORTED_PROCESSOR_ARCHITECTURES_INFORMATION[] // NtQuerySystemInformationEx
+    SystemMemoryUsageInformation = 182  # q: SYSTEM_MEMORY_USAGE_INFORMATION
+    SystemCodeIntegrityCertificateInformation = 183  # q: SYSTEM_CODEINTEGRITY_CERTIFICATE_INFORMATION
+    SystemPhysicalMemoryInformation = 184  # q: SYSTEM_PHYSICAL_MEMORY_INFORMATION // since REDSTONE2
     SystemControlFlowTransition = 185
-    SystemKernelDebuggingAllowed = 186
-    SystemActivityModerationExeState = 187
-    SystemActivityModerationUserSettings = 188
+    SystemKernelDebuggingAllowed = 186  # s: ULONG
+    SystemActivityModerationExeState = 187  # SYSTEM_ACTIVITY_MODERATION_EXE_STATE
+    SystemActivityModerationUserSettings = 188  # SYSTEM_ACTIVITY_MODERATION_USER_SETTINGS
     SystemCodeIntegrityPoliciesFullInformation = 189
-    SystemCodeIntegrityUnlockInformation = 190
+    SystemCodeIntegrityUnlockInformation = 190  # SYSTEM_CODEINTEGRITY_UNLOCK_INFORMATION // 190
     SystemIntegrityQuotaInformation = 191
-    SystemFlushInformation = 192
-    SystemProcessorIdleMaskInformation = 193
+    SystemFlushInformation = 192  # q: SYSTEM_FLUSH_INFORMATION
+    SystemProcessorIdleMaskInformation = 193  # q: ULONG_PTR[ActiveGroupCount] // since REDSTONE3
     SystemSecureDumpEncryptionInformation = 194
-    SystemWriteConstraintInformation = 195
-    SystemKernelVaShadowInformation = 196
-    SystemHypervisorSharedPageInformation = 197
+    SystemWriteConstraintInformation = 195  # SYSTEM_WRITE_CONSTRAINT_INFORMATION
+    SystemKernelVaShadowInformation = 196  # SYSTEM_KERNEL_VA_SHADOW_INFORMATION
+    SystemHypervisorSharedPageInformation = 197  # SYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION // since REDSTONE4
     SystemFirmwareBootPerformanceInformation = 198
-    SystemCodeIntegrityVerificationInformation = 199
-    SystemFirmwarePartitionInformation = 200
-    SystemSpeculationControlInformation = 201
-    SystemDmaGuardPolicyInformation = 202
-    SystemEnclaveLaunchControlInformation = 203
-    SystemWorkloadAllowedCpuSetsInformation = 204
+    SystemCodeIntegrityVerificationInformation = 199  # SYSTEM_CODEINTEGRITYVERIFICATION_INFORMATION
+    SystemFirmwarePartitionInformation = 200  # SYSTEM_FIRMWARE_PARTITION_INFORMATION // 200
+    SystemSpeculationControlInformation = 201  # SYSTEM_SPECULATION_CONTROL_INFORMATION // (CVE-2017-5715) REDSTONE3 and above.
+    SystemDmaGuardPolicyInformation = 202  # SYSTEM_DMA_GUARD_POLICY_INFORMATION
+    SystemEnclaveLaunchControlInformation = 203  # SYSTEM_ENCLAVE_LAUNCH_CONTROL_INFORMATION
+    SystemWorkloadAllowedCpuSetsInformation = 204  # SYSTEM_WORKLOAD_ALLOWED_CPU_SET_INFORMATION // since REDSTONE5
     SystemCodeIntegrityUnlockModeInformation = 205
-    SystemLeapSecondInformation = 206
-    SystemFlags2Information = 207
-    SystemSecurityModelInformation = 208
+    SystemLeapSecondInformation = 206  # SYSTEM_LEAP_SECOND_INFORMATION
+    SystemFlags2Information = 207  # q: SYSTEM_FLAGS_INFORMATION
+    SystemSecurityModelInformation = 208  # SYSTEM_SECURITY_MODEL_INFORMATION // since 19H1
     SystemCodeIntegritySyntheticCacheInformation = 209
-    SystemFeatureConfigurationInformation = 210
-    SystemFeatureConfigurationSectionInformation = 211
-    SystemFeatureUsageSubscriptionInformation = 212
-    SystemSecureSpeculationControlInformation = 213
-    SystemSpacesBootInformation = 214
-    SystemFwRamdiskInformation = 215
+    SystemFeatureConfigurationInformation = 210  # SYSTEM_FEATURE_CONFIGURATION_INFORMATION // since 20H1 // 210
+    SystemFeatureConfigurationSectionInformation = 211  # SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION
+    SystemFeatureUsageSubscriptionInformation = 212  # SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS
+    SystemSecureSpeculationControlInformation = 213  # SECURE_SPECULATION_CONTROL_INFORMATION
+    SystemSpacesBootInformation = 214  # since 20H2
+    SystemFwRamdiskInformation = 215  # SYSTEM_FIRMWARE_RAMDISK_INFORMATION
     SystemWheaIpmiHardwareInformation = 216
     SystemDifSetRuleClassInformation = 217
     SystemDifClearRuleClassInformation = 218
     SystemDifApplyPluginVerificationOnDriver = 219
-    SystemDifRemovePluginVerificationOnDriver = 220
-    SystemShadowStackInformation = 221
-    SystemBuildVersionInformation = 222
-    SystemPoolLimitInformation = 223
+    SystemDifRemovePluginVerificationOnDriver = 220  # 220
+    SystemShadowStackInformation = 221  # SYSTEM_SHADOW_STACK_INFORMATION
+    SystemBuildVersionInformation = 222  # SYSTEM_BUILD_VERSION_INFORMATION
+    SystemPoolLimitInformation = 223  # SYSTEM_POOL_LIMIT_INFORMATION
     SystemCodeIntegrityAddDynamicStore = 224
     SystemCodeIntegrityClearDynamicStores = 225
     SystemDifPoolTrackingInformation = 226
-    SystemPoolZeroingInformation = 227
-    MaxSystemInfoClass = 228
+    SystemPoolZeroingInformation = 227  # SYSTEM_POOL_ZEROING_INFORMATION
+    SystemDpcWatchdogInformation = 228
+    SystemDpcWatchdogInformation2 = 229
+    SystemSupportedProcessorArchitectures2 = 230  # q: in opt: HANDLE, out: SYSTEM_SUPPORTED_PROCESSOR_ARCHITECTURES_INFORMATION[] // NtQuerySystemInformationEx  // 230
+    SystemSingleProcessorRelationshipInformation = 231  # q: SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX // (EX in: PROCESSOR_NUMBER Processor)
+    SystemXfgCheckFailureInformation = 232
+    SystemIommuStateInformation = 233  # SYSTEM_IOMMU_STATE_INFORMATION // since 22H1
+    SystemHypervisorMinrootInformation = 234  # SYSTEM_HYPERVISOR_MINROOT_INFORMATION
+    SystemHypervisorBootPagesInformation = 235  # SYSTEM_HYPERVISOR_BOOT_PAGES_INFORMATION
+    SystemPointerAuthInformation = 236  # SYSTEM_POINTER_AUTH_INFORMATION
+    SystemSecureKernelDebuggerInformation = 237
+    SystemOriginalImageFeatureInformation = 238
+    MaxSystemInfoClass = 239
 make_global(SYSTEM_INFORMATION_CLASS)
 
 class EVENT_TRACE_INFORMATION_CLASS(Enum):
-    EventTraceKernelVersionInformation = 0
-    EventTraceGroupMaskInformation = 1
-    EventTracePerformanceInformation = 2
-    EventTraceTimeProfileInformation = 3
-    EventTraceSessionSecurityInformation = 4
-    EventTraceSpinlockInformation = 5
-    EventTraceStackTracingInformation = 6
-    EventTraceExecutiveResourceInformation = 7
-    EventTraceHeapTracingInformation = 8
-    EventTraceHeapSummaryTracingInformation = 9
-    EventTracePoolTagFilterInformation = 10
-    EventTracePebsTracingInformation = 11
-    EventTraceProfileConfigInformation = 12
-    EventTraceProfileSourceListInformation = 13
-    EventTraceProfileEventListInformation = 14
-    EventTraceProfileCounterListInformation = 15
-    EventTraceStackCachingInformation = 16
-    EventTraceObjectTypeFilterInformation = 17
-    EventTraceSoftRestartInformation = 18
-    EventTraceLastBranchConfigurationInformation = 19
+    EventTraceKernelVersionInformation = 0  # EVENT_TRACE_VERSION_INFORMATION
+    EventTraceGroupMaskInformation = 1  # EVENT_TRACE_GROUPMASK_INFORMATION
+    EventTracePerformanceInformation = 2  # EVENT_TRACE_PERFORMANCE_INFORMATION
+    EventTraceTimeProfileInformation = 3  # EVENT_TRACE_TIME_PROFILE_INFORMATION
+    EventTraceSessionSecurityInformation = 4  # EVENT_TRACE_SESSION_SECURITY_INFORMATION
+    EventTraceSpinlockInformation = 5  # EVENT_TRACE_SPINLOCK_INFORMATION
+    EventTraceStackTracingInformation = 6  # EVENT_TRACE_SYSTEM_EVENT_INFORMATION
+    EventTraceExecutiveResourceInformation = 7  # EVENT_TRACE_EXECUTIVE_RESOURCE_INFORMATION
+    EventTraceHeapTracingInformation = 8  # EVENT_TRACE_HEAP_TRACING_INFORMATION
+    EventTraceHeapSummaryTracingInformation = 9  # EVENT_TRACE_HEAP_TRACING_INFORMATION
+    EventTracePoolTagFilterInformation = 10  # EVENT_TRACE_TAG_FILTER_INFORMATION
+    EventTracePebsTracingInformation = 11  # EVENT_TRACE_SYSTEM_EVENT_INFORMATION
+    EventTraceProfileConfigInformation = 12  # EVENT_TRACE_PROFILE_COUNTER_INFORMATION
+    EventTraceProfileSourceListInformation = 13  # EVENT_TRACE_PROFILE_LIST_INFORMATION
+    EventTraceProfileEventListInformation = 14  # EVENT_TRACE_SYSTEM_EVENT_INFORMATION
+    EventTraceProfileCounterListInformation = 15  # EVENT_TRACE_PROFILE_COUNTER_INFORMATION
+    EventTraceStackCachingInformation = 16  # EVENT_TRACE_STACK_CACHING_INFORMATION
+    EventTraceObjectTypeFilterInformation = 17  # EVENT_TRACE_TAG_FILTER_INFORMATION
+    EventTraceSoftRestartInformation = 18  # EVENT_TRACE_SOFT_RESTART_INFORMATION
+    EventTraceLastBranchConfigurationInformation = 19  # REDSTONE3
     EventTraceLastBranchEventListInformation = 20
-    EventTraceProfileSourceAddInformation = 21
-    EventTraceProfileSourceRemoveInformation = 22
+    EventTraceProfileSourceAddInformation = 21  # EVENT_TRACE_PROFILE_ADD_INFORMATION // REDSTONE4
+    EventTraceProfileSourceRemoveInformation = 22  # EVENT_TRACE_PROFILE_REMOVE_INFORMATION
     EventTraceProcessorTraceConfigurationInformation = 23
     EventTraceProcessorTraceEventListInformation = 24
-    EventTraceCoverageSamplerInformation = 25
-    EventTraceUnifiedStackCachingInformation = 26
+    EventTraceCoverageSamplerInformation = 25  # EVENT_TRACE_COVERAGE_SAMPLER_INFORMATION
+    EventTraceUnifiedStackCachingInformation = 26  # sicne 21H1
     MaxEventTraceInfoClass = 27
 make_global(EVENT_TRACE_INFORMATION_CLASS)
 
@@ -514,6 +544,30 @@ class SYSTEM_CRASH_DUMP_CONFIGURATION_CLASS(Enum):
     SystemCrashDumpReconfigure = 1
     SystemCrashDumpInitializationComplete = 2
 make_global(SYSTEM_CRASH_DUMP_CONFIGURATION_CLASS)
+
+class WATCHDOG_HANDLER_ACTION(Enum):
+    WdActionSetTimeoutValue = 0
+    WdActionQueryTimeoutValue = 1
+    WdActionResetTimer = 2
+    WdActionStopTimer = 3
+    WdActionStartTimer = 4
+    WdActionSetTriggerAction = 5
+    WdActionQueryTriggerAction = 6
+    WdActionQueryState = 7
+make_global(WATCHDOG_HANDLER_ACTION)
+
+class WATCHDOG_INFORMATION_CLASS(Enum):
+    WdInfoTimeoutValue = 0
+    WdInfoResetTimer = 1
+    WdInfoStopTimer = 2
+    WdInfoStartTimer = 3
+    WdInfoTriggerAction = 4
+    WdInfoState = 5
+    WdInfoTriggerReset = 6
+    WdInfoNop = 7
+    WdInfoGeneratedLastReset = 8
+    WdInfoInvalid = 9
+make_global(WATCHDOG_INFORMATION_CLASS)
 
 class SYSTEM_FIRMWARE_TABLE_ACTION(Enum):
     SystemFirmwareTableEnumerate = 0
@@ -531,6 +585,12 @@ class SYSTEM_MEMORY_LIST_COMMAND(Enum):
     MemoryCommandMax = 6
 make_global(SYSTEM_MEMORY_LIST_COMMAND)
 
+class COVERAGE_REQUEST_CODES(Enum):
+    CoverageAllModules = 0
+    CoverageSearchByHash = 1
+    CoverageSearchByName = 2
+make_global(COVERAGE_REQUEST_CODES)
+
 class SYSTEM_VA_TYPE(Enum):
     SystemVaTypeAll = 0
     SystemVaTypeNonPagedPool = 1
@@ -541,9 +601,59 @@ class SYSTEM_VA_TYPE(Enum):
     SystemVaTypeMax = 6
 make_global(SYSTEM_VA_TYPE)
 
-class SYSTEM_STORE_INFORMATION_CLASS(Enum):
-    SystemStoreCompressionInformation = 22
-make_global(SYSTEM_STORE_INFORMATION_CLASS)
+class STORE_INFORMATION_CLASS(Enum):
+    StorePageRequest = 1
+    StoreStatsRequest = 2  # q: SM_STATS_REQUEST // SmProcessStatsRequest
+    StoreCreateRequest = 3  # s: SM_CREATE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    StoreDeleteRequest = 4  # s: SM_DELETE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    StoreListRequest = 5  # q: SM_STORE_LIST_REQUEST / SM_STORE_LIST_REQUEST_EX // SmProcessListRequest
+    Available1 = 6
+    StoreEmptyRequest = 7
+    CacheListRequest = 8  # q: SMC_CACHE_LIST_REQUEST // SmcProcessListRequest
+    CacheCreateRequest = 9  # s: SMC_CACHE_CREATE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    CacheDeleteRequest = 10  # s: SMC_CACHE_DELETE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    CacheStoreCreateRequest = 11  # s: SMC_STORE_CREATE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    CacheStoreDeleteRequest = 12  # s: SMC_STORE_DELETE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    CacheStatsRequest = 13  # q: SMC_CACHE_STATS_REQUEST // SmcProcessStatsRequest
+    Available2 = 14
+    RegistrationRequest = 15  # q: SM_REGISTRATION_REQUEST (requires SeProfileSingleProcessPrivilege) // SmProcessRegistrationRequest
+    GlobalCacheStatsRequest = 16
+    StoreResizeRequest = 17  # s: SM_STORE_RESIZE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    CacheStoreResizeRequest = 18  # s: SMC_STORE_RESIZE_REQUEST (requires SeProfileSingleProcessPrivilege)
+    SmConfigRequest = 19  # s: SM_CONFIG_REQUEST (requires SeProfileSingleProcessPrivilege)
+    StoreHighMemoryPriorityRequest = 20  # s: SM_STORE_HIGH_MEM_PRIORITY_REQUEST (requires SeProfileSingleProcessPrivilege)
+    SystemStoreTrimRequest = 21  # s: SM_SYSTEM_STORE_TRIM_REQUEST (requires SeProfileSingleProcessPrivilege)
+    MemCompressionInfoRequest = 22  # q: SM_MEM_COMPRESSION_INFO_REQUEST // SmProcessCompressionInfoRequest
+    ProcessStoreInfoRequest = 23  # SmProcessProcessStoreInfoRequest
+    StoreInformationMax = 24
+make_global(STORE_INFORMATION_CLASS)
+
+class ST_STATS_LEVEL(Enum):
+    StStatsLevelBasic = 0
+    StStatsLevelIoStats = 1
+    StStatsLevelRegionSpace = 2  # requires SeProfileSingleProcessPrivilege
+    StStatsLevelSpaceBitmap = 3  # requires SeProfileSingleProcessPrivilege
+    StStatsLevelMax = 4
+make_global(ST_STATS_LEVEL)
+
+class SM_STORE_TYPE(Enum):
+    StoreTypeInMemory = 0
+    StoreTypeFile = 1
+    StoreTypeMax = 2
+make_global(SM_STORE_TYPE)
+
+class SM_STORE_MANAGER_TYPE(Enum):
+    SmStoreManagerTypePhysical = 0
+    SmStoreManagerTypeVirtual = 1
+    SmStoreManagerTypeMax = 2
+make_global(SM_STORE_MANAGER_TYPE)
+
+class SM_CONFIG_TYPE(Enum):
+    SmConfigDirtyPageCompression = 0
+    SmConfigAsyncInswap = 1
+    SmConfigPrefetchSeekThreshold = 2
+    SmConfigTypeMax = 3
+make_global(SM_CONFIG_TYPE)
 
 class TPM_BOOT_ENTROPY_RESULT_CODE(Enum):
     TpmBootEntropyStructureUninitialized = 0
@@ -566,7 +676,7 @@ class SYSTEM_PROCESS_CLASSIFICATION(Enum):
     SystemProcessClassificationSystem = 1
     SystemProcessClassificationSecureSystem = 2
     SystemProcessClassificationMemCompression = 3
-    SystemProcessClassificationRegistry = 4
+    SystemProcessClassificationRegistry = 4  # REDSTONE4
     SystemProcessClassificationMaximum = 5
 make_global(SYSTEM_PROCESS_CLASSIFICATION)
 
@@ -583,28 +693,33 @@ class SYSTEM_ACTIVITY_MODERATION_APP_TYPE(Enum):
     MaxSystemActivityModerationAppType = 2
 make_global(SYSTEM_ACTIVITY_MODERATION_APP_TYPE)
 
+class SYSTEM_IOMMU_STATE(Enum):
+    IommuStateBlock = 0
+    IommuStateUnblock = 1
+make_global(SYSTEM_IOMMU_STATE)
+
 class SYSDBG_COMMAND(Enum):
     SysDbgQueryModuleInformation = 0
     SysDbgQueryTraceInformation = 1
     SysDbgSetTracepoint = 2
-    SysDbgSetSpecialCall = 3
-    SysDbgClearSpecialCalls = 4
+    SysDbgSetSpecialCall = 3  # PVOID
+    SysDbgClearSpecialCalls = 4  # void
     SysDbgQuerySpecialCalls = 5
     SysDbgBreakPoint = 6
-    SysDbgQueryVersion = 7
-    SysDbgReadVirtual = 8
-    SysDbgWriteVirtual = 9
-    SysDbgReadPhysical = 10
-    SysDbgWritePhysical = 11
-    SysDbgReadControlSpace = 12
-    SysDbgWriteControlSpace = 13
-    SysDbgReadIoSpace = 14
-    SysDbgWriteIoSpace = 15
-    SysDbgReadMsr = 16
-    SysDbgWriteMsr = 17
-    SysDbgReadBusData = 18
-    SysDbgWriteBusData = 19
-    SysDbgCheckLowMemory = 20
+    SysDbgQueryVersion = 7  # DBGKD_GET_VERSION64
+    SysDbgReadVirtual = 8  # SYSDBG_VIRTUAL
+    SysDbgWriteVirtual = 9  # SYSDBG_VIRTUAL
+    SysDbgReadPhysical = 10  # SYSDBG_PHYSICAL // 10
+    SysDbgWritePhysical = 11  # SYSDBG_PHYSICAL
+    SysDbgReadControlSpace = 12  # SYSDBG_CONTROL_SPACE
+    SysDbgWriteControlSpace = 13  # SYSDBG_CONTROL_SPACE
+    SysDbgReadIoSpace = 14  # SYSDBG_IO_SPACE
+    SysDbgWriteIoSpace = 15  # SYSDBG_IO_SPACE
+    SysDbgReadMsr = 16  # SYSDBG_MSR
+    SysDbgWriteMsr = 17  # SYSDBG_MSR
+    SysDbgReadBusData = 18  # SYSDBG_BUS_DATA
+    SysDbgWriteBusData = 19  # SYSDBG_BUS_DATA
+    SysDbgCheckLowMemory = 20  # 20
     SysDbgEnableKernelDebugger = 21
     SysDbgDisableKernelDebugger = 22
     SysDbgGetAutoKdEnable = 23
@@ -613,15 +728,17 @@ class SYSDBG_COMMAND(Enum):
     SysDbgSetPrintBufferSize = 26
     SysDbgGetKdUmExceptionEnable = 27
     SysDbgSetKdUmExceptionEnable = 28
-    SysDbgGetTriageDump = 29
-    SysDbgGetKdBlockEnable = 30
+    SysDbgGetTriageDump = 29  # SYSDBG_TRIAGE_DUMP
+    SysDbgGetKdBlockEnable = 30  # 30
     SysDbgSetKdBlockEnable = 31
     SysDbgRegisterForUmBreakInfo = 32
     SysDbgGetUmBreakPid = 33
     SysDbgClearUmBreakPid = 34
     SysDbgGetUmAttachPid = 35
     SysDbgClearUmAttachPid = 36
-    SysDbgGetLiveKernelDump = 37
+    SysDbgGetLiveKernelDump = 37  # SYSDBG_LIVEDUMP_CONTROL
+    SysDbgKdPullRemoteFile = 38  # SYSDBG_KD_PULL_REMOTE_FILE
+    SysDbgMaxInfoClass = 39
 make_global(SYSDBG_COMMAND)
 
 class HARDERROR_RESPONSE_OPTION(Enum):
@@ -665,22 +782,455 @@ class SHUTDOWN_ACTION(Enum):
     ShutdownNoReboot = 0
     ShutdownReboot = 1
     ShutdownPowerOff = 2
+    ShutdownRebootForRecovery = 3  # since WIN11
 make_global(SHUTDOWN_ACTION)
 
+class BCD_MESSAGE_TYPE(Enum):
+    BCD_MESSAGE_TYPE_NONE = 0
+    BCD_MESSAGE_TYPE_TRACE = 1
+    BCD_MESSAGE_TYPE_INFORMATION = 2
+    BCD_MESSAGE_TYPE_WARNING = 3
+    BCD_MESSAGE_TYPE_ERROR = 4
+    BCD_MESSAGE_TYPE_MAXIMUM = 5
+make_global(BCD_MESSAGE_TYPE)
+
+class BCD_IMPORT_FLAGS(Enum):
+    BCD_IMPORT_NONE = 0
+    BCD_IMPORT_DELETE_FIRMWARE_OBJECTS = 1
+make_global(BCD_IMPORT_FLAGS)
+
+class BCD_OPEN_FLAGS(Enum):
+    BCD_OPEN_NONE = 0
+    BCD_OPEN_OPEN_STORE_OFFLINE = 1
+    BCD_OPEN_SYNC_FIRMWARE_ENTRIES = 2
+make_global(BCD_OPEN_FLAGS)
+
+class BCD_OBJECT_TYPE(Enum):
+    BCD_OBJECT_TYPE_NONE = 0
+    BCD_OBJECT_TYPE_APPLICATION = 1
+    BCD_OBJECT_TYPE_INHERITED = 2
+    BCD_OBJECT_TYPE_DEVICE = 3
+make_global(BCD_OBJECT_TYPE)
+
+class BCD_APPLICATION_OBJECT_TYPE(Enum):
+    BCD_APPLICATION_OBJECT_NONE = 0
+    BCD_APPLICATION_OBJECT_FIRMWARE_BOOT_MANAGER = 1
+    BCD_APPLICATION_OBJECT_WINDOWS_BOOT_MANAGER = 2
+    BCD_APPLICATION_OBJECT_WINDOWS_BOOT_LOADER = 3
+    BCD_APPLICATION_OBJECT_WINDOWS_RESUME_APPLICATION = 4
+    BCD_APPLICATION_OBJECT_MEMORY_TESTER = 5
+    BCD_APPLICATION_OBJECT_LEGACY_NTLDR = 6
+    BCD_APPLICATION_OBJECT_LEGACY_SETUPLDR = 7
+    BCD_APPLICATION_OBJECT_BOOT_SECTOR = 8
+    BCD_APPLICATION_OBJECT_STARTUP_MODULE = 9
+    BCD_APPLICATION_OBJECT_GENERIC_APPLICATION = 10
+    BCD_APPLICATION_OBJECT_RESERVED = 1048575
+make_global(BCD_APPLICATION_OBJECT_TYPE)
+
+class BCD_APPLICATION_IMAGE_TYPE(Enum):
+    BCD_APPLICATION_IMAGE_NONE = 0
+    BCD_APPLICATION_IMAGE_FIRMWARE_APPLICATION = 1
+    BCD_APPLICATION_IMAGE_BOOT_APPLICATION = 2
+    BCD_APPLICATION_IMAGE_LEGACY_LOADER = 3
+    BCD_APPLICATION_IMAGE_REALMODE_CODE = 4
+make_global(BCD_APPLICATION_IMAGE_TYPE)
+
+class BCD_INHERITED_CLASS_TYPE(Enum):
+    BCD_INHERITED_CLASS_NONE = 0
+    BCD_INHERITED_CLASS_LIBRARY = 1
+    BCD_INHERITED_CLASS_APPLICATION = 2
+    BCD_INHERITED_CLASS_DEVICE = 3
+make_global(BCD_INHERITED_CLASS_TYPE)
+
+class BCD_COPY_FLAGS(Enum):
+    BCD_COPY_NONE = 0
+    BCD_COPY_COPY_CREATE_NEW_OBJECT_IDENTIFIER = 1
+    BCD_COPY_COPY_DELETE_EXISTING_OBJECT = 2
+    BCD_COPY_COPY_UNKNOWN_FIRMWARE_APPLICATION = 4
+    BCD_COPY_IGNORE_SETUP_TEMPLATE_ELEMENTS = 8
+    BCD_COPY_RETAIN_ELEMENT_DATA = 16
+    BCD_COPY_MIGRATE_ELEMENT_DATA = 32
+make_global(BCD_COPY_FLAGS)
+
+class BCD_ELEMENT_DATATYPE_FORMAT(Enum):
+    BCD_ELEMENT_DATATYPE_FORMAT_UNKNOWN = 0
+    BCD_ELEMENT_DATATYPE_FORMAT_DEVICE = 1  # 0x01000000
+    BCD_ELEMENT_DATATYPE_FORMAT_STRING = 2  # 0x02000000
+    BCD_ELEMENT_DATATYPE_FORMAT_OBJECT = 3  # 0x03000000
+    BCD_ELEMENT_DATATYPE_FORMAT_OBJECTLIST = 4  # 0x04000000
+    BCD_ELEMENT_DATATYPE_FORMAT_INTEGER = 5  # 0x05000000
+    BCD_ELEMENT_DATATYPE_FORMAT_BOOLEAN = 6  # 0x06000000
+    BCD_ELEMENT_DATATYPE_FORMAT_INTEGERLIST = 7  # 0x07000000
+    BCD_ELEMENT_DATATYPE_FORMAT_BINARY = 8  # 0x08000000
+make_global(BCD_ELEMENT_DATATYPE_FORMAT)
+
+class BCD_ELEMENT_DATATYPE_CLASS(Enum):
+    BCD_ELEMENT_DATATYPE_CLASS_NONE = 0
+    BCD_ELEMENT_DATATYPE_CLASS_LIBRARY = 1
+    BCD_ELEMENT_DATATYPE_CLASS_APPLICATION = 2
+    BCD_ELEMENT_DATATYPE_CLASS_DEVICE = 3
+    BCD_ELEMENT_DATATYPE_CLASS_SETUPTEMPLATE = 4
+    BCD_ELEMENT_DATATYPE_CLASS_OEM = 5
+make_global(BCD_ELEMENT_DATATYPE_CLASS)
+
+class BCD_ELEMENT_DEVICE_TYPE(Enum):
+    BCD_ELEMENT_DEVICE_TYPE_NONE = 0
+    BCD_ELEMENT_DEVICE_TYPE_BOOT_DEVICE = 1
+    BCD_ELEMENT_DEVICE_TYPE_PARTITION = 2
+    BCD_ELEMENT_DEVICE_TYPE_FILE = 3
+    BCD_ELEMENT_DEVICE_TYPE_RAMDISK = 4
+    BCD_ELEMENT_DEVICE_TYPE_UNKNOWN = 5
+    BCD_ELEMENT_DEVICE_TYPE_QUALIFIED_PARTITION = 6
+    BCD_ELEMENT_DEVICE_TYPE_VMBUS = 7
+    BCD_ELEMENT_DEVICE_TYPE_LOCATE_DEVICE = 8
+    BCD_ELEMENT_DEVICE_TYPE_URI = 9
+    BCD_ELEMENT_DEVICE_TYPE_COMPOSITE = 10
+make_global(BCD_ELEMENT_DEVICE_TYPE)
+
+class BCD_FLAGS(Enum):
+    BCD_FLAG_NONE = 0
+    BCD_FLAG_QUALIFIED_PARTITION = 1
+    BCD_FLAG_NO_DEVICE_TRANSLATION = 2
+    BCD_FLAG_ENUMERATE_INHERITED_OBJECTS = 4
+    BCD_FLAG_ENUMERATE_DEVICE_OPTIONS = 8
+    BCD_FLAG_OBSERVE_PRECEDENCE = 16
+    BCD_FLAG_DISABLE_VHD_NT_TRANSLATION = 32
+    BCD_FLAG_DISABLE_VHD_DEVICE_DETECTION = 64
+    BCD_FLAG_DISABLE_POLICY_CHECKS = 128
+make_global(BCD_FLAGS)
+
+class BcdBootMgrElementTypes(Enum):
+    BcdBootMgrObjectList_DisplayOrder = 603979777
+    BcdBootMgrObjectList_BootSequence = 603979778
+    BcdBootMgrObject_DefaultObject = 587202563
+    BcdBootMgrInteger_Timeout = 620756996
+    BcdBootMgrBoolean_AttemptResume = 637534213
+    BcdBootMgrObject_ResumeObject = 587202566
+    BcdBootMgrObjectList_StartupSequence = 603979783
+    BcdBootMgrObjectList_ToolsDisplayOrder = 603979792
+    BcdBootMgrBoolean_DisplayBootMenu = 637534240
+    BcdBootMgrBoolean_NoErrorDisplay = 637534241
+    BcdBootMgrDevice_BcdDevice = 553648162
+    BcdBootMgrString_BcdFilePath = 570425379
+    BcdBootMgrBoolean_HormEnabled = 637534244
+    BcdBootMgrBoolean_HiberRoot = 637534245
+    BcdBootMgrString_PasswordOverride = 570425382
+    BcdBootMgrString_PinpassPhraseOverride = 570425383
+    BcdBootMgrBoolean_ProcessCustomActionsFirst = 637534248
+    BcdBootMgrIntegerList_CustomActionsList = 654311472
+    BcdBootMgrBoolean_PersistBootSequence = 637534257
+    BcdBootMgrBoolean_SkipStartupSequence = 637534258
+make_global(BcdBootMgrElementTypes)
+
+class BcdLibrary_FirstMegabytePolicy(Enum):
+    FirstMegabytePolicyUseNone = 0
+    FirstMegabytePolicyUseAll = 1
+    FirstMegabytePolicyUsePrivate = 2
+make_global(BcdLibrary_FirstMegabytePolicy)
+
+class BcdLibrary_DebuggerType(Enum):
+    DebuggerSerial = 0
+    Debugger1394 = 1
+    DebuggerUsb = 2
+    DebuggerNet = 3
+    DebuggerLocal = 4
+make_global(BcdLibrary_DebuggerType)
+
+class BcdLibrary_DebuggerStartPolicy(Enum):
+    DebuggerStartActive = 0
+    DebuggerStartAutoEnable = 1
+    DebuggerStartDisable = 2
+make_global(BcdLibrary_DebuggerStartPolicy)
+
+class BcdLibrary_ConfigAccessPolicy(Enum):
+    ConfigAccessPolicyDefault = 0
+    ConfigAccessPolicyDisallowMmConfig = 1
+make_global(BcdLibrary_ConfigAccessPolicy)
+
+class BcdLibrary_UxDisplayMessageType(Enum):
+    DisplayMessageTypeDefault = 0
+    DisplayMessageTypeResume = 1
+    DisplayMessageTypeHyperV = 2
+    DisplayMessageTypeRecovery = 3
+    DisplayMessageTypeStartupRepair = 4
+    DisplayMessageTypeSystemImageRecovery = 5
+    DisplayMessageTypeCommandPrompt = 6
+    DisplayMessageTypeSystemRestore = 7
+    DisplayMessageTypePushButtonReset = 8
+make_global(BcdLibrary_UxDisplayMessageType)
+
+class BcdLibrary_SafeBoot(Enum):
+    SafemodeMinimal = 0
+    SafemodeNetwork = 1
+    SafemodeDsRepair = 2
+make_global(BcdLibrary_SafeBoot)
+
+class BcdLibraryElementTypes(Enum):
+    BcdLibraryDevice_ApplicationDevice = 285212673
+    BcdLibraryString_ApplicationPath = 301989890
+    BcdLibraryString_Description = 301989892
+    BcdLibraryString_PreferredLocale = 301989893
+    BcdLibraryObjectList_InheritedObjects = 335544326
+    BcdLibraryInteger_TruncatePhysicalMemory = 352321543
+    BcdLibraryObjectList_RecoverySequence = 335544328
+    BcdLibraryBoolean_AutoRecoveryEnabled = 369098761
+    BcdLibraryIntegerList_BadMemoryList = 385875978
+    BcdLibraryBoolean_AllowBadMemoryAccess = 369098763
+    BcdLibraryInteger_FirstMegabytePolicy = 352321548
+    BcdLibraryInteger_RelocatePhysicalMemory = 352321549
+    BcdLibraryInteger_AvoidLowPhysicalMemory = 352321550
+    BcdLibraryBoolean_TraditionalKsegMappings = 369098767
+    BcdLibraryBoolean_DebuggerEnabled = 369098768
+    BcdLibraryInteger_DebuggerType = 352321553
+    BcdLibraryInteger_SerialDebuggerPortAddress = 352321554
+    BcdLibraryInteger_SerialDebuggerPort = 352321555
+    BcdLibraryInteger_SerialDebuggerBaudRate = 352321556
+    BcdLibraryInteger_1394DebuggerChannel = 352321557
+    BcdLibraryString_UsbDebuggerTargetName = 301989910
+    BcdLibraryBoolean_DebuggerIgnoreUsermodeExceptions = 369098775
+    BcdLibraryInteger_DebuggerStartPolicy = 352321560
+    BcdLibraryString_DebuggerBusParameters = 301989913
+    BcdLibraryInteger_DebuggerNetHostIP = 352321562
+    BcdLibraryInteger_DebuggerNetPort = 352321563
+    BcdLibraryBoolean_DebuggerNetDhcp = 369098780
+    BcdLibraryString_DebuggerNetKey = 301989917
+    BcdLibraryBoolean_DebuggerNetVM = 369098782
+    BcdLibraryString_DebuggerNetHostIpv6 = 301989919
+    BcdLibraryBoolean_EmsEnabled = 369098784
+    BcdLibraryInteger_EmsPort = 352321570
+    BcdLibraryInteger_EmsBaudRate = 352321571
+    BcdLibraryString_LoadOptionsString = 301989936
+    BcdLibraryBoolean_AttemptNonBcdStart = 369098801
+    BcdLibraryBoolean_DisplayAdvancedOptions = 369098816
+    BcdLibraryBoolean_DisplayOptionsEdit = 369098817
+    BcdLibraryInteger_FVEKeyRingAddress = 352321602
+    BcdLibraryDevice_BsdLogDevice = 285212739
+    BcdLibraryString_BsdLogPath = 301989956
+    BcdLibraryBoolean_BsdPreserveLog = 369098821
+    BcdLibraryBoolean_GraphicsModeDisabled = 369098822
+    BcdLibraryInteger_ConfigAccessPolicy = 352321607
+    BcdLibraryBoolean_DisableIntegrityChecks = 369098824
+    BcdLibraryBoolean_AllowPrereleaseSignatures = 369098825
+    BcdLibraryString_FontPath = 301989962
+    BcdLibraryInteger_SiPolicy = 352321611
+    BcdLibraryInteger_FveBandId = 352321612
+    BcdLibraryBoolean_ConsoleExtendedInput = 369098832
+    BcdLibraryInteger_InitialConsoleInput = 352321617
+    BcdLibraryInteger_GraphicsResolution = 352321618
+    BcdLibraryBoolean_RestartOnFailure = 369098835
+    BcdLibraryBoolean_GraphicsForceHighestMode = 369098836
+    BcdLibraryBoolean_IsolatedExecutionContext = 369098848
+    BcdLibraryInteger_BootUxDisplayMessage = 352321637
+    BcdLibraryInteger_BootUxDisplayMessageOverride = 352321638
+    BcdLibraryBoolean_BootUxLogoDisable = 369098855
+    BcdLibraryBoolean_BootUxTextDisable = 369098856
+    BcdLibraryBoolean_BootUxProgressDisable = 369098857
+    BcdLibraryBoolean_BootUxFadeDisable = 369098858
+    BcdLibraryBoolean_BootUxReservePoolDebug = 369098859
+    BcdLibraryBoolean_BootUxDisable = 369098860
+    BcdLibraryInteger_BootUxFadeFrames = 352321645
+    BcdLibraryBoolean_BootUxDumpStats = 369098862
+    BcdLibraryBoolean_BootUxShowStats = 369098863
+    BcdLibraryBoolean_MultiBootSystem = 369098865
+    BcdLibraryBoolean_ForceNoKeyboard = 369098866
+    BcdLibraryInteger_AliasWindowsKey = 352321651
+    BcdLibraryBoolean_BootShutdownDisabled = 369098868
+    BcdLibraryInteger_PerformanceFrequency = 352321653
+    BcdLibraryInteger_SecurebootRawPolicy = 352321654
+    BcdLibraryIntegerList_AllowedInMemorySettings = 352321655
+    BcdLibraryInteger_BootUxBitmapTransitionTime = 352321657
+    BcdLibraryBoolean_TwoBootImages = 369098874
+    BcdLibraryBoolean_ForceFipsCrypto = 369098875
+    BcdLibraryInteger_BootErrorUx = 352321661
+    BcdLibraryBoolean_AllowFlightSignatures = 369098878
+    BcdLibraryInteger_BootMeasurementLogFormat = 352321663
+    BcdLibraryInteger_DisplayRotation = 352321664
+    BcdLibraryInteger_LogControl = 352321665
+    BcdLibraryBoolean_NoFirmwareSync = 369098882
+    BcdLibraryDevice_WindowsSystemDevice = 285212804
+    BcdLibraryBoolean_NumLockOn = 369098887
+    BcdLibraryString_AdditionalCiPolicy = 301990024
+make_global(BcdLibraryElementTypes)
+
+class BcdTemplateElementTypes(Enum):
+    BcdSetupInteger_DeviceType = 1157627905
+    BcdSetupString_ApplicationRelativePath = 1107296258
+    BcdSetupString_RamdiskDeviceRelativePath = 1107296259
+    BcdSetupBoolean_OmitOsLoaderElements = 1174405124
+    BcdSetupIntegerList_ElementsToMigrateList = 1191182342
+    BcdSetupBoolean_RecoveryOs = 1174405136
+make_global(BcdTemplateElementTypes)
+
+class BcdOSLoader_NxPolicy(Enum):
+    NxPolicyOptIn = 0
+    NxPolicyOptOut = 1
+    NxPolicyAlwaysOff = 2
+    NxPolicyAlwaysOn = 3
+make_global(BcdOSLoader_NxPolicy)
+
+class BcdOSLoader_PAEPolicy(Enum):
+    PaePolicyDefault = 0
+    PaePolicyForceEnable = 1
+    PaePolicyForceDisable = 2
+make_global(BcdOSLoader_PAEPolicy)
+
+class BcdOSLoader_BootStatusPolicy(Enum):
+    BootStatusPolicyDisplayAllFailures = 0
+    BootStatusPolicyIgnoreAllFailures = 1
+    BootStatusPolicyIgnoreShutdownFailures = 2
+    BootStatusPolicyIgnoreBootFailures = 3
+    BootStatusPolicyIgnoreCheckpointFailures = 4
+    BootStatusPolicyDisplayShutdownFailures = 5
+    BootStatusPolicyDisplayBootFailures = 6
+    BootStatusPolicyDisplayCheckpointFailures = 7
+make_global(BcdOSLoader_BootStatusPolicy)
+
+class BcdOSLoaderElementTypes(Enum):
+    BcdOSLoaderDevice_OSDevice = 553648129
+    BcdOSLoaderString_SystemRoot = 570425346
+    BcdOSLoaderObject_AssociatedResumeObject = 587202563
+    BcdOSLoaderBoolean_StampDisks = 637534212
+    BcdOSLoaderBoolean_DetectKernelAndHal = 637534224
+    BcdOSLoaderString_KernelPath = 570425361
+    BcdOSLoaderString_HalPath = 570425362
+    BcdOSLoaderString_DbgTransportPath = 570425363
+    BcdOSLoaderInteger_NxPolicy = 620757024
+    BcdOSLoaderInteger_PAEPolicy = 620757025
+    BcdOSLoaderBoolean_WinPEMode = 637534242
+    BcdOSLoaderBoolean_DisableCrashAutoReboot = 637534244
+    BcdOSLoaderBoolean_UseLastGoodSettings = 637534245
+    BcdOSLoaderBoolean_DisableCodeIntegrityChecks = 637534246
+    BcdOSLoaderBoolean_AllowPrereleaseSignatures = 637534247
+    BcdOSLoaderBoolean_NoLowMemory = 637534256
+    BcdOSLoaderInteger_RemoveMemory = 620757041
+    BcdOSLoaderInteger_IncreaseUserVa = 620757042
+    BcdOSLoaderInteger_PerformaceDataMemory = 620757043
+    BcdOSLoaderBoolean_UseVgaDriver = 637534272
+    BcdOSLoaderBoolean_DisableBootDisplay = 637534273
+    BcdOSLoaderBoolean_DisableVesaBios = 637534274
+    BcdOSLoaderBoolean_DisableVgaMode = 637534275
+    BcdOSLoaderInteger_ClusterModeAddressing = 620757072
+    BcdOSLoaderBoolean_UsePhysicalDestination = 637534289
+    BcdOSLoaderInteger_RestrictApicCluster = 620757074
+    BcdOSLoaderString_OSLoaderTypeEVStore = 570425427
+    BcdOSLoaderBoolean_UseLegacyApicMode = 637534292
+    BcdOSLoaderInteger_X2ApicPolicy = 620757077
+    BcdOSLoaderBoolean_UseBootProcessorOnly = 637534304
+    BcdOSLoaderInteger_NumberOfProcessors = 620757089
+    BcdOSLoaderBoolean_ForceMaximumProcessors = 637534306
+    BcdOSLoaderBoolean_ProcessorConfigurationFlags = 620757091
+    BcdOSLoaderBoolean_MaximizeGroupsCreated = 637534308
+    BcdOSLoaderBoolean_ForceGroupAwareness = 637534309
+    BcdOSLoaderInteger_GroupSize = 620757094
+    BcdOSLoaderInteger_UseFirmwarePciSettings = 637534320
+    BcdOSLoaderInteger_MsiPolicy = 620757105
+    BcdOSLoaderInteger_PciExpressPolicy = 620757106
+    BcdOSLoaderInteger_SafeBoot = 620757120
+    BcdOSLoaderBoolean_SafeBootAlternateShell = 637534337
+    BcdOSLoaderBoolean_BootLogInitialization = 637534352
+    BcdOSLoaderBoolean_VerboseObjectLoadMode = 637534353
+    BcdOSLoaderBoolean_KernelDebuggerEnabled = 637534368
+    BcdOSLoaderBoolean_DebuggerHalBreakpoint = 637534369
+    BcdOSLoaderBoolean_UsePlatformClock = 637534370
+    BcdOSLoaderBoolean_ForceLegacyPlatform = 637534371
+    BcdOSLoaderBoolean_UsePlatformTick = 637534372
+    BcdOSLoaderBoolean_DisableDynamicTick = 637534373
+    BcdOSLoaderInteger_TscSyncPolicy = 620757158
+    BcdOSLoaderBoolean_EmsEnabled = 637534384
+    BcdOSLoaderInteger_ForceFailure = 620757184
+    BcdOSLoaderInteger_DriverLoadFailurePolicy = 620757185
+    BcdOSLoaderInteger_BootMenuPolicy = 620757186
+    BcdOSLoaderBoolean_AdvancedOptionsOneTime = 637534403
+    BcdOSLoaderBoolean_OptionsEditOneTime = 637534404
+    BcdOSLoaderInteger_BootStatusPolicy = 620757216
+    BcdOSLoaderBoolean_DisableElamDrivers = 637534433
+    BcdOSLoaderInteger_HypervisorLaunchType = 620757232
+    BcdOSLoaderString_HypervisorPath = 620757233
+    BcdOSLoaderBoolean_HypervisorDebuggerEnabled = 637534450
+    BcdOSLoaderInteger_HypervisorDebuggerType = 620757235
+    BcdOSLoaderInteger_HypervisorDebuggerPortNumber = 620757236
+    BcdOSLoaderInteger_HypervisorDebuggerBaudrate = 620757237
+    BcdOSLoaderInteger_HypervisorDebugger1394Channel = 620757238
+    BcdOSLoaderInteger_BootUxPolicy = 620757239
+    BcdOSLoaderInteger_HypervisorSlatDisabled = 570425592
+    BcdOSLoaderString_HypervisorDebuggerBusParams = 570425593
+    BcdOSLoaderInteger_HypervisorNumProc = 620757242
+    BcdOSLoaderInteger_HypervisorRootProcPerNode = 620757243
+    BcdOSLoaderBoolean_HypervisorUseLargeVTlb = 637534460
+    BcdOSLoaderInteger_HypervisorDebuggerNetHostIp = 620757245
+    BcdOSLoaderInteger_HypervisorDebuggerNetHostPort = 620757246
+    BcdOSLoaderInteger_HypervisorDebuggerPages = 620757247
+    BcdOSLoaderInteger_TpmBootEntropyPolicy = 620757248
+    BcdOSLoaderString_HypervisorDebuggerNetKey = 570425616
+    BcdOSLoaderString_HypervisorProductSkuType = 570425618
+    BcdOSLoaderInteger_HypervisorRootProc = 570425619
+    BcdOSLoaderBoolean_HypervisorDebuggerNetDhcp = 637534484
+    BcdOSLoaderInteger_HypervisorIommuPolicy = 620757269
+    BcdOSLoaderBoolean_HypervisorUseVApic = 637534486
+    BcdOSLoaderString_HypervisorLoadOptions = 570425623
+    BcdOSLoaderInteger_HypervisorMsrFilterPolicy = 620757272
+    BcdOSLoaderInteger_HypervisorMmioNxPolicy = 620757273
+    BcdOSLoaderInteger_HypervisorSchedulerType = 620757274
+    BcdOSLoaderString_HypervisorRootProcNumaNodes = 570425627
+    BcdOSLoaderInteger_HypervisorPerfmon = 620757276
+    BcdOSLoaderInteger_HypervisorRootProcPerCore = 620757277
+    BcdOSLoaderString_HypervisorRootProcNumaNodeLps = 570425630
+    BcdOSLoaderInteger_XSavePolicy = 620757280
+    BcdOSLoaderInteger_XSaveAddFeature0 = 620757281
+    BcdOSLoaderInteger_XSaveAddFeature1 = 620757282
+    BcdOSLoaderInteger_XSaveAddFeature2 = 620757283
+    BcdOSLoaderInteger_XSaveAddFeature3 = 620757284
+    BcdOSLoaderInteger_XSaveAddFeature4 = 620757285
+    BcdOSLoaderInteger_XSaveAddFeature5 = 620757286
+    BcdOSLoaderInteger_XSaveAddFeature6 = 620757287
+    BcdOSLoaderInteger_XSaveAddFeature7 = 620757288
+    BcdOSLoaderInteger_XSaveRemoveFeature = 620757289
+    BcdOSLoaderInteger_XSaveProcessorsMask = 620757290
+    BcdOSLoaderInteger_XSaveDisable = 620757291
+    BcdOSLoaderInteger_KernelDebuggerType = 620757292
+    BcdOSLoaderString_KernelDebuggerBusParameters = 570425645
+    BcdOSLoaderInteger_KernelDebuggerPortAddress = 620757294
+    BcdOSLoaderInteger_KernelDebuggerPortNumber = 620757295
+    BcdOSLoaderInteger_ClaimedTpmCounter = 620757296
+    BcdOSLoaderInteger_KernelDebugger1394Channel = 620757297
+    BcdOSLoaderString_KernelDebuggerUsbTargetname = 570425650
+    BcdOSLoaderInteger_KernelDebuggerNetHostIp = 620757299
+    BcdOSLoaderInteger_KernelDebuggerNetHostPort = 620757300
+    BcdOSLoaderBoolean_KernelDebuggerNetDhcp = 637534517
+    BcdOSLoaderString_KernelDebuggerNetKey = 570425654
+    BcdOSLoaderString_IMCHiveName = 570425655
+    BcdOSLoaderDevice_IMCDevice = 553648440
+    BcdOSLoaderInteger_KernelDebuggerBaudrate = 620757305
+    BcdOSLoaderString_ManufacturingMode = 570425664
+    BcdOSLoaderBoolean_EventLoggingEnabled = 637534529
+    BcdOSLoaderInteger_VsmLaunchType = 620757314
+    BcdOSLoaderInteger_HypervisorEnforcedCodeIntegrity = 620757316
+    BcdOSLoaderBoolean_DtraceEnabled = 637534533
+    BcdOSLoaderDevice_SystemDataDevice = 553648464
+    BcdOSLoaderDevice_OsArcDevice = 553648465
+    BcdOSLoaderDevice_OsDataDevice = 553648467
+    BcdOSLoaderDevice_BspDevice = 553648468
+    BcdOSLoaderDevice_BspFilepath = 553648469
+    BcdOSLoaderString_KernelDebuggerNetHostIpv6 = 570425686
+    BcdOSLoaderString_HypervisorDebuggerNetHostIpv6 = 570425697
+make_global(BcdOSLoaderElementTypes)
+
 class MEMORY_INFORMATION_CLASS(Enum):
-    MemoryBasicInformation = 0
-    MemoryWorkingSetInformation = 1
-    MemoryMappedFilenameInformation = 2
-    MemoryRegionInformation = 3
-    MemoryWorkingSetExInformation = 4
-    MemorySharedCommitInformation = 5
-    MemoryImageInformation = 6
-    MemoryRegionInformationEx = 7
+    MemoryBasicInformation = 0  # MEMORY_BASIC_INFORMATION
+    MemoryWorkingSetInformation = 1  # MEMORY_WORKING_SET_INFORMATION
+    MemoryMappedFilenameInformation = 2  # UNICODE_STRING
+    MemoryRegionInformation = 3  # MEMORY_REGION_INFORMATION
+    MemoryWorkingSetExInformation = 4  # MEMORY_WORKING_SET_EX_INFORMATION // since VISTA
+    MemorySharedCommitInformation = 5  # MEMORY_SHARED_COMMIT_INFORMATION // since WIN8
+    MemoryImageInformation = 6  # MEMORY_IMAGE_INFORMATION
+    MemoryRegionInformationEx = 7  # MEMORY_REGION_INFORMATION
     MemoryPrivilegedBasicInformation = 8
-    MemoryEnclaveImageInformation = 9
-    MemoryBasicInformationCapped = 10
-    MemoryPhysicalContiguityInformation = 11
-    MaxMemoryInfoClass = 12
+    MemoryEnclaveImageInformation = 9  # MEMORY_ENCLAVE_IMAGE_INFORMATION // since REDSTONE3
+    MemoryBasicInformationCapped = 10  # 10
+    MemoryPhysicalContiguityInformation = 11  # MEMORY_PHYSICAL_CONTIGUITY_INFORMATION // since 20H1
+    MemoryBadInformation = 12  # since WIN11
+    MemoryBadInformationAllProcesses = 13  # since 22H1
+    MaxMemoryInfoClass = 14
 make_global(MEMORY_INFORMATION_CLASS)
 
 class MEMORY_WORKING_SET_EX_LOCATION(Enum):
@@ -699,11 +1249,11 @@ class MEMORY_PHYSICAL_CONTIGUITY_UNIT_STATE(Enum):
 make_global(MEMORY_PHYSICAL_CONTIGUITY_UNIT_STATE)
 
 class SECTION_INFORMATION_CLASS(Enum):
-    SectionBasicInformation = 0
-    SectionImageInformation = 1
-    SectionRelocationInformation = 2
-    SectionOriginalBaseInformation = 3
-    SectionInternalImageInformation = 4
+    SectionBasicInformation = 0  # q; SECTION_BASIC_INFORMATION
+    SectionImageInformation = 1  # q; SECTION_IMAGE_INFORMATION
+    SectionRelocationInformation = 2  # q; PVOID RelocationAddress // name:wow64:whNtQuerySection_SectionRelocationInformation // since WIN7
+    SectionOriginalBaseInformation = 3  # PVOID BaseAddress
+    SectionInternalImageInformation = 4  # SECTION_INTERNAL_IMAGE_INFORMATION // since REDSTONE2
     MaxSectionInfoClass = 5
 make_global(SECTION_INFORMATION_CLASS)
 
@@ -713,203 +1263,233 @@ class SECTION_INHERIT(Enum):
 make_global(SECTION_INHERIT)
 
 class VIRTUAL_MEMORY_INFORMATION_CLASS(Enum):
-    VmPrefetchInformation = 0
-    VmPagePriorityInformation = 1
-    VmCfgCallTargetInformation = 2
-    VmPageDirtyStateInformation = 3
-    VmImageHotPatchInformation = 4
-    VmPhysicalContiguityInformation = 5
+    VmPrefetchInformation = 0  # ULONG
+    VmPagePriorityInformation = 1  # OFFER_PRIORITY
+    VmCfgCallTargetInformation = 2  # CFG_CALL_TARGET_LIST_INFORMATION // REDSTONE2
+    VmPageDirtyStateInformation = 3  # REDSTONE3
+    VmImageHotPatchInformation = 4  # 19H1
+    VmPhysicalContiguityInformation = 5  # 20H1
     VmVirtualMachinePrepopulateInformation = 6
-    MaxVmInfoClass = 7
+    VmRemoveFromWorkingSetInformation = 7
+    MaxVmInfoClass = 8
 make_global(VIRTUAL_MEMORY_INFORMATION_CLASS)
 
-class MEMORY_PARTITION_INFORMATION_CLASS(Enum):
-    SystemMemoryPartitionInformation = 0
-    SystemMemoryPartitionMoveMemory = 1
-    SystemMemoryPartitionAddPagefile = 2
-    SystemMemoryPartitionCombineMemory = 3
-    SystemMemoryPartitionInitialAddMemory = 4
-    SystemMemoryPartitionGetMemoryEvents = 5
-    SystemMemoryPartitionMax = 6
-make_global(MEMORY_PARTITION_INFORMATION_CLASS)
+class PARTITION_INFORMATION_CLASS(Enum):
+    SystemMemoryPartitionInformation = 0  # q: MEMORY_PARTITION_CONFIGURATION_INFORMATION
+    SystemMemoryPartitionMoveMemory = 1  # s: MEMORY_PARTITION_TRANSFER_INFORMATION
+    SystemMemoryPartitionAddPagefile = 2  # s: MEMORY_PARTITION_PAGEFILE_INFORMATION
+    SystemMemoryPartitionCombineMemory = 3  # q; s: MEMORY_PARTITION_PAGE_COMBINE_INFORMATION
+    SystemMemoryPartitionInitialAddMemory = 4  # q; s: MEMORY_PARTITION_INITIAL_ADD_INFORMATION
+    SystemMemoryPartitionGetMemoryEvents = 5  # MEMORY_PARTITION_MEMORY_EVENTS_INFORMATION // since REDSTONE2
+    SystemMemoryPartitionSetAttributes = 6
+    SystemMemoryPartitionNodeInformation = 7
+    SystemMemoryPartitionCreateLargePages = 8
+    SystemMemoryPartitionDedicatedMemoryInformation = 9
+    SystemMemoryPartitionOpenDedicatedMemory = 10  # 10
+    SystemMemoryPartitionMemoryChargeAttributes = 11
+    SystemMemoryPartitionClearAttributes = 12
+    SystemMemoryPartitionSetMemoryThresholds = 13  # since WIN11
+    SystemMemoryPartitionMax = 14
+make_global(PARTITION_INFORMATION_CLASS)
 
 class OBJECT_INFORMATION_CLASS(Enum):
-    ObjectBasicInformation = 0
-    ObjectNameInformation = 1
-    ObjectTypeInformation = 2
-    ObjectTypesInformation = 3
-    ObjectHandleFlagInformation = 4
-    ObjectSessionInformation = 5
-    ObjectSessionObjectInformation = 6
+    ObjectBasicInformation = 0  # q: OBJECT_BASIC_INFORMATION
+    ObjectNameInformation = 1  # q: OBJECT_NAME_INFORMATION
+    ObjectTypeInformation = 2  # q: OBJECT_TYPE_INFORMATION
+    ObjectTypesInformation = 3  # q: OBJECT_TYPES_INFORMATION
+    ObjectHandleFlagInformation = 4  # qs: OBJECT_HANDLE_FLAG_INFORMATION
+    ObjectSessionInformation = 5  # s: void // change object session // (requires SeTcbPrivilege)
+    ObjectSessionObjectInformation = 6  # s: void // change object session // (requires SeTcbPrivilege)
     MaxObjectInfoClass = 7
 make_global(OBJECT_INFORMATION_CLASS)
 
+class BOUNDARY_ENTRY_TYPE(Enum):
+    OBNS_Invalid = 0
+    OBNS_Name = 1
+    OBNS_SID = 2
+    OBNS_IL = 3
+make_global(BOUNDARY_ENTRY_TYPE)
+
 class SYMBOLIC_LINK_INFO_CLASS(Enum):
-    SymbolicLinkGlobalInformation = 1
-    SymbolicLinkAccessMask = 2
+    SymbolicLinkGlobalInformation = 1  # s: ULONG
+    SymbolicLinkAccessMask = 2  # s: ACCESS_MASK
     MaxnSymbolicLinkInfoClass = 3
 make_global(SYMBOLIC_LINK_INFO_CLASS)
 
 class PROCESSINFOCLASS(Enum):
-    ProcessBasicInformation = 0
-    ProcessQuotaLimits = 1
-    ProcessIoCounters = 2
-    ProcessVmCounters = 3
-    ProcessTimes = 4
-    ProcessBasePriority = 5
-    ProcessRaisePriority = 6
-    ProcessDebugPort = 7
-    ProcessExceptionPort = 8
-    ProcessAccessToken = 9
-    ProcessLdtInformation = 10
-    ProcessLdtSize = 11
-    ProcessDefaultHardErrorMode = 12
-    ProcessIoPortHandlers = 13
-    ProcessPooledUsageAndLimits = 14
-    ProcessWorkingSetWatch = 15
-    ProcessUserModeIOPL = 16
-    ProcessEnableAlignmentFaultFixup = 17
-    ProcessPriorityClass = 18
-    ProcessWx86Information = 19
-    ProcessHandleCount = 20
-    ProcessAffinityMask = 21
-    ProcessPriorityBoost = 22
-    ProcessDeviceMap = 23
-    ProcessSessionInformation = 24
-    ProcessForegroundInformation = 25
-    ProcessWow64Information = 26
-    ProcessImageFileName = 27
-    ProcessLUIDDeviceMapsEnabled = 28
-    ProcessBreakOnTermination = 29
-    ProcessDebugObjectHandle = 30
-    ProcessDebugFlags = 31
-    ProcessHandleTracing = 32
-    ProcessIoPriority = 33
-    ProcessExecuteFlags = 34
-    ProcessTlsInformation = 35
-    ProcessCookie = 36
-    ProcessImageInformation = 37
-    ProcessCycleTime = 38
-    ProcessPagePriority = 39
-    ProcessInstrumentationCallback = 40
-    ProcessThreadStackAllocation = 41
-    ProcessWorkingSetWatchEx = 42
-    ProcessImageFileNameWin32 = 43
-    ProcessImageFileMapping = 44
-    ProcessAffinityUpdateMode = 45
-    ProcessMemoryAllocationMode = 46
-    ProcessGroupInformation = 47
-    ProcessTokenVirtualizationEnabled = 48
-    ProcessConsoleHostProcess = 49
-    ProcessWindowInformation = 50
-    ProcessHandleInformation = 51
-    ProcessMitigationPolicy = 52
+    ProcessBasicInformation = 0  # q: PROCESS_BASIC_INFORMATION, PROCESS_EXTENDED_BASIC_INFORMATION
+    ProcessQuotaLimits = 1  # qs: QUOTA_LIMITS, QUOTA_LIMITS_EX
+    ProcessIoCounters = 2  # q: IO_COUNTERS
+    ProcessVmCounters = 3  # q: VM_COUNTERS, VM_COUNTERS_EX, VM_COUNTERS_EX2
+    ProcessTimes = 4  # q: KERNEL_USER_TIMES
+    ProcessBasePriority = 5  # s: KPRIORITY
+    ProcessRaisePriority = 6  # s: ULONG
+    ProcessDebugPort = 7  # q: HANDLE
+    ProcessExceptionPort = 8  # s: PROCESS_EXCEPTION_PORT (requires SeTcbPrivilege)
+    ProcessAccessToken = 9  # s: PROCESS_ACCESS_TOKEN
+    ProcessLdtInformation = 10  # qs: PROCESS_LDT_INFORMATION // 10
+    ProcessLdtSize = 11  # s: PROCESS_LDT_SIZE
+    ProcessDefaultHardErrorMode = 12  # qs: ULONG
+    ProcessIoPortHandlers = 13  # (kernel-mode only) // PROCESS_IO_PORT_HANDLER_INFORMATION
+    ProcessPooledUsageAndLimits = 14  # q: POOLED_USAGE_AND_LIMITS
+    ProcessWorkingSetWatch = 15  # q: PROCESS_WS_WATCH_INFORMATION[]; s: void
+    ProcessUserModeIOPL = 16  # qs: ULONG (requires SeTcbPrivilege)
+    ProcessEnableAlignmentFaultFixup = 17  # s: BOOLEAN
+    ProcessPriorityClass = 18  # qs: PROCESS_PRIORITY_CLASS
+    ProcessWx86Information = 19  # qs: ULONG (requires SeTcbPrivilege) (VdmAllowed)
+    ProcessHandleCount = 20  # q: ULONG, PROCESS_HANDLE_INFORMATION // 20
+    ProcessAffinityMask = 21  # (q >WIN7)s: KAFFINITY, qs: GROUP_AFFINITY
+    ProcessPriorityBoost = 22  # qs: ULONG
+    ProcessDeviceMap = 23  # qs: PROCESS_DEVICEMAP_INFORMATION, PROCESS_DEVICEMAP_INFORMATION_EX
+    ProcessSessionInformation = 24  # q: PROCESS_SESSION_INFORMATION
+    ProcessForegroundInformation = 25  # s: PROCESS_FOREGROUND_BACKGROUND
+    ProcessWow64Information = 26  # q: ULONG_PTR
+    ProcessImageFileName = 27  # q: UNICODE_STRING
+    ProcessLUIDDeviceMapsEnabled = 28  # q: ULONG
+    ProcessBreakOnTermination = 29  # qs: ULONG
+    ProcessDebugObjectHandle = 30  # q: HANDLE // 30
+    ProcessDebugFlags = 31  # qs: ULONG
+    ProcessHandleTracing = 32  # q: PROCESS_HANDLE_TRACING_QUERY; s: size 0 disables, otherwise enables
+    ProcessIoPriority = 33  # qs: IO_PRIORITY_HINT
+    ProcessExecuteFlags = 34  # qs: ULONG
+    ProcessTlsInformation = 35  # PROCESS_TLS_INFORMATION // ProcessResourceManagement
+    ProcessCookie = 36  # q: ULONG
+    ProcessImageInformation = 37  # q: SECTION_IMAGE_INFORMATION
+    ProcessCycleTime = 38  # q: PROCESS_CYCLE_TIME_INFORMATION // since VISTA
+    ProcessPagePriority = 39  # qs: PAGE_PRIORITY_INFORMATION
+    ProcessInstrumentationCallback = 40  # s: PVOID or PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION // 40
+    ProcessThreadStackAllocation = 41  # s: PROCESS_STACK_ALLOCATION_INFORMATION, PROCESS_STACK_ALLOCATION_INFORMATION_EX
+    ProcessWorkingSetWatchEx = 42  # q: PROCESS_WS_WATCH_INFORMATION_EX[]
+    ProcessImageFileNameWin32 = 43  # q: UNICODE_STRING
+    ProcessImageFileMapping = 44  # q: HANDLE (input)
+    ProcessAffinityUpdateMode = 45  # qs: PROCESS_AFFINITY_UPDATE_MODE
+    ProcessMemoryAllocationMode = 46  # qs: PROCESS_MEMORY_ALLOCATION_MODE
+    ProcessGroupInformation = 47  # q: USHORT[]
+    ProcessTokenVirtualizationEnabled = 48  # s: ULONG
+    ProcessConsoleHostProcess = 49  # q: ULONG_PTR // ProcessOwnerInformation
+    ProcessWindowInformation = 50  # q: PROCESS_WINDOW_INFORMATION // 50
+    ProcessHandleInformation = 51  # q: PROCESS_HANDLE_SNAPSHOT_INFORMATION // since WIN8
+    ProcessMitigationPolicy = 52  # s: PROCESS_MITIGATION_POLICY_INFORMATION
     ProcessDynamicFunctionTableInformation = 53
-    ProcessHandleCheckingMode = 54
-    ProcessKeepAliveCount = 55
-    ProcessRevokeFileHandles = 56
-    ProcessWorkingSetControl = 57
-    ProcessHandleTable = 58
-    ProcessCheckStackExtentsMode = 59
-    ProcessCommandLineInformation = 60
-    ProcessProtectionInformation = 61
-    ProcessMemoryExhaustion = 62
-    ProcessFaultInformation = 63
-    ProcessTelemetryIdInformation = 64
-    ProcessCommitReleaseInformation = 65
-    ProcessDefaultCpuSetsInformation = 66
-    ProcessAllowedCpuSetsInformation = 67
+    ProcessHandleCheckingMode = 54  # qs: ULONG; s: 0 disables, otherwise enables
+    ProcessKeepAliveCount = 55  # q: PROCESS_KEEPALIVE_COUNT_INFORMATION
+    ProcessRevokeFileHandles = 56  # s: PROCESS_REVOKE_FILE_HANDLES_INFORMATION
+    ProcessWorkingSetControl = 57  # s: PROCESS_WORKING_SET_CONTROL
+    ProcessHandleTable = 58  # q: ULONG[] // since WINBLUE
+    ProcessCheckStackExtentsMode = 59  # qs: ULONG // KPROCESS->CheckStackExtents (CFG)
+    ProcessCommandLineInformation = 60  # q: UNICODE_STRING // 60
+    ProcessProtectionInformation = 61  # q: PS_PROTECTION
+    ProcessMemoryExhaustion = 62  # PROCESS_MEMORY_EXHAUSTION_INFO // since THRESHOLD
+    ProcessFaultInformation = 63  # PROCESS_FAULT_INFORMATION
+    ProcessTelemetryIdInformation = 64  # q: PROCESS_TELEMETRY_ID_INFORMATION
+    ProcessCommitReleaseInformation = 65  # PROCESS_COMMIT_RELEASE_INFORMATION
+    ProcessDefaultCpuSetsInformation = 66  # SYSTEM_CPU_SET_INFORMATION[5]
+    ProcessAllowedCpuSetsInformation = 67  # SYSTEM_CPU_SET_INFORMATION[5]
     ProcessSubsystemProcess = 68
-    ProcessJobMemoryInformation = 69
-    ProcessInPrivate = 70
-    ProcessRaiseUMExceptionOnInvalidHandleClose = 71
+    ProcessJobMemoryInformation = 69  # q: PROCESS_JOB_MEMORY_INFO
+    ProcessInPrivate = 70  # s: void // ETW // since THRESHOLD2 // 70
+    ProcessRaiseUMExceptionOnInvalidHandleClose = 71  # qs: ULONG; s: 0 disables, otherwise enables
     ProcessIumChallengeResponse = 72
-    ProcessChildProcessInformation = 73
-    ProcessHighGraphicsPriorityInformation = 74
-    ProcessSubsystemInformation = 75
-    ProcessEnergyValues = 76
-    ProcessPowerThrottlingState = 77
-    ProcessReserved3Information = 78
-    ProcessWin32kSyscallFilterInformation = 79
-    ProcessDisableSystemAllowedCpuSets = 80
-    ProcessWakeInformation = 81
-    ProcessEnergyTrackingState = 82
-    ProcessManageWritesToExecutableMemory = 83
+    ProcessChildProcessInformation = 73  # q: PROCESS_CHILD_PROCESS_INFORMATION
+    ProcessHighGraphicsPriorityInformation = 74  # qs: BOOLEAN (requires SeTcbPrivilege)
+    ProcessSubsystemInformation = 75  # q: SUBSYSTEM_INFORMATION_TYPE // since REDSTONE2
+    ProcessEnergyValues = 76  # q: PROCESS_ENERGY_VALUES, PROCESS_EXTENDED_ENERGY_VALUES
+    ProcessPowerThrottlingState = 77  # qs: POWER_THROTTLING_PROCESS_STATE
+    ProcessReserved3Information = 78  # ProcessActivityThrottlePolicy // PROCESS_ACTIVITY_THROTTLE_POLICY
+    ProcessWin32kSyscallFilterInformation = 79  # q: WIN32K_SYSCALL_FILTER
+    ProcessDisableSystemAllowedCpuSets = 80  # 80
+    ProcessWakeInformation = 81  # PROCESS_WAKE_INFORMATION
+    ProcessEnergyTrackingState = 82  # PROCESS_ENERGY_TRACKING_STATE
+    ProcessManageWritesToExecutableMemory = 83  # MANAGE_WRITES_TO_EXECUTABLE_MEMORY // since REDSTONE3
     ProcessCaptureTrustletLiveDump = 84
     ProcessTelemetryCoverage = 85
     ProcessEnclaveInformation = 86
-    ProcessEnableReadWriteVmLogging = 87
-    ProcessUptimeInformation = 88
-    ProcessImageSection = 89
-    ProcessDebugAuthInformation = 90
-    ProcessSystemResourceManagement = 91
-    ProcessSequenceNumber = 92
-    ProcessLoaderDetour = 93
-    ProcessSecurityDomainInformation = 94
-    ProcessCombineSecurityDomainsInformation = 95
-    ProcessEnableLogging = 96
-    ProcessLeapSecondInformation = 97
-    ProcessFiberShadowStackAllocation = 98
-    ProcessFreeFiberShadowStackAllocation = 99
-    ProcessAltSystemCallInformation = 100
-    ProcessDynamicEHContinuationTargets = 101
-    ProcessDynamicEnforcedCetCompatibleRanges = 102
-    MaxProcessInfoClass = 103
+    ProcessEnableReadWriteVmLogging = 87  # PROCESS_READWRITEVM_LOGGING_INFORMATION
+    ProcessUptimeInformation = 88  # q: PROCESS_UPTIME_INFORMATION
+    ProcessImageSection = 89  # q: HANDLE
+    ProcessDebugAuthInformation = 90  # since REDSTONE4 // 90
+    ProcessSystemResourceManagement = 91  # PROCESS_SYSTEM_RESOURCE_MANAGEMENT
+    ProcessSequenceNumber = 92  # q: ULONGLONG
+    ProcessLoaderDetour = 93  # since REDSTONE5
+    ProcessSecurityDomainInformation = 94  # PROCESS_SECURITY_DOMAIN_INFORMATION
+    ProcessCombineSecurityDomainsInformation = 95  # PROCESS_COMBINE_SECURITY_DOMAINS_INFORMATION
+    ProcessEnableLogging = 96  # PROCESS_LOGGING_INFORMATION
+    ProcessLeapSecondInformation = 97  # PROCESS_LEAP_SECOND_INFORMATION
+    ProcessFiberShadowStackAllocation = 98  # PROCESS_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION // since 19H1
+    ProcessFreeFiberShadowStackAllocation = 99  # PROCESS_FREE_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION
+    ProcessAltSystemCallInformation = 100  # qs: BOOLEAN (kernel-mode only) // INT2E // since 20H1 // 100
+    ProcessDynamicEHContinuationTargets = 101  # PROCESS_DYNAMIC_EH_CONTINUATION_TARGETS_INFORMATION
+    ProcessDynamicEnforcedCetCompatibleRanges = 102  # PROCESS_DYNAMIC_ENFORCED_ADDRESS_RANGE_INFORMATION // since 20H2
+    ProcessCreateStateChange = 103  # since WIN11
+    ProcessApplyStateChange = 104
+    ProcessEnableOptionalXStateFeatures = 105
+    ProcessAltPrefetchParam = 106  # since 22H1
+    ProcessAssignCpuPartitions = 107
+    ProcessPriorityClassEx = 108  # s: PROCESS_PRIORITY_CLASS_EX
+    ProcessMembershipInformation = 109
+    ProcessEffectiveIoPriority = 110  # q: IO_PRIORITY_HINT
+    ProcessEffectivePagePriority = 111  # q: ULONG
+    MaxProcessInfoClass = 112
 make_global(PROCESSINFOCLASS)
 
 class THREADINFOCLASS(Enum):
-    ThreadBasicInformation = 0
-    ThreadTimes = 1
-    ThreadPriority = 2
-    ThreadBasePriority = 3
-    ThreadAffinityMask = 4
-    ThreadImpersonationToken = 5
-    ThreadDescriptorTableEntry = 6
-    ThreadEnableAlignmentFaultFixup = 7
+    ThreadBasicInformation = 0  # q: THREAD_BASIC_INFORMATION
+    ThreadTimes = 1  # q: KERNEL_USER_TIMES
+    ThreadPriority = 2  # s: KPRIORITY (requires SeIncreaseBasePriorityPrivilege)
+    ThreadBasePriority = 3  # s: KPRIORITY
+    ThreadAffinityMask = 4  # s: KAFFINITY
+    ThreadImpersonationToken = 5  # s: HANDLE
+    ThreadDescriptorTableEntry = 6  # q: DESCRIPTOR_TABLE_ENTRY (or WOW64_DESCRIPTOR_TABLE_ENTRY)
+    ThreadEnableAlignmentFaultFixup = 7  # s: BOOLEAN
     ThreadEventPair = 8
-    ThreadQuerySetWin32StartAddress = 9
-    ThreadZeroTlsCell = 10
-    ThreadPerformanceCount = 11
-    ThreadAmILastThread = 12
-    ThreadIdealProcessor = 13
-    ThreadPriorityBoost = 14
-    ThreadSetTlsArrayAddress = 15
-    ThreadIsIoPending = 16
-    ThreadHideFromDebugger = 17
-    ThreadBreakOnTermination = 18
-    ThreadSwitchLegacyState = 19
-    ThreadIsTerminated = 20
-    ThreadLastSystemCall = 21
-    ThreadIoPriority = 22
-    ThreadCycleTime = 23
-    ThreadPagePriority = 24
-    ThreadActualBasePriority = 25
-    ThreadTebInformation = 26
+    ThreadQuerySetWin32StartAddress = 9  # q: ULONG_PTR
+    ThreadZeroTlsCell = 10  # s: ULONG // TlsIndex // 10
+    ThreadPerformanceCount = 11  # q: LARGE_INTEGER
+    ThreadAmILastThread = 12  # q: ULONG
+    ThreadIdealProcessor = 13  # s: ULONG
+    ThreadPriorityBoost = 14  # qs: ULONG
+    ThreadSetTlsArrayAddress = 15  # s: ULONG_PTR
+    ThreadIsIoPending = 16  # q: ULONG
+    ThreadHideFromDebugger = 17  # q: BOOLEAN; s: void
+    ThreadBreakOnTermination = 18  # qs: ULONG
+    ThreadSwitchLegacyState = 19  # s: void // NtCurrentThread // NPX/FPU
+    ThreadIsTerminated = 20  # q: ULONG // 20
+    ThreadLastSystemCall = 21  # q: THREAD_LAST_SYSCALL_INFORMATION
+    ThreadIoPriority = 22  # qs: IO_PRIORITY_HINT (requires SeIncreaseBasePriorityPrivilege)
+    ThreadCycleTime = 23  # q: THREAD_CYCLE_TIME_INFORMATION
+    ThreadPagePriority = 24  # qs: PAGE_PRIORITY_INFORMATION
+    ThreadActualBasePriority = 25  # s: LONG (requires SeIncreaseBasePriorityPrivilege)
+    ThreadTebInformation = 26  # q: THREAD_TEB_INFORMATION (requires THREAD_GET_CONTEXT + THREAD_SET_CONTEXT)
     ThreadCSwitchMon = 27
     ThreadCSwitchPmu = 28
-    ThreadWow64Context = 29
-    ThreadGroupInformation = 30
-    ThreadUmsInformation = 31
-    ThreadCounterProfiling = 32
-    ThreadIdealProcessorEx = 33
-    ThreadCpuAccountingInformation = 34
-    ThreadSuspendCount = 35
-    ThreadHeterogeneousCpuPolicy = 36
-    ThreadContainerId = 37
-    ThreadNameInformation = 38
+    ThreadWow64Context = 29  # qs: WOW64_CONTEXT
+    ThreadGroupInformation = 30  # qs: GROUP_AFFINITY // 30
+    ThreadUmsInformation = 31  # q: THREAD_UMS_INFORMATION
+    ThreadCounterProfiling = 32  # q: BOOLEAN; s: THREAD_PROFILING_INFORMATION?
+    ThreadIdealProcessorEx = 33  # qs: PROCESSOR_NUMBER; s: previous PROCESSOR_NUMBER on return
+    ThreadCpuAccountingInformation = 34  # q: BOOLEAN; s: HANDLE (NtOpenSession) // NtCurrentThread // since WIN8
+    ThreadSuspendCount = 35  # q: ULONG // since WINBLUE
+    ThreadHeterogeneousCpuPolicy = 36  # q: KHETERO_CPU_POLICY // since THRESHOLD
+    ThreadContainerId = 37  # q: GUID
+    ThreadNameInformation = 38  # qs: THREAD_NAME_INFORMATION
     ThreadSelectedCpuSets = 39
-    ThreadSystemThreadInformation = 40
-    ThreadActualGroupAffinity = 41
-    ThreadDynamicCodePolicyInfo = 42
-    ThreadExplicitCaseSensitivity = 43
-    ThreadWorkOnBehalfTicket = 44
-    ThreadSubsystemInformation = 45
-    ThreadDbgkWerReportActive = 46
-    ThreadAttachContainer = 47
-    ThreadManageWritesToExecutableMemory = 48
-    ThreadPowerThrottlingState = 49
-    ThreadWorkloadClass = 50
-    MaxThreadInfoClass = 51
+    ThreadSystemThreadInformation = 40  # q: SYSTEM_THREAD_INFORMATION // 40
+    ThreadActualGroupAffinity = 41  # q: GROUP_AFFINITY // since THRESHOLD2
+    ThreadDynamicCodePolicyInfo = 42  # q: ULONG; s: ULONG (NtCurrentThread)
+    ThreadExplicitCaseSensitivity = 43  # qs: ULONG; s: 0 disables, otherwise enables
+    ThreadWorkOnBehalfTicket = 44  # RTL_WORK_ON_BEHALF_TICKET_EX
+    ThreadSubsystemInformation = 45  # q: SUBSYSTEM_INFORMATION_TYPE // since REDSTONE2
+    ThreadDbgkWerReportActive = 46  # s: ULONG; s: 0 disables, otherwise enables
+    ThreadAttachContainer = 47  # s: HANDLE (job object) // NtCurrentThread
+    ThreadManageWritesToExecutableMemory = 48  # MANAGE_WRITES_TO_EXECUTABLE_MEMORY // since REDSTONE3
+    ThreadPowerThrottlingState = 49  # POWER_THROTTLING_THREAD_STATE
+    ThreadWorkloadClass = 50  # THREAD_WORKLOAD_CLASS // since REDSTONE5 // 50
+    ThreadCreateStateChange = 51  # since WIN11
+    ThreadApplyStateChange = 52
+    ThreadStrongerBadHandleChecks = 53  # since 22H1
+    ThreadEffectiveIoPriority = 54  # q: IO_PRIORITY_HINT
+    ThreadEffectivePagePriority = 55  # q: ULONG
+    MaxThreadInfoClass = 56
 make_global(THREADINFOCLASS)
 
 class PROCESS_TLS_INFORMATION_TYPE(Enum):
@@ -963,41 +1543,69 @@ class THREAD_WORKLOAD_CLASS(Enum):
     MaxThreadWorkloadClass = 2
 make_global(THREAD_WORKLOAD_CLASS)
 
+class PROCESS_STATE_CHANGE_TYPE(Enum):
+    ProcessStateChangeSuspend = 0
+    ProcessStateChangeResume = 1
+    ProcessStateChangeMax = 2
+make_global(PROCESS_STATE_CHANGE_TYPE)
+
+class THREAD_STATE_CHANGE_TYPE(Enum):
+    ThreadStateChangeSuspend = 0
+    ThreadStateChangeResume = 1
+    ThreadStateChangeMax = 2
+make_global(THREAD_STATE_CHANGE_TYPE)
+
+class SE_SAFE_OPEN_PROMPT_EXPERIENCE_RESULTS(Enum):
+    SeSafeOpenExperienceNone = 0
+    SeSafeOpenExperienceCalled = 1
+    SeSafeOpenExperienceAppRepCalled = 2
+    SeSafeOpenExperiencePromptDisplayed = 4
+    SeSafeOpenExperienceUAC = 8
+    SeSafeOpenExperienceUninstaller = 16
+    SeSafeOpenExperienceIgnoreUnknownOrBad = 32
+    SeSafeOpenExperienceDefenderTrustedInstaller = 64
+    SeSafeOpenExperienceMOTWPresent = 128
+make_global(SE_SAFE_OPEN_PROMPT_EXPERIENCE_RESULTS)
+
 class PS_ATTRIBUTE_NUM(Enum):
-    PsAttributeParentProcess = 0
-    PsAttributeDebugPort = 1
-    PsAttributeToken = 2
-    PsAttributeClientId = 3
-    PsAttributeTebAddress = 4
-    PsAttributeImageName = 5
-    PsAttributeImageInfo = 6
-    PsAttributeMemoryReserve = 7
-    PsAttributePriorityClass = 8
-    PsAttributeErrorMode = 9
-    PsAttributeStdHandleInfo = 10
-    PsAttributeHandleList = 11
-    PsAttributeGroupAffinity = 12
-    PsAttributePreferredNode = 13
-    PsAttributeIdealProcessor = 14
-    PsAttributeUmsThread = 15
-    PsAttributeMitigationOptions = 16
-    PsAttributeProtectionLevel = 17
-    PsAttributeSecureProcess = 18
-    PsAttributeJobList = 19
-    PsAttributeChildProcessPolicy = 20
-    PsAttributeAllApplicationPackagesPolicy = 21
-    PsAttributeWin32kFilter = 22
-    PsAttributeSafeOpenPromptOriginClaim = 23
-    PsAttributeBnoIsolation = 24
-    PsAttributeDesktopAppPolicy = 25
-    PsAttributeChpe = 26
-    PsAttributeMax = 27
+    PsAttributeParentProcess = 0  # in HANDLE
+    PsAttributeDebugObject = 1  # in HANDLE
+    PsAttributeToken = 2  # in HANDLE
+    PsAttributeClientId = 3  # out PCLIENT_ID
+    PsAttributeTebAddress = 4  # out PTEB *
+    PsAttributeImageName = 5  # in PWSTR
+    PsAttributeImageInfo = 6  # out PSECTION_IMAGE_INFORMATION
+    PsAttributeMemoryReserve = 7  # in PPS_MEMORY_RESERVE
+    PsAttributePriorityClass = 8  # in UCHAR
+    PsAttributeErrorMode = 9  # in ULONG
+    PsAttributeStdHandleInfo = 10  # 10, in PPS_STD_HANDLE_INFO
+    PsAttributeHandleList = 11  # in HANDLE[]
+    PsAttributeGroupAffinity = 12  # in PGROUP_AFFINITY
+    PsAttributePreferredNode = 13  # in PUSHORT
+    PsAttributeIdealProcessor = 14  # in PPROCESSOR_NUMBER
+    PsAttributeUmsThread = 15  # ? in PUMS_CREATE_THREAD_ATTRIBUTES
+    PsAttributeMitigationOptions = 16  # in PPS_MITIGATION_OPTIONS_MAP (PROCESS_CREATION_MITIGATION_POLICY_*) // since WIN8
+    PsAttributeProtectionLevel = 17  # in PS_PROTECTION // since WINBLUE
+    PsAttributeSecureProcess = 18  # in PPS_TRUSTLET_CREATE_ATTRIBUTES, since THRESHOLD
+    PsAttributeJobList = 19  # in HANDLE[]
+    PsAttributeChildProcessPolicy = 20  # 20, in PULONG (PROCESS_CREATION_CHILD_PROCESS_*) // since THRESHOLD2
+    PsAttributeAllApplicationPackagesPolicy = 21  # in PULONG (PROCESS_CREATION_ALL_APPLICATION_PACKAGES_*) // since REDSTONE
+    PsAttributeWin32kFilter = 22  # in PWIN32K_SYSCALL_FILTER
+    PsAttributeSafeOpenPromptOriginClaim = 23  # in
+    PsAttributeBnoIsolation = 24  # in PPS_BNO_ISOLATION_PARAMETERS // since REDSTONE2
+    PsAttributeDesktopAppPolicy = 25  # in PULONG (PROCESS_CREATION_DESKTOP_APP_*)
+    PsAttributeChpe = 26  # in BOOLEAN // since REDSTONE3
+    PsAttributeMitigationAuditOptions = 27  # in PPS_MITIGATION_AUDIT_OPTIONS_MAP (PROCESS_CREATION_MITIGATION_AUDIT_POLICY_*) // since 21H1
+    PsAttributeMachineType = 28  # in WORD // since 21H2
+    PsAttributeComponentFilter = 29
+    PsAttributeEnableOptionalXStateFeatures = 30  # since WIN11
+    PsAttributeMax = 31
 make_global(PS_ATTRIBUTE_NUM)
 
 class PS_STD_HANDLE_STATE(Enum):
     PsNeverDuplicate = 0
-    PsRequestDuplicate = 1
-    PsAlwaysDuplicate = 2
+    PsRequestDuplicate = 1  # duplicate standard handles specified by PseudoHandleMask, and only if StdHandleSubsystemType matches the image subsystem
+    PsAlwaysDuplicate = 2  # always duplicate standard handles
     PsMaxStdHandleStates = 3
 make_global(PS_STD_HANDLE_STATE)
 
@@ -1022,7 +1630,7 @@ class PS_MITIGATION_OPTION(Enum):
     PS_MITIGATION_OPTION_LOADER_INTEGRITY_CONTINUITY = 17
     PS_MITIGATION_OPTION_STRICT_CONTROL_FLOW_GUARD = 18
     PS_MITIGATION_OPTION_RESTRICT_SET_THREAD_CONTEXT = 19
-    PS_MITIGATION_OPTION_ROP_STACKPIVOT = 20
+    PS_MITIGATION_OPTION_ROP_STACKPIVOT = 20  # since REDSTONE3
     PS_MITIGATION_OPTION_ROP_CALLER_CHECK = 21
     PS_MITIGATION_OPTION_ROP_SIMEXEC = 22
     PS_MITIGATION_OPTION_EXPORT_ADDRESS_FILTER = 23
@@ -1031,9 +1639,13 @@ class PS_MITIGATION_OPTION(Enum):
     PS_MITIGATION_OPTION_IMPORT_ADDRESS_FILTER = 26
     PS_MITIGATION_OPTION_MODULE_TAMPERING_PROTECTION = 27
     PS_MITIGATION_OPTION_RESTRICT_INDIRECT_BRANCH_PREDICTION = 28
-    PS_MITIGATION_OPTION_SPECULATIVE_STORE_BYPASS_DISABLE = 29
+    PS_MITIGATION_OPTION_SPECULATIVE_STORE_BYPASS_DISABLE = 29  # since REDSTONE5
     PS_MITIGATION_OPTION_ALLOW_DOWNGRADE_DYNAMIC_CODE_POLICY = 30
-    PS_MITIGATION_OPTION_CET_SHADOW_STACKS = 31
+    PS_MITIGATION_OPTION_CET_USER_SHADOW_STACKS = 31
+    PS_MITIGATION_OPTION_USER_CET_SET_CONTEXT_IP_VALIDATION = 32  # since 21H1
+    PS_MITIGATION_OPTION_BLOCK_NON_CET_BINARIES = 33
+    PS_MITIGATION_OPTION_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY = 34
+    PS_MITIGATION_OPTION_REDIRECTION_TRUST = 35  # since 22H1
 make_global(PS_MITIGATION_OPTION)
 
 class PS_CREATE_STATE(Enum):
@@ -1042,7 +1654,7 @@ class PS_CREATE_STATE(Enum):
     PsCreateFailOnSectionCreate = 2
     PsCreateFailExeFormat = 3
     PsCreateFailMachineMismatch = 4
-    PsCreateFailExeName = 5
+    PsCreateFailExeName = 5  # Debugger specified
     PsCreateSuccess = 6
     PsCreateMaximumStates = 7
 make_global(PS_CREATE_STATE)
@@ -1069,119 +1681,134 @@ make_global(DBG_STATE)
 
 class DEBUGOBJECTINFOCLASS(Enum):
     DebugObjectUnusedInformation = 0
-    DebugObjectKillProcessOnExitInformation = 1
+    DebugObjectKillProcessOnExitInformation = 1  # s: ULONG
     MaxDebugObjectInfoClass = 2
 make_global(DEBUGOBJECTINFOCLASS)
 
 class FILE_INFORMATION_CLASS(Enum):
-    FileDirectoryInformation = 1
-    FileFullDirectoryInformation = 2
-    FileBothDirectoryInformation = 3
-    FileBasicInformation = 4
-    FileStandardInformation = 5
-    FileInternalInformation = 6
-    FileEaInformation = 7
-    FileAccessInformation = 8
-    FileNameInformation = 9
-    FileRenameInformation = 10
-    FileLinkInformation = 11
-    FileNamesInformation = 12
-    FileDispositionInformation = 13
-    FilePositionInformation = 14
-    FileFullEaInformation = 15
-    FileModeInformation = 16
-    FileAlignmentInformation = 17
-    FileAllInformation = 18
-    FileAllocationInformation = 19
-    FileEndOfFileInformation = 20
-    FileAlternateNameInformation = 21
-    FileStreamInformation = 22
-    FilePipeInformation = 23
-    FilePipeLocalInformation = 24
-    FilePipeRemoteInformation = 25
-    FileMailslotQueryInformation = 26
-    FileMailslotSetInformation = 27
-    FileCompressionInformation = 28
-    FileObjectIdInformation = 29
-    FileCompletionInformation = 30
-    FileMoveClusterInformation = 31
-    FileQuotaInformation = 32
-    FileReparsePointInformation = 33
-    FileNetworkOpenInformation = 34
-    FileAttributeTagInformation = 35
-    FileTrackingInformation = 36
-    FileIdBothDirectoryInformation = 37
-    FileIdFullDirectoryInformation = 38
-    FileValidDataLengthInformation = 39
-    FileShortNameInformation = 40
-    FileIoCompletionNotificationInformation = 41
-    FileIoStatusBlockRangeInformation = 42
-    FileIoPriorityHintInformation = 43
-    FileSfioReserveInformation = 44
-    FileSfioVolumeInformation = 45
-    FileHardLinkInformation = 46
-    FileProcessIdsUsingFileInformation = 47
-    FileNormalizedNameInformation = 48
-    FileNetworkPhysicalNameInformation = 49
-    FileIdGlobalTxDirectoryInformation = 50
-    FileIsRemoteDeviceInformation = 51
+    FileDirectoryInformation = 1  # FILE_DIRECTORY_INFORMATION
+    FileFullDirectoryInformation = 2  # FILE_FULL_DIR_INFORMATION
+    FileBothDirectoryInformation = 3  # FILE_BOTH_DIR_INFORMATION
+    FileBasicInformation = 4  # FILE_BASIC_INFORMATION
+    FileStandardInformation = 5  # FILE_STANDARD_INFORMATION
+    FileInternalInformation = 6  # FILE_INTERNAL_INFORMATION
+    FileEaInformation = 7  # FILE_EA_INFORMATION
+    FileAccessInformation = 8  # FILE_ACCESS_INFORMATION
+    FileNameInformation = 9  # FILE_NAME_INFORMATION
+    FileRenameInformation = 10  # FILE_RENAME_INFORMATION // 10
+    FileLinkInformation = 11  # FILE_LINK_INFORMATION
+    FileNamesInformation = 12  # FILE_NAMES_INFORMATION
+    FileDispositionInformation = 13  # FILE_DISPOSITION_INFORMATION
+    FilePositionInformation = 14  # FILE_POSITION_INFORMATION
+    FileFullEaInformation = 15  # FILE_FULL_EA_INFORMATION
+    FileModeInformation = 16  # FILE_MODE_INFORMATION
+    FileAlignmentInformation = 17  # FILE_ALIGNMENT_INFORMATION
+    FileAllInformation = 18  # FILE_ALL_INFORMATION
+    FileAllocationInformation = 19  # FILE_ALLOCATION_INFORMATION
+    FileEndOfFileInformation = 20  # FILE_END_OF_FILE_INFORMATION // 20
+    FileAlternateNameInformation = 21  # FILE_NAME_INFORMATION
+    FileStreamInformation = 22  # FILE_STREAM_INFORMATION
+    FilePipeInformation = 23  # FILE_PIPE_INFORMATION
+    FilePipeLocalInformation = 24  # FILE_PIPE_LOCAL_INFORMATION
+    FilePipeRemoteInformation = 25  # FILE_PIPE_REMOTE_INFORMATION
+    FileMailslotQueryInformation = 26  # FILE_MAILSLOT_QUERY_INFORMATION
+    FileMailslotSetInformation = 27  # FILE_MAILSLOT_SET_INFORMATION
+    FileCompressionInformation = 28  # FILE_COMPRESSION_INFORMATION
+    FileObjectIdInformation = 29  # FILE_OBJECTID_INFORMATION
+    FileCompletionInformation = 30  # FILE_COMPLETION_INFORMATION // 30
+    FileMoveClusterInformation = 31  # FILE_MOVE_CLUSTER_INFORMATION
+    FileQuotaInformation = 32  # FILE_QUOTA_INFORMATION
+    FileReparsePointInformation = 33  # FILE_REPARSE_POINT_INFORMATION
+    FileNetworkOpenInformation = 34  # FILE_NETWORK_OPEN_INFORMATION
+    FileAttributeTagInformation = 35  # FILE_ATTRIBUTE_TAG_INFORMATION
+    FileTrackingInformation = 36  # FILE_TRACKING_INFORMATION
+    FileIdBothDirectoryInformation = 37  # FILE_ID_BOTH_DIR_INFORMATION
+    FileIdFullDirectoryInformation = 38  # FILE_ID_FULL_DIR_INFORMATION
+    FileValidDataLengthInformation = 39  # FILE_VALID_DATA_LENGTH_INFORMATION
+    FileShortNameInformation = 40  # FILE_NAME_INFORMATION // 40
+    FileIoCompletionNotificationInformation = 41  # FILE_IO_COMPLETION_NOTIFICATION_INFORMATION // since VISTA
+    FileIoStatusBlockRangeInformation = 42  # FILE_IOSTATUSBLOCK_RANGE_INFORMATION
+    FileIoPriorityHintInformation = 43  # FILE_IO_PRIORITY_HINT_INFORMATION, FILE_IO_PRIORITY_HINT_INFORMATION_EX
+    FileSfioReserveInformation = 44  # FILE_SFIO_RESERVE_INFORMATION
+    FileSfioVolumeInformation = 45  # FILE_SFIO_VOLUME_INFORMATION
+    FileHardLinkInformation = 46  # FILE_LINKS_INFORMATION
+    FileProcessIdsUsingFileInformation = 47  # FILE_PROCESS_IDS_USING_FILE_INFORMATION
+    FileNormalizedNameInformation = 48  # FILE_NAME_INFORMATION
+    FileNetworkPhysicalNameInformation = 49  # FILE_NETWORK_PHYSICAL_NAME_INFORMATION
+    FileIdGlobalTxDirectoryInformation = 50  # FILE_ID_GLOBAL_TX_DIR_INFORMATION // since WIN7 // 50
+    FileIsRemoteDeviceInformation = 51  # FILE_IS_REMOTE_DEVICE_INFORMATION
     FileUnusedInformation = 52
-    FileNumaNodeInformation = 53
-    FileStandardLinkInformation = 54
-    FileRemoteProtocolInformation = 55
-    FileRenameInformationBypassAccessCheck = 56
-    FileLinkInformationBypassAccessCheck = 57
-    FileVolumeNameInformation = 58
-    FileIdInformation = 59
-    FileIdExtdDirectoryInformation = 60
-    FileReplaceCompletionInformation = 61
-    FileHardLinkFullIdInformation = 62
-    FileIdExtdBothDirectoryInformation = 63
-    FileDispositionInformationEx = 64
-    FileRenameInformationEx = 65
-    FileRenameInformationExBypassAccessCheck = 66
-    FileDesiredStorageClassInformation = 67
-    FileStatInformation = 68
-    FileMemoryPartitionInformation = 69
-    FileStatLxInformation = 70
-    FileCaseSensitiveInformation = 71
-    FileLinkInformationEx = 72
-    FileLinkInformationExBypassAccessCheck = 73
-    FileStorageReserveIdInformation = 74
-    FileCaseSensitiveInformationForceAccessCheck = 75
-    FileMaximumInformation = 76
+    FileNumaNodeInformation = 53  # FILE_NUMA_NODE_INFORMATION
+    FileStandardLinkInformation = 54  # FILE_STANDARD_LINK_INFORMATION
+    FileRemoteProtocolInformation = 55  # FILE_REMOTE_PROTOCOL_INFORMATION
+    FileRenameInformationBypassAccessCheck = 56  # (kernel-mode only); FILE_RENAME_INFORMATION // since WIN8
+    FileLinkInformationBypassAccessCheck = 57  # (kernel-mode only); FILE_LINK_INFORMATION
+    FileVolumeNameInformation = 58  # FILE_VOLUME_NAME_INFORMATION
+    FileIdInformation = 59  # FILE_ID_INFORMATION
+    FileIdExtdDirectoryInformation = 60  # FILE_ID_EXTD_DIR_INFORMATION // 60
+    FileReplaceCompletionInformation = 61  # FILE_COMPLETION_INFORMATION // since WINBLUE
+    FileHardLinkFullIdInformation = 62  # FILE_LINK_ENTRY_FULL_ID_INFORMATION // FILE_LINKS_FULL_ID_INFORMATION
+    FileIdExtdBothDirectoryInformation = 63  # FILE_ID_EXTD_BOTH_DIR_INFORMATION // since THRESHOLD
+    FileDispositionInformationEx = 64  # FILE_DISPOSITION_INFO_EX // since REDSTONE
+    FileRenameInformationEx = 65  # FILE_RENAME_INFORMATION_EX
+    FileRenameInformationExBypassAccessCheck = 66  # (kernel-mode only); FILE_RENAME_INFORMATION_EX
+    FileDesiredStorageClassInformation = 67  # FILE_DESIRED_STORAGE_CLASS_INFORMATION // since REDSTONE2
+    FileStatInformation = 68  # FILE_STAT_INFORMATION
+    FileMemoryPartitionInformation = 69  # FILE_MEMORY_PARTITION_INFORMATION // since REDSTONE3
+    FileStatLxInformation = 70  # FILE_STAT_LX_INFORMATION // since REDSTONE4 // 70
+    FileCaseSensitiveInformation = 71  # FILE_CASE_SENSITIVE_INFORMATION
+    FileLinkInformationEx = 72  # FILE_LINK_INFORMATION_EX // since REDSTONE5
+    FileLinkInformationExBypassAccessCheck = 73  # (kernel-mode only); FILE_LINK_INFORMATION_EX
+    FileStorageReserveIdInformation = 74  # FILE_SET_STORAGE_RESERVE_ID_INFORMATION
+    FileCaseSensitiveInformationForceAccessCheck = 75  # FILE_CASE_SENSITIVE_INFORMATION
+    FileKnownFolderInformation = 76  # FILE_KNOWN_FOLDER_INFORMATION // since WIN11
+    FileMaximumInformation = 77
 make_global(FILE_INFORMATION_CLASS)
 
 class IO_PRIORITY_HINT(Enum):
-    IoPriorityVeryLow = 0
-    IoPriorityLow = 1
-    IoPriorityNormal = 2
-    IoPriorityHigh = 3
-    IoPriorityCritical = 4
+    IoPriorityVeryLow = 0  # Defragging, content indexing and other background I/Os.
+    IoPriorityLow = 1  # Prefetching for applications.
+    IoPriorityNormal = 2  # Normal I/Os.
+    IoPriorityHigh = 3  # Used by filesystems for checkpoint I/O.
+    IoPriorityCritical = 4  # Used by memory manager. Not available for applications.
     MaxIoPriorityTypes = 5
 make_global(IO_PRIORITY_HINT)
 
+class FILE_KNOWN_FOLDER_TYPE(Enum):
+    KnownFolderNone = 0
+    KnownFolderDesktop = 1
+    KnownFolderDocuments = 2
+    KnownFolderDownloads = 3
+    KnownFolderMusic = 4
+    KnownFolderPictures = 5
+    KnownFolderVideos = 6
+    KnownFolderOther = 7
+    KnownFolderMax = 7
+make_global(FILE_KNOWN_FOLDER_TYPE)
+
 class FSINFOCLASS(Enum):
-    FileFsVolumeInformation = 1
-    FileFsLabelInformation = 2
-    FileFsSizeInformation = 3
-    FileFsDeviceInformation = 4
-    FileFsAttributeInformation = 5
-    FileFsControlInformation = 6
-    FileFsFullSizeInformation = 7
-    FileFsObjectIdInformation = 8
-    FileFsDriverPathInformation = 9
-    FileFsVolumeFlagsInformation = 10
-    FileFsSectorSizeInformation = 11
-    FileFsDataCopyInformation = 12
-    FileFsMetadataSizeInformation = 13
-    FileFsFullSizeInformationEx = 14
+    FileFsVolumeInformation = 1  # FILE_FS_VOLUME_INFORMATION
+    FileFsLabelInformation = 2  # FILE_FS_LABEL_INFORMATION
+    FileFsSizeInformation = 3  # FILE_FS_SIZE_INFORMATION
+    FileFsDeviceInformation = 4  # FILE_FS_DEVICE_INFORMATION
+    FileFsAttributeInformation = 5  # FILE_FS_ATTRIBUTE_INFORMATION
+    FileFsControlInformation = 6  # FILE_FS_CONTROL_INFORMATION
+    FileFsFullSizeInformation = 7  # FILE_FS_FULL_SIZE_INFORMATION
+    FileFsObjectIdInformation = 8  # FILE_FS_OBJECTID_INFORMATION
+    FileFsDriverPathInformation = 9  # FILE_FS_DRIVER_PATH_INFORMATION
+    FileFsVolumeFlagsInformation = 10  # FILE_FS_VOLUME_FLAGS_INFORMATION // 10
+    FileFsSectorSizeInformation = 11  # FILE_FS_SECTOR_SIZE_INFORMATION // since WIN8
+    FileFsDataCopyInformation = 12  # FILE_FS_DATA_COPY_INFORMATION
+    FileFsMetadataSizeInformation = 13  # FILE_FS_METADATA_SIZE_INFORMATION // since THRESHOLD
+    FileFsFullSizeInformationEx = 14  # FILE_FS_FULL_SIZE_INFORMATION_EX // since REDSTONE5
     FileFsMaximumInformation = 15
 make_global(FSINFOCLASS)
 
 class DIRECTORY_NOTIFY_INFORMATION_CLASS(Enum):
-    DirectoryNotifyInformation = 0
-    DirectoryNotifyExtendedInformation = 1
+    DirectoryNotifyInformation = 1  # FILE_NOTIFY_INFORMATION
+    DirectoryNotifyExtendedInformation = 2  # FILE_NOTIFY_EXTENDED_INFORMATION
+    DirectoryNotifyFullInformation = 3  # since 22H2
+    DirectoryNotifyMaximumInformation = 4
 make_global(DIRECTORY_NOTIFY_INFORMATION_CLASS)
 
 class IO_COMPLETION_INFORMATION_CLASS(Enum):
@@ -1200,15 +1827,15 @@ class IO_SESSION_EVENT(Enum):
 make_global(IO_SESSION_EVENT)
 
 class IO_SESSION_STATE(Enum):
-    IoSessionStateCreated = 0
-    IoSessionStateInitialized = 1
-    IoSessionStateConnected = 2
-    IoSessionStateDisconnected = 3
-    IoSessionStateDisconnectedLoggedOn = 4
-    IoSessionStateLoggedOn = 5
-    IoSessionStateLoggedOff = 6
-    IoSessionStateTerminated = 7
-    IoSessionStateMax = 8
+    IoSessionStateCreated = 1
+    IoSessionStateInitialized = 2
+    IoSessionStateConnected = 3
+    IoSessionStateDisconnected = 4
+    IoSessionStateDisconnectedLoggedOn = 5
+    IoSessionStateLoggedOn = 6
+    IoSessionStateLoggedOff = 7
+    IoSessionStateTerminated = 8
+    IoSessionStateMax = 9
 make_global(IO_SESSION_STATE)
 
 class INTERFACE_TYPE(Enum):
@@ -1230,14 +1857,17 @@ class INTERFACE_TYPE(Enum):
     PNPISABus = 14
     PNPBus = 15
     Vmcs = 16
-    MaximumInterfaceType = 17
+    ACPIBus = 17
+    MaximumInterfaceType = 18
 make_global(INTERFACE_TYPE)
 
 class DMA_WIDTH(Enum):
     Width8Bits = 0
     Width16Bits = 1
     Width32Bits = 2
-    MaximumDmaWidth = 3
+    Width64Bits = 3
+    WidthNoWrap = 4
+    MaximumDmaWidth = 5
 make_global(DMA_WIDTH)
 
 class DMA_SPEED(Enum):
@@ -1272,25 +1902,26 @@ class PORT_INFORMATION_CLASS(Enum):
 make_global(PORT_INFORMATION_CLASS)
 
 class ALPC_PORT_INFORMATION_CLASS(Enum):
-    AlpcBasicInformation = 0
-    AlpcPortInformation = 1
-    AlpcAssociateCompletionPortInformation = 2
-    AlpcConnectedSIDInformation = 3
-    AlpcServerInformation = 4
-    AlpcMessageZoneInformation = 5
-    AlpcRegisterCompletionListInformation = 6
-    AlpcUnregisterCompletionListInformation = 7
-    AlpcAdjustCompletionListConcurrencyCountInformation = 8
-    AlpcRegisterCallbackInformation = 9
-    AlpcCompletionListRundownInformation = 10
+    AlpcBasicInformation = 0  # q: out ALPC_BASIC_INFORMATION
+    AlpcPortInformation = 1  # s: in ALPC_PORT_ATTRIBUTES
+    AlpcAssociateCompletionPortInformation = 2  # s: in ALPC_PORT_ASSOCIATE_COMPLETION_PORT
+    AlpcConnectedSIDInformation = 3  # q: in SID
+    AlpcServerInformation = 4  # q: inout ALPC_SERVER_INFORMATION
+    AlpcMessageZoneInformation = 5  # s: in ALPC_PORT_MESSAGE_ZONE_INFORMATION
+    AlpcRegisterCompletionListInformation = 6  # s: in ALPC_PORT_COMPLETION_LIST_INFORMATION
+    AlpcUnregisterCompletionListInformation = 7  # s: VOID
+    AlpcAdjustCompletionListConcurrencyCountInformation = 8  # s: in ULONG
+    AlpcRegisterCallbackInformation = 9  # kernel-mode only
+    AlpcCompletionListRundownInformation = 10  # s: VOID // 10
     AlpcWaitForPortReferences = 11
+    AlpcServerSessionInformation = 12  # q: ALPC_SERVER_SESSION_INFORMATION // since 19H2
 make_global(ALPC_PORT_INFORMATION_CLASS)
 
 class ALPC_MESSAGE_INFORMATION_CLASS(Enum):
-    AlpcMessageSidInformation = 0
-    AlpcMessageTokenModifiedIdInformation = 1
+    AlpcMessageSidInformation = 0  # q: out SID
+    AlpcMessageTokenModifiedIdInformation = 1  # q: out LUID
     AlpcMessageDirectStatusInformation = 2
-    AlpcMessageHandleInformation = 3
+    AlpcMessageHandleInformation = 3  # ALPC_MESSAGE_HANDLE_INFORMATION
     MaxAlpcMessageInfoClass = 4
 make_global(ALPC_MESSAGE_INFORMATION_CLASS)
 
@@ -1315,11 +1946,15 @@ class PF_ENABLE_STATUS(Enum):
 make_global(PF_ENABLE_STATUS)
 
 class PREFETCHER_INFORMATION_CLASS(Enum):
-    PrefetcherRetrieveTrace = 1
-    PrefetcherSystemParameters = 2
-    PrefetcherBootPhase = 3
-    PrefetcherRetrieveBootLoaderTrace = 4
-    PrefetcherBootControl = 5
+    PrefetcherRetrieveTrace = 1  # q: CHAR[]
+    PrefetcherSystemParameters = 2  # q: PF_SYSTEM_PREFETCH_PARAMETERS
+    PrefetcherBootPhase = 3  # s: PF_BOOT_PHASE_ID
+    PrefetcherSpare1 = 4  # PrefetcherRetrieveBootLoaderTrace // q: CHAR[]
+    PrefetcherBootControl = 5  # s: PF_BOOT_CONTROL
+    PrefetcherScenarioPolicyControl = 6
+    PrefetcherSpare2 = 7
+    PrefetcherAppLaunchScenarioControl = 8
+    PrefetcherInformationMax = 9
 make_global(PREFETCHER_INFORMATION_CLASS)
 
 class PFS_PRIVATE_PAGE_SOURCE_TYPE(Enum):
@@ -1338,27 +1973,35 @@ class PF_PHASED_SCENARIO_TYPE(Enum):
 make_global(PF_PHASED_SCENARIO_TYPE)
 
 class SUPERFETCH_INFORMATION_CLASS(Enum):
-    SuperfetchRetrieveTrace = 1
-    SuperfetchSystemParameters = 2
+    SuperfetchRetrieveTrace = 1  # q: CHAR[]
+    SuperfetchSystemParameters = 2  # q: PF_SYSTEM_SUPERFETCH_PARAMETERS
     SuperfetchLogEvent = 3
     SuperfetchGenerateTrace = 4
     SuperfetchPrefetch = 5
-    SuperfetchPfnQuery = 6
+    SuperfetchPfnQuery = 6  # q: PF_PFN_PRIO_REQUEST
     SuperfetchPfnSetPriority = 7
-    SuperfetchPrivSourceQuery = 8
-    SuperfetchSequenceNumberQuery = 9
-    SuperfetchScenarioPhase = 10
+    SuperfetchPrivSourceQuery = 8  # q: PF_PRIVSOURCE_QUERY_REQUEST
+    SuperfetchSequenceNumberQuery = 9  # q: ULONG
+    SuperfetchScenarioPhase = 10  # 10
     SuperfetchWorkerPriority = 11
-    SuperfetchScenarioQuery = 12
+    SuperfetchScenarioQuery = 12  # q: PF_SCENARIO_PHASE_INFO
     SuperfetchScenarioPrefetch = 13
     SuperfetchRobustnessControl = 14
     SuperfetchTimeControl = 15
-    SuperfetchMemoryListQuery = 16
-    SuperfetchMemoryRangesQuery = 17
+    SuperfetchMemoryListQuery = 16  # q: PF_MEMORY_LIST_INFO
+    SuperfetchMemoryRangesQuery = 17  # q: PF_PHYSICAL_MEMORY_RANGE_INFO
     SuperfetchTracingControl = 18
     SuperfetchTrimWhileAgingControl = 19
-    SuperfetchRepurposedByPrefetch = 20
-    SuperfetchInformationMax = 21
+    SuperfetchRepurposedByPrefetch = 20  # q: PF_REPURPOSED_BY_PREFETCH_INFO // rev
+    SuperfetchChannelPowerRequest = 21
+    SuperfetchMovePages = 22
+    SuperfetchVirtualQuery = 23
+    SuperfetchCombineStatsQuery = 24
+    SuperfetchSetMinWsAgeRate = 25
+    SuperfetchDeprioritizeOldPagesInWs = 26
+    SuperfetchFileExtentsQuery = 27
+    SuperfetchGpuUtilizationQuery = 28  # PF_GPU_UTILIZATION_INFO
+    SuperfetchInformationMax = 29
 make_global(SUPERFETCH_INFORMATION_CLASS)
 
 class PLUGPLAY_EVENT_CATEGORY(Enum):
@@ -1376,37 +2019,55 @@ class PLUGPLAY_EVENT_CATEGORY(Enum):
 make_global(PLUGPLAY_EVENT_CATEGORY)
 
 class PLUGPLAY_CONTROL_CLASS(Enum):
-    PlugPlayControlEnumerateDevice = 0
-    PlugPlayControlRegisterNewDevice = 1
-    PlugPlayControlDeregisterDevice = 2
-    PlugPlayControlInitializeDevice = 3
-    PlugPlayControlStartDevice = 4
-    PlugPlayControlUnlockDevice = 5
-    PlugPlayControlQueryAndRemoveDevice = 6
-    PlugPlayControlUserResponse = 7
-    PlugPlayControlGenerateLegacyDevice = 8
-    PlugPlayControlGetInterfaceDeviceList = 9
-    PlugPlayControlProperty = 10
-    PlugPlayControlDeviceClassAssociation = 11
-    PlugPlayControlGetRelatedDevice = 12
-    PlugPlayControlGetInterfaceDeviceAlias = 13
-    PlugPlayControlDeviceStatus = 14
-    PlugPlayControlGetDeviceDepth = 15
-    PlugPlayControlQueryDeviceRelations = 16
-    PlugPlayControlTargetDeviceRelation = 17
-    PlugPlayControlQueryConflictList = 18
-    PlugPlayControlRetrieveDock = 19
-    PlugPlayControlResetDevice = 20
-    PlugPlayControlHaltDevice = 21
-    PlugPlayControlGetBlockedDriverList = 22
-    PlugPlayControlGetDeviceInterfaceEnabled = 23
+    PlugPlayControlEnumerateDevice = 0  # PLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA
+    PlugPlayControlRegisterNewDevice = 1  # PLUGPLAY_CONTROL_DEVICE_CONTROL_DATA
+    PlugPlayControlDeregisterDevice = 2  # PLUGPLAY_CONTROL_DEVICE_CONTROL_DATA
+    PlugPlayControlInitializeDevice = 3  # PLUGPLAY_CONTROL_DEVICE_CONTROL_DATA
+    PlugPlayControlStartDevice = 4  # PLUGPLAY_CONTROL_DEVICE_CONTROL_DATA
+    PlugPlayControlUnlockDevice = 5  # PLUGPLAY_CONTROL_DEVICE_CONTROL_DATA
+    PlugPlayControlQueryAndRemoveDevice = 6  # PLUGPLAY_CONTROL_QUERY_AND_REMOVE_DATA
+    PlugPlayControlUserResponse = 7  # PLUGPLAY_CONTROL_USER_RESPONSE_DATA
+    PlugPlayControlGenerateLegacyDevice = 8  # PLUGPLAY_CONTROL_LEGACY_DEVGEN_DATA
+    PlugPlayControlGetInterfaceDeviceList = 9  # PLUGPLAY_CONTROL_INTERFACE_LIST_DATA
+    PlugPlayControlProperty = 10  # PLUGPLAY_CONTROL_PROPERTY_DATA
+    PlugPlayControlDeviceClassAssociation = 11  # PLUGPLAY_CONTROL_CLASS_ASSOCIATION_DATA
+    PlugPlayControlGetRelatedDevice = 12  # PLUGPLAY_CONTROL_RELATED_DEVICE_DATA
+    PlugPlayControlGetInterfaceDeviceAlias = 13  # PLUGPLAY_CONTROL_INTERFACE_ALIAS_DATA
+    PlugPlayControlDeviceStatus = 14  # PLUGPLAY_CONTROL_STATUS_DATA
+    PlugPlayControlGetDeviceDepth = 15  # PLUGPLAY_CONTROL_DEPTH_DATA
+    PlugPlayControlQueryDeviceRelations = 16  # PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA
+    PlugPlayControlTargetDeviceRelation = 17  # PLUGPLAY_CONTROL_TARGET_RELATION_DATA
+    PlugPlayControlQueryConflictList = 18  # PLUGPLAY_CONTROL_CONFLICT_LIST
+    PlugPlayControlRetrieveDock = 19  # PLUGPLAY_CONTROL_RETRIEVE_DOCK_DATA
+    PlugPlayControlResetDevice = 20  # PLUGPLAY_CONTROL_DEVICE_CONTROL_DATA
+    PlugPlayControlHaltDevice = 21  # PLUGPLAY_CONTROL_DEVICE_CONTROL_DATA
+    PlugPlayControlGetBlockedDriverList = 22  # PLUGPLAY_CONTROL_BLOCKED_DRIVER_DATA
+    PlugPlayControlGetDeviceInterfaceEnabled = 23  # PLUGPLAY_CONTROL_DEVICE_INTERFACE_ENABLED
     MaxPlugPlayControl = 24
 make_global(PLUGPLAY_CONTROL_CLASS)
+
+class POWER_REQUEST_TYPE_INTERNAL(Enum):
+    PowerRequestDisplayRequiredInternal = 0
+    PowerRequestSystemRequiredInternal = 1
+    PowerRequestAwayModeRequiredInternal = 2
+    PowerRequestExecutionRequiredInternal = 3  # Windows 8+
+    PowerRequestPerfBoostRequiredInternal = 4  # Windows 8+
+    PowerRequestActiveLockScreenInternal = 5  # Windows 10 RS1+ (reserved on Windows 8)
+    PowerRequestInternalInvalid = 6
+    PowerRequestInternalUnknown = 7
+    PowerRequestFullScreenVideoRequired = 8  # Windows 8 only
+make_global(POWER_REQUEST_TYPE_INTERNAL)
 
 class POWER_STATE_TYPE(Enum):
     SystemPowerState = 0
     DevicePowerState = 1
 make_global(POWER_STATE_TYPE)
+
+class REQUESTER_TYPE(Enum):
+    KernelRequester = 0
+    UserProcessRequester = 1
+    UserSharedServiceRequester = 2
+make_global(REQUESTER_TYPE)
 
 class POWER_STATE_HANDLER_TYPE(Enum):
     PowerStateSleeping1 = 0
@@ -1419,46 +2080,147 @@ class POWER_STATE_HANDLER_TYPE(Enum):
     PowerStateMaximum = 7
 make_global(POWER_STATE_HANDLER_TYPE)
 
-class POWER_REQUEST_ORIGIN(Enum):
-    POWER_REQUEST_ORIGIN_DRIVER = 0
-    POWER_REQUEST_ORIGIN_PROCESS = 1
-    POWER_REQUEST_ORIGIN_SERVICE = 2
-make_global(POWER_REQUEST_ORIGIN)
+class POWER_INFORMATION_LEVEL_INTERNAL(Enum):
+    PowerInternalAcpiInterfaceRegister = 0
+    PowerInternalS0LowPowerIdleInfo = 1  # POWER_S0_LOW_POWER_IDLE_INFO
+    PowerInternalReapplyBrightnessSettings = 2
+    PowerInternalUserAbsencePrediction = 3  # POWER_USER_ABSENCE_PREDICTION
+    PowerInternalUserAbsencePredictionCapability = 4  # POWER_USER_ABSENCE_PREDICTION_CAPABILITY
+    PowerInternalPoProcessorLatencyHint = 5  # POWER_PROCESSOR_LATENCY_HINT
+    PowerInternalStandbyNetworkRequest = 6  # POWER_STANDBY_NETWORK_REQUEST
+    PowerInternalDirtyTransitionInformation = 7
+    PowerInternalSetBackgroundTaskState = 8  # POWER_SET_BACKGROUND_TASK_STATE
+    PowerInternalTtmOpenTerminal = 9
+    PowerInternalTtmCreateTerminal = 10  # 10
+    PowerInternalTtmEvacuateDevices = 11
+    PowerInternalTtmCreateTerminalEventQueue = 12
+    PowerInternalTtmGetTerminalEvent = 13
+    PowerInternalTtmSetDefaultDeviceAssignment = 14
+    PowerInternalTtmAssignDevice = 15
+    PowerInternalTtmSetDisplayState = 16
+    PowerInternalTtmSetDisplayTimeouts = 17
+    PowerInternalBootSessionStandbyActivationInformation = 18
+    PowerInternalSessionPowerState = 19
+    PowerInternalSessionTerminalInput = 20  # 20
+    PowerInternalSetWatchdog = 21
+    PowerInternalPhysicalPowerButtonPressInfoAtBoot = 22
+    PowerInternalExternalMonitorConnected = 23
+    PowerInternalHighPrecisionBrightnessSettings = 24
+    PowerInternalWinrtScreenToggle = 25
+    PowerInternalPpmQosDisable = 26
+    PowerInternalTransitionCheckpoint = 27
+    PowerInternalInputControllerState = 28
+    PowerInternalFirmwareResetReason = 29
+    PowerInternalPpmSchedulerQosSupport = 30  # 30
+    PowerInternalBootStatGet = 31
+    PowerInternalBootStatSet = 32
+    PowerInternalCallHasNotReturnedWatchdog = 33
+    PowerInternalBootStatCheckIntegrity = 34
+    PowerInternalBootStatRestoreDefaults = 35  # in: void
+    PowerInternalHostEsStateUpdate = 36
+    PowerInternalGetPowerActionState = 37
+    PowerInternalBootStatUnlock = 38
+    PowerInternalWakeOnVoiceState = 39
+    PowerInternalDeepSleepBlock = 40  # 40
+    PowerInternalIsPoFxDevice = 41
+    PowerInternalPowerTransitionExtensionAtBoot = 42
+    PowerInternalProcessorBrandedFrequency = 43  # in: POWER_INTERNAL_PROCESSOR_BRANDED_FREQENCY_INPUT, out: POWER_INTERNAL_PROCESSOR_BRANDED_FREQENCY_OUTPUT
+    PowerInternalTimeBrokerExpirationReason = 44
+    PowerInternalNotifyUserShutdownStatus = 45
+    PowerInternalPowerRequestTerminalCoreWindow = 46
+    PowerInternalProcessorIdleVeto = 47
+    PowerInternalPlatformIdleVeto = 48
+    PowerInternalIsLongPowerButtonBugcheckEnabled = 49
+    PowerInternalAutoChkCausedReboot = 50  # 50
+    PowerInternalSetWakeAlarmOverride = 51
+    PowerInternalDirectedFxAddTestDevice = 53
+    PowerInternalDirectedFxRemoveTestDevice = 54
+    PowerInternalDirectedFxSetMode = 56
+    PowerInternalRegisterPowerPlane = 57
+    PowerInternalSetDirectedDripsFlags = 58
+    PowerInternalClearDirectedDripsFlags = 59
+    PowerInternalRetrieveHiberFileResumeContext = 60  # 60
+    PowerInternalReadHiberFilePage = 61
+    PowerInternalLastBootSucceeded = 62  # out: BOOLEAN
+    PowerInternalQuerySleepStudyHelperRoutineBlock = 63
+    PowerInternalDirectedDripsQueryCapabilities = 64
+    PowerInternalClearConstraints = 65
+    PowerInternalSoftParkVelocityEnabled = 66
+    PowerInternalQueryIntelPepCapabilities = 67
+    PowerInternalGetSystemIdleLoopEnablement = 68  # since WIN11
+    PowerInternalGetVmPerfControlSupport = 69
+    PowerInternalGetVmPerfControlConfig = 70  # 70
+    PowerInternalSleepDetailedDiagUpdate = 71
+    PowerInternalProcessorClassFrequencyBandsStats = 72
+    PowerInternalHostGlobalUserPresenceStateUpdate = 73
+    PowerInternalCpuNodeIdleIntervalStats = 74
+    PowerInternalClassIdleIntervalStats = 75
+    PowerInternalCpuNodeConcurrencyStats = 76
+    PowerInternalClassConcurrencyStats = 77
+    PowerInternalQueryProcMeasurementCapabilities = 78
+    PowerInternalQueryProcMeasurementValues = 79
+    PowerInternalPrepareForSystemInitiatedReboot = 80  # 80
+    PowerInternalGetAdaptiveSessionState = 81
+    PowerInternalSetConsoleLockedState = 82
+    PowerInternalOverrideSystemInitiatedRebootState = 83
+    PowerInternalFanImpactStats = 84
+    PowerInternalFanRpmBuckets = 85
+    PowerInternalPowerBootAppDiagInfo = 86
+    PowerInternalUnregisterShutdownNotification = 87  # since 22H1
+    PowerInternalManageTransitionStateRecord = 88
+    PowerInformationInternalMaximum = 89
+make_global(POWER_INFORMATION_LEVEL_INTERNAL)
+
+class POWER_S0_DISCONNECTED_REASON(Enum):
+    PoS0DisconnectedReasonNone = 0
+    PoS0DisconnectedReasonNonCompliantNic = 1
+    PoS0DisconnectedReasonSettingPolicy = 2
+    PoS0DisconnectedReasonEnforceDsPolicy = 3
+    PoS0DisconnectedReasonCsChecksFailed = 4
+    PoS0DisconnectedReasonSmartStandby = 5
+    PoS0DisconnectedReasonMaximum = 6
+make_global(POWER_S0_DISCONNECTED_REASON)
 
 class KEY_INFORMATION_CLASS(Enum):
-    KeyBasicInformation = 0
-    KeyNodeInformation = 1
-    KeyFullInformation = 2
-    KeyNameInformation = 3
-    KeyCachedInformation = 4
-    KeyFlagsInformation = 5
-    KeyVirtualizationInformation = 6
-    KeyHandleTagsInformation = 7
-    KeyTrustInformation = 8
-    KeyLayerInformation = 9
+    KeyBasicInformation = 0  # KEY_BASIC_INFORMATION
+    KeyNodeInformation = 1  # KEY_NODE_INFORMATION
+    KeyFullInformation = 2  # KEY_FULL_INFORMATION
+    KeyNameInformation = 3  # KEY_NAME_INFORMATION
+    KeyCachedInformation = 4  # KEY_CACHED_INFORMATION
+    KeyFlagsInformation = 5  # KEY_FLAGS_INFORMATION
+    KeyVirtualizationInformation = 6  # KEY_VIRTUALIZATION_INFORMATION
+    KeyHandleTagsInformation = 7  # KEY_HANDLE_TAGS_INFORMATION
+    KeyTrustInformation = 8  # KEY_TRUST_INFORMATION
+    KeyLayerInformation = 9  # KEY_LAYER_INFORMATION
     MaxKeyInfoClass = 10
 make_global(KEY_INFORMATION_CLASS)
 
 class KEY_SET_INFORMATION_CLASS(Enum):
-    KeyWriteTimeInformation = 0
-    KeyWow64FlagsInformation = 1
-    KeyControlFlagsInformation = 2
-    KeySetVirtualizationInformation = 3
+    KeyWriteTimeInformation = 0  # KEY_WRITE_TIME_INFORMATION
+    KeyWow64FlagsInformation = 1  # KEY_WOW64_FLAGS_INFORMATION
+    KeyControlFlagsInformation = 2  # KEY_CONTROL_FLAGS_INFORMATION
+    KeySetVirtualizationInformation = 3  # KEY_SET_VIRTUALIZATION_INFORMATION
     KeySetDebugInformation = 4
-    KeySetHandleTagsInformation = 5
-    KeySetLayerInformation = 6
+    KeySetHandleTagsInformation = 5  # KEY_HANDLE_TAGS_INFORMATION
+    KeySetLayerInformation = 6  # KEY_SET_LAYER_INFORMATION
     MaxKeySetInfoClass = 7
 make_global(KEY_SET_INFORMATION_CLASS)
 
 class KEY_VALUE_INFORMATION_CLASS(Enum):
-    KeyValueBasicInformation = 0
-    KeyValueFullInformation = 1
-    KeyValuePartialInformation = 2
+    KeyValueBasicInformation = 0  # KEY_VALUE_BASIC_INFORMATION
+    KeyValueFullInformation = 1  # KEY_VALUE_FULL_INFORMATION
+    KeyValuePartialInformation = 2  # KEY_VALUE_PARTIAL_INFORMATION
     KeyValueFullInformationAlign64 = 3
-    KeyValuePartialInformationAlign64 = 4
-    KeyValueLayerInformation = 5
+    KeyValuePartialInformationAlign64 = 4  # KEY_VALUE_PARTIAL_INFORMATION_ALIGN64
+    KeyValueLayerInformation = 5  # KEY_VALUE_LAYER_INFORMATION
     MaxKeyValueInfoClass = 6
 make_global(KEY_VALUE_INFORMATION_CLASS)
+
+class KEY_LOAD_ENTRY_TYPE(Enum):
+    KeyLoadTrustClassKey = 1
+    KeyLoadEvent = 2
+    KeyLoadToken = 3
+make_global(KEY_LOAD_ENTRY_TYPE)
 
 class REG_ACTION(Enum):
     KeyAdded = 0
@@ -1519,28 +2281,31 @@ class HEAP_COMPATIBILITY_MODE(Enum):
 make_global(HEAP_COMPATIBILITY_MODE)
 
 class IMAGE_MITIGATION_POLICY(Enum):
-    ImageDepPolicy = 0
-    ImageAslrPolicy = 1
-    ImageDynamicCodePolicy = 2
-    ImageStrictHandleCheckPolicy = 3
-    ImageSystemCallDisablePolicy = 4
+    ImageDepPolicy = 0  # RTL_IMAGE_MITIGATION_DEP_POLICY
+    ImageAslrPolicy = 1  # RTL_IMAGE_MITIGATION_ASLR_POLICY
+    ImageDynamicCodePolicy = 2  # RTL_IMAGE_MITIGATION_DYNAMIC_CODE_POLICY
+    ImageStrictHandleCheckPolicy = 3  # RTL_IMAGE_MITIGATION_STRICT_HANDLE_CHECK_POLICY
+    ImageSystemCallDisablePolicy = 4  # RTL_IMAGE_MITIGATION_SYSTEM_CALL_DISABLE_POLICY
     ImageMitigationOptionsMask = 5
-    ImageExtensionPointDisablePolicy = 6
-    ImageControlFlowGuardPolicy = 7
-    ImageSignaturePolicy = 8
-    ImageFontDisablePolicy = 9
-    ImageImageLoadPolicy = 10
-    ImagePayloadRestrictionPolicy = 11
-    ImageChildProcessPolicy = 12
-    ImageSehopPolicy = 13
-    ImageHeapPolicy = 14
-    MaxImageMitigationPolicy = 15
+    ImageExtensionPointDisablePolicy = 6  # RTL_IMAGE_MITIGATION_EXTENSION_POINT_DISABLE_POLICY
+    ImageControlFlowGuardPolicy = 7  # RTL_IMAGE_MITIGATION_CONTROL_FLOW_GUARD_POLICY
+    ImageSignaturePolicy = 8  # RTL_IMAGE_MITIGATION_BINARY_SIGNATURE_POLICY
+    ImageFontDisablePolicy = 9  # RTL_IMAGE_MITIGATION_FONT_DISABLE_POLICY
+    ImageImageLoadPolicy = 10  # RTL_IMAGE_MITIGATION_IMAGE_LOAD_POLICY
+    ImagePayloadRestrictionPolicy = 11  # RTL_IMAGE_MITIGATION_PAYLOAD_RESTRICTION_POLICY
+    ImageChildProcessPolicy = 12  # RTL_IMAGE_MITIGATION_CHILD_PROCESS_POLICY
+    ImageSehopPolicy = 13  # RTL_IMAGE_MITIGATION_SEHOP_POLICY
+    ImageHeapPolicy = 14  # RTL_IMAGE_MITIGATION_HEAP_POLICY
+    ImageUserShadowStackPolicy = 15  # RTL_IMAGE_MITIGATION_USER_SHADOW_STACK_POLICY
+    MaxImageMitigationPolicy = 16
 make_global(IMAGE_MITIGATION_POLICY)
 
 class RTL_IMAGE_MITIGATION_OPTION_STATE(Enum):
     RtlMitigationOptionStateNotConfigured = 0
     RtlMitigationOptionStateOn = 1
     RtlMitigationOptionStateOff = 2
+    RtlMitigationOptionStateForce = 3
+    RtlMitigationOptionStateOption = 4
 make_global(RTL_IMAGE_MITIGATION_OPTION_STATE)
 
 class APPCONTAINER_SID_TYPE(Enum):
@@ -1558,545 +2323,40 @@ class STATE_LOCATION_TYPE(Enum):
 make_global(STATE_LOCATION_TYPE)
 
 class RTL_BSD_ITEM_TYPE(Enum):
-    RtlBsdItemVersionNumber = 0
-    RtlBsdItemProductType = 1
-    RtlBsdItemAabEnabled = 2
-    RtlBsdItemAabTimeout = 3
-    RtlBsdItemBootGood = 4
-    RtlBsdItemBootShutdown = 5
-    RtlBsdSleepInProgress = 6
-    RtlBsdPowerTransition = 7
-    RtlBsdItemBootAttemptCount = 8
-    RtlBsdItemBootCheckpoint = 9
-    RtlBsdItemBootId = 10
-    RtlBsdItemShutdownBootId = 11
-    RtlBsdItemReportedAbnormalShutdownBootId = 12
-    RtlBsdItemErrorInfo = 13
-    RtlBsdItemPowerButtonPressInfo = 14
-    RtlBsdItemChecksum = 15
+    RtlBsdItemVersionNumber = 0  # q; s: ULONG
+    RtlBsdItemProductType = 1  # q; s: NT_PRODUCT_TYPE (ULONG)
+    RtlBsdItemAabEnabled = 2  # q: s: BOOLEAN // AutoAdvancedBoot
+    RtlBsdItemAabTimeout = 3  # q: s: UCHAR // AdvancedBootMenuTimeout
+    RtlBsdItemBootGood = 4  # q: s: BOOLEAN // LastBootSucceeded
+    RtlBsdItemBootShutdown = 5  # q: s: BOOLEAN // LastBootShutdown
+    RtlBsdSleepInProgress = 6  # q: s: BOOLEAN // SleepInProgress
+    RtlBsdPowerTransition = 7  # q: s: RTL_BSD_DATA_POWER_TRANSITION
+    RtlBsdItemBootAttemptCount = 8  # q: s: UCHAR // BootAttemptCount
+    RtlBsdItemBootCheckpoint = 9  # q: s: UCHAR // LastBootCheckpoint
+    RtlBsdItemBootId = 10  # q; s: ULONG (USER_SHARED_DATA->BootId)
+    RtlBsdItemShutdownBootId = 11  # q; s: ULONG
+    RtlBsdItemReportedAbnormalShutdownBootId = 12  # q; s: ULONG
+    RtlBsdItemErrorInfo = 13  # RTL_BSD_DATA_ERROR_INFO
+    RtlBsdItemPowerButtonPressInfo = 14  # RTL_BSD_POWER_BUTTON_PRESS_INFO
+    RtlBsdItemChecksum = 15  # q: s: UCHAR
     RtlBsdPowerTransitionExtension = 16
-    RtlBsdItemFeatureConfigurationState = 17
+    RtlBsdItemFeatureConfigurationState = 17  # q; s: ULONG
     RtlBsdItemMax = 18
 make_global(RTL_BSD_ITEM_TYPE)
+
+class TOKEN_SECURITY_ATTRIBUTE_OPERATION(Enum):
+    TOKEN_SECURITY_ATTRIBUTE_OPERATION_NONE = 0
+    TOKEN_SECURITY_ATTRIBUTE_OPERATION_REPLACE_ALL = 1
+    TOKEN_SECURITY_ATTRIBUTE_OPERATION_ADD = 2
+    TOKEN_SECURITY_ATTRIBUTE_OPERATION_DELETE = 3
+    TOKEN_SECURITY_ATTRIBUTE_OPERATION_REPLACE = 4
+make_global(TOKEN_SECURITY_ATTRIBUTE_OPERATION)
 
 class TP_TRACE_TYPE(Enum):
     TpTraceThreadPriority = 1
     TpTraceThreadAffinity = 2
     MaxTpTraceType = 3
 make_global(TP_TRACE_TYPE)
-
-class KMTQUERYADAPTERINFOTYPE(Enum):
-    KMTQAITYPE_UMDRIVERPRIVATE = 0
-    KMTQAITYPE_UMDRIVERNAME = 1
-    KMTQAITYPE_UMOPENGLINFO = 2
-    KMTQAITYPE_GETSEGMENTSIZE = 3
-    KMTQAITYPE_ADAPTERGUID = 4
-    KMTQAITYPE_FLIPQUEUEINFO = 5
-    KMTQAITYPE_ADAPTERADDRESS = 6
-    KMTQAITYPE_SETWORKINGSETINFO = 7
-    KMTQAITYPE_ADAPTERREGISTRYINFO = 8
-    KMTQAITYPE_CURRENTDISPLAYMODE = 9
-    KMTQAITYPE_MODELIST = 10
-    KMTQAITYPE_CHECKDRIVERUPDATESTATUS = 11
-    KMTQAITYPE_VIRTUALADDRESSINFO = 12
-    KMTQAITYPE_DRIVERVERSION = 13
-    KMTQAITYPE_UNKNOWN = 14
-    KMTQAITYPE_ADAPTERTYPE = 15
-    KMTQAITYPE_OUTPUTDUPLCONTEXTSCOUNT = 16
-    KMTQAITYPE_WDDM_1_2_CAPS = 17
-    KMTQAITYPE_UMD_DRIVER_VERSION = 18
-    KMTQAITYPE_DIRECTFLIP_SUPPORT = 19
-    KMTQAITYPE_MULTIPLANEOVERLAY_SUPPORT = 20
-    KMTQAITYPE_DLIST_DRIVER_NAME = 21
-    KMTQAITYPE_WDDM_1_3_CAPS = 22
-    KMTQAITYPE_MULTIPLANEOVERLAY_HUD_SUPPORT = 23
-    KMTQAITYPE_WDDM_2_0_CAPS = 24
-    KMTQAITYPE_NODEMETADATA = 25
-    KMTQAITYPE_CPDRIVERNAME = 26
-    KMTQAITYPE_XBOX = 27
-    KMTQAITYPE_INDEPENDENTFLIP_SUPPORT = 28
-    KMTQAITYPE_MIRACASTCOMPANIONDRIVERNAME = 29
-    KMTQAITYPE_PHYSICALADAPTERCOUNT = 30
-    KMTQAITYPE_PHYSICALADAPTERDEVICEIDS = 31
-    KMTQAITYPE_DRIVERCAPS_EXT = 32
-    KMTQAITYPE_QUERY_MIRACAST_DRIVER_TYPE = 33
-    KMTQAITYPE_QUERY_GPUMMU_CAPS = 34
-    KMTQAITYPE_QUERY_MULTIPLANEOVERLAY_DECODE_SUPPORT = 35
-    KMTQAITYPE_QUERY_HW_PROTECTION_TEARDOWN_COUNT = 36
-    KMTQAITYPE_QUERY_ISBADDRIVERFORHWPROTECTIONDISABLED = 37
-    KMTQAITYPE_MULTIPLANEOVERLAY_SECONDARY_SUPPORT = 38
-    KMTQAITYPE_INDEPENDENTFLIP_SECONDARY_SUPPORT = 39
-    KMTQAITYPE_PANELFITTER_SUPPORT = 40
-    KMTQAITYPE_PHYSICALADAPTERPNPKEY = 41
-    KMTQAITYPE_GETSEGMENTGROUPSIZE = 42
-    KMTQAITYPE_MPO3DDI_SUPPORT = 43
-    KMTQAITYPE_HWDRM_SUPPORT = 44
-    KMTQAITYPE_MPOKERNELCAPS_SUPPORT = 45
-    KMTQAITYPE_MULTIPLANEOVERLAY_STRETCH_SUPPORT = 46
-    KMTQAITYPE_GET_DEVICE_VIDPN_OWNERSHIP_INFO = 47
-    KMTQAITYPE_QUERYREGISTRY = 48
-    KMTQAITYPE_KMD_DRIVER_VERSION = 49
-    KMTQAITYPE_BLOCKLIST_KERNEL = 50
-    KMTQAITYPE_BLOCKLIST_RUNTIME = 51
-    KMTQAITYPE_ADAPTERGUID_RENDER = 52
-    KMTQAITYPE_ADAPTERADDRESS_RENDER = 53
-    KMTQAITYPE_ADAPTERREGISTRYINFO_RENDER = 54
-    KMTQAITYPE_CHECKDRIVERUPDATESTATUS_RENDER = 55
-    KMTQAITYPE_DRIVERVERSION_RENDER = 56
-    KMTQAITYPE_ADAPTERTYPE_RENDER = 57
-    KMTQAITYPE_WDDM_1_2_CAPS_RENDER = 58
-    KMTQAITYPE_WDDM_1_3_CAPS_RENDER = 59
-    KMTQAITYPE_QUERY_ADAPTER_UNIQUE_GUID = 60
-    KMTQAITYPE_NODEPERFDATA = 61
-    KMTQAITYPE_ADAPTERPERFDATA = 62
-    KMTQAITYPE_ADAPTERPERFDATA_CAPS = 63
-    KMTQUITYPE_GPUVERSION = 64
-    KMTQAITYPE_DRIVER_DESCRIPTION = 65
-    KMTQAITYPE_DRIVER_DESCRIPTION_RENDER = 66
-    KMTQAITYPE_SCANOUT_CAPS = 67
-    KMTQAITYPE_DISPLAY_UMDRIVERNAME = 68
-    KMTQAITYPE_PARAVIRTUALIZATION_RENDER = 69
-    KMTQAITYPE_SERVICENAME = 70
-    KMTQAITYPE_WDDM_2_7_CAPS = 71
-    KMTQAITYPE_TRACKEDWORKLOAD_SUPPORT = 72
-make_global(KMTQUERYADAPTERINFOTYPE)
-
-class KMTUMDVERSION(Enum):
-    KMTUMDVERSION_DX9 = 0
-    KMTUMDVERSION_DX10 = 1
-    KMTUMDVERSION_DX11 = 2
-    KMTUMDVERSION_DX12 = 3
-    NUM_KMTUMDVERSIONS = 4
-make_global(KMTUMDVERSION)
-
-class D3DDDIFORMAT(Enum):
-    D3DDDIFMT_UNKNOWN = 0
-    D3DDDIFMT_R8G8B8 = 20
-    D3DDDIFMT_A8R8G8B8 = 21
-    D3DDDIFMT_X8R8G8B8 = 22
-    D3DDDIFMT_R5G6B5 = 23
-    D3DDDIFMT_X1R5G5B5 = 24
-    D3DDDIFMT_A1R5G5B5 = 25
-    D3DDDIFMT_A4R4G4B4 = 26
-    D3DDDIFMT_R3G3B2 = 27
-    D3DDDIFMT_A8 = 28
-    D3DDDIFMT_A8R3G3B2 = 29
-    D3DDDIFMT_X4R4G4B4 = 30
-    D3DDDIFMT_A2B10G10R10 = 31
-    D3DDDIFMT_A8B8G8R8 = 32
-    D3DDDIFMT_X8B8G8R8 = 33
-    D3DDDIFMT_G16R16 = 34
-    D3DDDIFMT_A2R10G10B10 = 35
-    D3DDDIFMT_A16B16G16R16 = 36
-    D3DDDIFMT_A8P8 = 40
-    D3DDDIFMT_P8 = 41
-    D3DDDIFMT_L8 = 50
-    D3DDDIFMT_A8L8 = 51
-    D3DDDIFMT_A4L4 = 52
-    D3DDDIFMT_V8U8 = 60
-    D3DDDIFMT_L6V5U5 = 61
-    D3DDDIFMT_X8L8V8U8 = 62
-    D3DDDIFMT_Q8W8V8U8 = 63
-    D3DDDIFMT_V16U16 = 64
-    D3DDDIFMT_W11V11U10 = 65
-    D3DDDIFMT_A2W10V10U10 = 67
-    D3DDDIFMT_UYVY = 1498831189
-    D3DDDIFMT_R8G8_B8G8 = 1195525970
-    D3DDDIFMT_YUY2 = 844715353
-    D3DDDIFMT_G8R8_G8B8 = 1111970375
-    D3DDDIFMT_DXT1 = 827611204
-    D3DDDIFMT_DXT2 = 844388420
-    D3DDDIFMT_DXT3 = 861165636
-    D3DDDIFMT_DXT4 = 877942852
-    D3DDDIFMT_DXT5 = 894720068
-    D3DDDIFMT_D16_LOCKABLE = 70
-    D3DDDIFMT_D32 = 71
-    D3DDDIFMT_D15S1 = 73
-    D3DDDIFMT_D24S8 = 75
-    D3DDDIFMT_D24X8 = 77
-    D3DDDIFMT_D24X4S4 = 79
-    D3DDDIFMT_D16 = 80
-    D3DDDIFMT_D32F_LOCKABLE = 82
-    D3DDDIFMT_D24FS8 = 83
-    D3DDDIFMT_D32_LOCKABLE = 84
-    D3DDDIFMT_S8_LOCKABLE = 85
-    D3DDDIFMT_S1D15 = 72
-    D3DDDIFMT_S8D24 = 74
-    D3DDDIFMT_X8D24 = 76
-    D3DDDIFMT_X4S4D24 = 78
-    D3DDDIFMT_L16 = 81
-    D3DDDIFMT_G8R8 = 91
-    D3DDDIFMT_R8 = 92
-    D3DDDIFMT_VERTEXDATA = 100
-    D3DDDIFMT_INDEX16 = 101
-    D3DDDIFMT_INDEX32 = 102
-    D3DDDIFMT_Q16W16V16U16 = 110
-    D3DDDIFMT_MULTI2_ARGB8 = 827606349
-    D3DDDIFMT_R16F = 111
-    D3DDDIFMT_G16R16F = 112
-    D3DDDIFMT_A16B16G16R16F = 113
-    D3DDDIFMT_R32F = 114
-    D3DDDIFMT_G32R32F = 115
-    D3DDDIFMT_A32B32G32R32F = 116
-    D3DDDIFMT_CxV8U8 = 117
-    D3DDDIFMT_A1 = 118
-    D3DDDIFMT_A2B10G10R10_XR_BIAS = 119
-    D3DDDIFMT_DXVACOMPBUFFER_BASE = 150
-    D3DDDIFMT_PICTUREPARAMSDATA = 150
-    D3DDDIFMT_MACROBLOCKDATA = 151
-    D3DDDIFMT_RESIDUALDIFFERENCEDATA = 152
-    D3DDDIFMT_DEBLOCKINGDATA = 153
-    D3DDDIFMT_INVERSEQUANTIZATIONDATA = 154
-    D3DDDIFMT_SLICECONTROLDATA = 155
-    D3DDDIFMT_BITSTREAMDATA = 156
-    D3DDDIFMT_MOTIONVECTORBUFFER = 157
-    D3DDDIFMT_FILMGRAINBUFFER = 158
-    D3DDDIFMT_DXVA_RESERVED9 = 159
-    D3DDDIFMT_DXVA_RESERVED10 = 160
-    D3DDDIFMT_DXVA_RESERVED11 = 161
-    D3DDDIFMT_DXVA_RESERVED12 = 162
-    D3DDDIFMT_DXVA_RESERVED13 = 163
-    D3DDDIFMT_DXVA_RESERVED14 = 164
-    D3DDDIFMT_DXVA_RESERVED15 = 165
-    D3DDDIFMT_DXVA_RESERVED16 = 166
-    D3DDDIFMT_DXVA_RESERVED17 = 167
-    D3DDDIFMT_DXVA_RESERVED18 = 168
-    D3DDDIFMT_DXVA_RESERVED19 = 169
-    D3DDDIFMT_DXVA_RESERVED20 = 170
-    D3DDDIFMT_DXVA_RESERVED21 = 171
-    D3DDDIFMT_DXVA_RESERVED22 = 172
-    D3DDDIFMT_DXVA_RESERVED23 = 173
-    D3DDDIFMT_DXVA_RESERVED24 = 174
-    D3DDDIFMT_DXVA_RESERVED25 = 175
-    D3DDDIFMT_DXVA_RESERVED26 = 176
-    D3DDDIFMT_DXVA_RESERVED27 = 177
-    D3DDDIFMT_DXVA_RESERVED28 = 178
-    D3DDDIFMT_DXVA_RESERVED29 = 179
-    D3DDDIFMT_DXVA_RESERVED30 = 180
-    D3DDDIFMT_DXVA_RESERVED31 = 181
-    D3DDDIFMT_DXVACOMPBUFFER_MAX = 181
-    D3DDDIFMT_BINARYBUFFER = 199
-    D3DDDIFMT_FORCE_UINT = 2147483647
-make_global(D3DDDIFORMAT)
-
-class D3DDDI_VIDEO_SIGNAL_SCANLINE_ORDERING(Enum):
-    D3DDDI_VSSLO_UNINITIALIZED = 0
-    D3DDDI_VSSLO_PROGRESSIVE = 1
-    D3DDDI_VSSLO_INTERLACED_UPPERFIELDFIRST = 2
-    D3DDDI_VSSLO_INTERLACED_LOWERFIELDFIRST = 3
-    D3DDDI_VSSLO_OTHER = 255
-make_global(D3DDDI_VIDEO_SIGNAL_SCANLINE_ORDERING)
-
-class D3DDDI_ROTATION(Enum):
-    D3DDDI_ROTATION_IDENTITY = 1
-    D3DDDI_ROTATION_90 = 2
-    D3DDDI_ROTATION_180 = 3
-    D3DDDI_ROTATION_270 = 4
-make_global(D3DDDI_ROTATION)
-
-class D3DKMDT_MODE_PRUNING_REASON(Enum):
-    D3DKMDT_MPR_UNINITIALIZED = 0
-    D3DKMDT_MPR_ALLCAPS = 1
-    D3DKMDT_MPR_DESCRIPTOR_MONITOR_SOURCE_MODE = 2
-    D3DKMDT_MPR_DESCRIPTOR_MONITOR_FREQUENCY_RANGE = 3
-    D3DKMDT_MPR_DESCRIPTOR_OVERRIDE_MONITOR_SOURCE_MODE = 4
-    D3DKMDT_MPR_DESCRIPTOR_OVERRIDE_MONITOR_FREQUENCY_RANGE = 5
-    D3DKMDT_MPR_DEFAULT_PROFILE_MONITOR_SOURCE_MODE = 6
-    D3DKMDT_MPR_DRIVER_RECOMMENDED_MONITOR_SOURCE_MODE = 7
-    D3DKMDT_MPR_MONITOR_FREQUENCY_RANGE_OVERRIDE = 8
-    D3DKMDT_MPR_CLONE_PATH_PRUNED = 9
-    D3DKMDT_MPR_MAXVALID = 10
-make_global(D3DKMDT_MODE_PRUNING_REASON)
-
-class D3DKMT_DRIVERVERSION(Enum):
-    KMT_DRIVERVERSION_WDDM_1_0 = 1000
-    KMT_DRIVERVERSION_WDDM_1_1_PRERELEASE = 1102
-    KMT_DRIVERVERSION_WDDM_1_1 = 1105
-    KMT_DRIVERVERSION_WDDM_1_2 = 1200
-    KMT_DRIVERVERSION_WDDM_1_3 = 1300
-    KMT_DRIVERVERSION_WDDM_2_0 = 2000
-    KMT_DRIVERVERSION_WDDM_2_1 = 2100
-    KMT_DRIVERVERSION_WDDM_2_2 = 2200
-    KMT_DRIVERVERSION_WDDM_2_3 = 2300
-    KMT_DRIVERVERSION_WDDM_2_4 = 2400
-    KMT_DRIVERVERSION_WDDM_2_5 = 2500
-    KMT_DRIVERVERSION_WDDM_2_6 = 2600
-    KMT_DRIVERVERSION_WDDM_2_7 = 2700
-make_global(D3DKMT_DRIVERVERSION)
-
-class D3DKMDT_GRAPHICS_PREEMPTION_GRANULARITY(Enum):
-    D3DKMDT_GRAPHICS_PREEMPTION_NONE = 0
-    D3DKMDT_GRAPHICS_PREEMPTION_DMA_BUFFER_BOUNDARY = 100
-    D3DKMDT_GRAPHICS_PREEMPTION_PRIMITIVE_BOUNDARY = 200
-    D3DKMDT_GRAPHICS_PREEMPTION_TRIANGLE_BOUNDARY = 300
-    D3DKMDT_GRAPHICS_PREEMPTION_PIXEL_BOUNDARY = 400
-    D3DKMDT_GRAPHICS_PREEMPTION_SHADER_BOUNDARY = 500
-make_global(D3DKMDT_GRAPHICS_PREEMPTION_GRANULARITY)
-
-class D3DKMDT_COMPUTE_PREEMPTION_GRANULARITY(Enum):
-    D3DKMDT_COMPUTE_PREEMPTION_NONE = 0
-    D3DKMDT_COMPUTE_PREEMPTION_DMA_BUFFER_BOUNDARY = 100
-    D3DKMDT_COMPUTE_PREEMPTION_DISPATCH_BOUNDARY = 200
-    D3DKMDT_COMPUTE_PREEMPTION_THREAD_GROUP_BOUNDARY = 300
-    D3DKMDT_COMPUTE_PREEMPTION_THREAD_BOUNDARY = 400
-    D3DKMDT_COMPUTE_PREEMPTION_SHADER_BOUNDARY = 500
-make_global(D3DKMDT_COMPUTE_PREEMPTION_GRANULARITY)
-
-class DXGK_ENGINE_TYPE(Enum):
-    DXGK_ENGINE_TYPE_OTHER = 0
-    DXGK_ENGINE_TYPE_3D = 1
-    DXGK_ENGINE_TYPE_VIDEO_DECODE = 2
-    DXGK_ENGINE_TYPE_VIDEO_ENCODE = 3
-    DXGK_ENGINE_TYPE_VIDEO_PROCESSING = 4
-    DXGK_ENGINE_TYPE_SCENE_ASSEMBLY = 5
-    DXGK_ENGINE_TYPE_COPY = 6
-    DXGK_ENGINE_TYPE_OVERLAY = 7
-    DXGK_ENGINE_TYPE_CRYPTO = 8
-    DXGK_ENGINE_TYPE_MAX = 9
-make_global(DXGK_ENGINE_TYPE)
-
-class D3DKMT_MIRACAST_DRIVER_TYPE(Enum):
-    D3DKMT_MIRACAST_DRIVER_NOT_SUPPORTED = 0
-    D3DKMT_MIRACAST_DRIVER_IHV = 1
-    D3DKMT_MIRACAST_DRIVER_MS = 2
-make_global(D3DKMT_MIRACAST_DRIVER_TYPE)
-
-class D3DKMT_PNP_KEY_TYPE(Enum):
-    D3DKMT_PNP_KEY_HARDWARE = 1
-    D3DKMT_PNP_KEY_SOFTWARE = 2
-make_global(D3DKMT_PNP_KEY_TYPE)
-
-class D3DDDI_QUERYREGISTRY_TYPE(Enum):
-    D3DDDI_QUERYREGISTRY_SERVICEKEY = 0
-    D3DDDI_QUERYREGISTRY_ADAPTERKEY = 1
-    D3DDDI_QUERYREGISTRY_DRIVERSTOREPATH = 2
-    D3DDDI_QUERYREGISTRY_DRIVERIMAGEPATH = 3
-    D3DDDI_QUERYREGISTRY_MAX = 4
-make_global(D3DDDI_QUERYREGISTRY_TYPE)
-
-class D3DDDI_QUERYREGISTRY_STATUS(Enum):
-    D3DDDI_QUERYREGISTRY_STATUS_SUCCESS = 0
-    D3DDDI_QUERYREGISTRY_STATUS_BUFFER_OVERFLOW = 1
-    D3DDDI_QUERYREGISTRY_STATUS_FAIL = 2
-    D3DDDI_QUERYREGISTRY_STATUS_MAX = 3
-make_global(D3DDDI_QUERYREGISTRY_STATUS)
-
-class D3DKMT_QUERYRESULT_PREEMPTION_ATTEMPT_RESULT(Enum):
-    D3DKMT_PreemptionAttempt = 0
-    D3DKMT_PreemptionAttemptSuccess = 1
-    D3DKMT_PreemptionAttemptMissNoCommand = 2
-    D3DKMT_PreemptionAttemptMissNotEnabled = 3
-    D3DKMT_PreemptionAttemptMissNextFence = 4
-    D3DKMT_PreemptionAttemptMissPagingCommand = 5
-    D3DKMT_PreemptionAttemptMissSplittedCommand = 6
-    D3DKMT_PreemptionAttemptMissFenceCommand = 7
-    D3DKMT_PreemptionAttemptMissRenderPendingFlip = 8
-    D3DKMT_PreemptionAttemptMissNotMakingProgress = 9
-    D3DKMT_PreemptionAttemptMissLessPriority = 10
-    D3DKMT_PreemptionAttemptMissRemainingQuantum = 11
-    D3DKMT_PreemptionAttemptMissRemainingPreemptionQuantum = 12
-    D3DKMT_PreemptionAttemptMissAlreadyPreempting = 13
-    D3DKMT_PreemptionAttemptMissGlobalBlock = 14
-    D3DKMT_PreemptionAttemptMissAlreadyRunning = 15
-    D3DKMT_PreemptionAttemptStatisticsMax = 16
-make_global(D3DKMT_QUERYRESULT_PREEMPTION_ATTEMPT_RESULT)
-
-class D3DKMT_QUERYSTATISTICS_DMA_PACKET_TYPE(Enum):
-    D3DKMT_ClientRenderBuffer = 0
-    D3DKMT_ClientPagingBuffer = 1
-    D3DKMT_SystemPagingBuffer = 2
-    D3DKMT_SystemPreemptionBuffer = 3
-    D3DKMT_DmaPacketTypeMax = 4
-make_global(D3DKMT_QUERYSTATISTICS_DMA_PACKET_TYPE)
-
-class D3DKMT_QUERYSTATISTICS_QUEUE_PACKET_TYPE(Enum):
-    D3DKMT_RenderCommandBuffer = 0
-    D3DKMT_DeferredCommandBuffer = 1
-    D3DKMT_SystemCommandBuffer = 2
-    D3DKMT_MmIoFlipCommandBuffer = 3
-    D3DKMT_WaitCommandBuffer = 4
-    D3DKMT_SignalCommandBuffer = 5
-    D3DKMT_DeviceCommandBuffer = 6
-    D3DKMT_SoftwareCommandBuffer = 7
-    D3DKMT_QueuePacketTypeMax = 8
-make_global(D3DKMT_QUERYSTATISTICS_QUEUE_PACKET_TYPE)
-
-class D3DKMT_QUERYSTATISTICS_ALLOCATION_PRIORITY_CLASS(Enum):
-    D3DKMT_AllocationPriorityClassMinimum = 0
-    D3DKMT_AllocationPriorityClassLow = 1
-    D3DKMT_AllocationPriorityClassNormal = 2
-    D3DKMT_AllocationPriorityClassHigh = 3
-    D3DKMT_AllocationPriorityClassMaximum = 4
-    D3DKMT_MaxAllocationPriorityClass = 5
-make_global(D3DKMT_QUERYSTATISTICS_ALLOCATION_PRIORITY_CLASS)
-
-class D3DKMT_QUERYSTATISTICS_TYPE(Enum):
-    D3DKMT_QUERYSTATISTICS_ADAPTER = 0
-    D3DKMT_QUERYSTATISTICS_PROCESS = 1
-    D3DKMT_QUERYSTATISTICS_PROCESS_ADAPTER = 2
-    D3DKMT_QUERYSTATISTICS_SEGMENT = 3
-    D3DKMT_QUERYSTATISTICS_PROCESS_SEGMENT = 4
-    D3DKMT_QUERYSTATISTICS_NODE = 5
-    D3DKMT_QUERYSTATISTICS_PROCESS_NODE = 6
-    D3DKMT_QUERYSTATISTICS_VIDPNSOURCE = 7
-    D3DKMT_QUERYSTATISTICS_PROCESS_VIDPNSOURCE = 8
-    D3DKMT_QUERYSTATISTICS_PROCESS_SEGMENT_GROUP = 9
-    D3DKMT_QUERYSTATISTICS_PHYSICAL_ADAPTER = 10
-make_global(D3DKMT_QUERYSTATISTICS_TYPE)
-
-class D3DKMT_MEMORY_SEGMENT_GROUP(Enum):
-    D3DKMT_MEMORY_SEGMENT_GROUP_LOCAL = 0
-    D3DKMT_MEMORY_SEGMENT_GROUP_NON_LOCAL = 1
-make_global(D3DKMT_MEMORY_SEGMENT_GROUP)
-
-class D3DKMT_ESCAPETYPE(Enum):
-    D3DKMT_ESCAPE_DRIVERPRIVATE = 0
-    D3DKMT_ESCAPE_VIDMM = 1
-    D3DKMT_ESCAPE_TDRDBGCTRL = 2
-    D3DKMT_ESCAPE_VIDSCH = 3
-    D3DKMT_ESCAPE_DEVICE = 4
-    D3DKMT_ESCAPE_DMM = 5
-    D3DKMT_ESCAPE_DEBUG_SNAPSHOT = 6
-    D3DKMT_ESCAPE_DRT_TEST = 8
-    D3DKMT_ESCAPE_DIAGNOSTICS = 9
-    D3DKMT_ESCAPE_OUTPUTDUPL_SNAPSHOT = 10
-    D3DKMT_ESCAPE_OUTPUTDUPL_DIAGNOSTICS = 11
-    D3DKMT_ESCAPE_BDD_PNP = 12
-    D3DKMT_ESCAPE_BDD_FALLBACK = 13
-    D3DKMT_ESCAPE_ACTIVATE_SPECIFIC_DIAG = 14
-    D3DKMT_ESCAPE_MODES_PRUNED_OUT = 15
-    D3DKMT_ESCAPE_WHQL_INFO = 16
-    D3DKMT_ESCAPE_BRIGHTNESS = 17
-    D3DKMT_ESCAPE_EDID_CACHE = 18
-    D3DKMT_ESCAPE_GENERIC_ADAPTER_DIAG_INFO = 19
-    D3DKMT_ESCAPE_MIRACAST_DISPLAY_REQUEST = 20
-    D3DKMT_ESCAPE_HISTORY_BUFFER_STATUS = 21
-    D3DKMT_ESCAPE_MIRACAST_ADAPTER_DIAG_INFO = 23
-    D3DKMT_ESCAPE_FORCE_BDDFALLBACK_HEADLESS = 24
-    D3DKMT_ESCAPE_REQUEST_MACHINE_CRASH = 25
-    D3DKMT_ESCAPE_HMD_GET_EDID_BASE_BLOCK = 26
-    D3DKMT_ESCAPE_SOFTGPU_ENABLE_DISABLE_HMD = 27
-    D3DKMT_ESCAPE_PROCESS_VERIFIER_OPTION = 28
-    D3DKMT_ESCAPE_ADAPTER_VERIFIER_OPTION = 29
-    D3DKMT_ESCAPE_IDD_REQUEST = 30
-    D3DKMT_ESCAPE_DOD_SET_DIRTYRECT_MODE = 31
-    D3DKMT_ESCAPE_LOG_CODEPOINT_PACKET = 32
-    D3DKMT_ESCAPE_LOG_USERMODE_DAIG_PACKET = 33
-    D3DKMT_ESCAPE_GET_EXTERNAL_DIAGNOSTICS = 34
-    D3DKMT_ESCAPE_GET_DISPLAY_CONFIGURATIONS = 36
-    D3DKMT_ESCAPE_QUERY_IOMMU_STATUS = 37
-    D3DKMT_ESCAPE_CCD_DATABASE = 38
-    D3DKMT_ESCAPE_WIN32K_START = 1024
-    D3DKMT_ESCAPE_WIN32K_HIP_DEVICE_INFO = 1024
-    D3DKMT_ESCAPE_WIN32K_QUERY_CD_ROTATION_BLOCK = 1025
-    D3DKMT_ESCAPE_WIN32K_DPI_INFO = 1026
-    D3DKMT_ESCAPE_WIN32K_PRESENTER_VIEW_INFO = 1027
-    D3DKMT_ESCAPE_WIN32K_SYSTEM_DPI = 1028
-    D3DKMT_ESCAPE_WIN32K_BDD_FALLBACK = 1029
-    D3DKMT_ESCAPE_WIN32K_DDA_TEST_CTL = 1030
-    D3DKMT_ESCAPE_WIN32K_USER_DETECTED_BLACK_SCREEN = 1031
-    D3DKMT_ESCAPE_WIN32K_HMD_ENUM = 1032
-    D3DKMT_ESCAPE_WIN32K_HMD_CONTROL = 1033
-    D3DKMT_ESCAPE_WIN32K_LPMDISPLAY_CONTROL = 1034
-make_global(D3DKMT_ESCAPETYPE)
-
-class D3DKMT_VIDMMESCAPETYPE(Enum):
-    D3DKMT_VIDMMESCAPETYPE_SETFAULT = 0
-    D3DKMT_VIDMMESCAPETYPE_RUN_COHERENCY_TEST = 1
-    D3DKMT_VIDMMESCAPETYPE_RUN_UNMAP_TO_DUMMY_PAGE_TEST = 2
-    D3DKMT_VIDMMESCAPETYPE_APERTURE_CORRUPTION_CHECK = 3
-    D3DKMT_VIDMMESCAPETYPE_SUSPEND_CPU_ACCESS_TEST = 4
-    D3DKMT_VIDMMESCAPETYPE_EVICT = 5
-    D3DKMT_VIDMMESCAPETYPE_EVICT_BY_NT_HANDLE = 6
-    D3DKMT_VIDMMESCAPETYPE_GET_VAD_INFO = 7
-    D3DKMT_VIDMMESCAPETYPE_SET_BUDGET = 8
-    D3DKMT_VIDMMESCAPETYPE_SUSPEND_PROCESS = 9
-    D3DKMT_VIDMMESCAPETYPE_RESUME_PROCESS = 10
-    D3DKMT_VIDMMESCAPETYPE_GET_BUDGET = 11
-    D3DKMT_VIDMMESCAPETYPE_SET_TRIM_INTERVALS = 12
-    D3DKMT_VIDMMESCAPETYPE_EVICT_BY_CRITERIA = 13
-    D3DKMT_VIDMMESCAPETYPE_WAKE = 14
-    D3DKMT_VIDMMESCAPETYPE_DEFRAG = 15
-make_global(D3DKMT_VIDMMESCAPETYPE)
-
-class DXGK_PTE_PAGE_SIZE(Enum):
-    DXGK_PTE_PAGE_TABLE_PAGE_4KB = 0
-    DXGK_PTE_PAGE_TABLE_PAGE_64KB = 1
-make_global(DXGK_PTE_PAGE_SIZE)
-
-class D3DKMT_VAD_ESCAPE_COMMAND(Enum):
-    D3DKMT_VAD_ESCAPE_GETNUMVADS = 0
-    D3DKMT_VAD_ESCAPE_GETVAD = 1
-    D3DKMT_VAD_ESCAPE_GETVADRANGE = 2
-    D3DKMT_VAD_ESCAPE_GET_PTE = 3
-    D3DKMT_VAD_ESCAPE_GET_GPUMMU_CAPS = 4
-    D3DKMT_VAD_ESCAPE_GET_SEGMENT_CAPS = 5
-make_global(D3DKMT_VAD_ESCAPE_COMMAND)
-
-class D3DKMT_DEFRAG_ESCAPE_OPERATION(Enum):
-    D3DKMT_DEFRAG_ESCAPE_GET_FRAGMENTATION_STATS = 0
-    D3DKMT_DEFRAG_ESCAPE_DEFRAG_UPWARD = 1
-    D3DKMT_DEFRAG_ESCAPE_DEFRAG_DOWNWARD = 2
-    D3DKMT_DEFRAG_ESCAPE_DEFRAG_PASS = 3
-    D3DKMT_DEFRAG_ESCAPE_VERIFY_TRANSFER = 4
-make_global(D3DKMT_DEFRAG_ESCAPE_OPERATION)
-
-class D3DKMT_TDRDBGCTRLTYPE(Enum):
-    D3DKMT_TDRDBGCTRLTYPE_FORCETDR = 0
-    D3DKMT_TDRDBGCTRLTYPE_DISABLEBREAK = 1
-    D3DKMT_TDRDBGCTRLTYPE_ENABLEBREAK = 2
-    D3DKMT_TDRDBGCTRLTYPE_UNCONDITIONAL = 3
-    D3DKMT_TDRDBGCTRLTYPE_VSYNCTDR = 4
-    D3DKMT_TDRDBGCTRLTYPE_GPUTDR = 5
-    D3DKMT_TDRDBGCTRLTYPE_FORCEDODTDR = 6
-    D3DKMT_TDRDBGCTRLTYPE_FORCEDODVSYNCTDR = 7
-    D3DKMT_TDRDBGCTRLTYPE_ENGINETDR = 8
-make_global(D3DKMT_TDRDBGCTRLTYPE)
-
-class D3DKMT_VIDSCHESCAPETYPE(Enum):
-    D3DKMT_VIDSCHESCAPETYPE_PREEMPTIONCONTROL = 0
-    D3DKMT_VIDSCHESCAPETYPE_SUSPENDSCHEDULER = 1
-    D3DKMT_VIDSCHESCAPETYPE_TDRCONTROL = 2
-    D3DKMT_VIDSCHESCAPETYPE_SUSPENDRESUME = 3
-    D3DKMT_VIDSCHESCAPETYPE_ENABLECONTEXTDELAY = 4
-    D3DKMT_VIDSCHESCAPETYPE_CONFIGURE_TDR_LIMIT = 5
-    D3DKMT_VIDSCHESCAPETYPE_VGPU_RESET = 6
-    D3DKMT_VIDSCHESCAPETYPE_PFN_CONTROL = 7
-make_global(D3DKMT_VIDSCHESCAPETYPE)
-
-class D3DKMT_ESCAPE_PFN_CONTROL_COMMAND(Enum):
-    D3DKMT_ESCAPE_PFN_CONTROL_DEFAULT = 0
-    D3DKMT_ESCAPE_PFN_CONTROL_FORCE_CPU = 1
-    D3DKMT_ESCAPE_PFN_CONTROL_FORCE_GPU = 2
-make_global(D3DKMT_ESCAPE_PFN_CONTROL_COMMAND)
-
-class D3DKMT_DEVICEESCAPE_TYPE(Enum):
-    D3DKMT_DEVICEESCAPE_VIDPNFROMALLOCATION = 0
-    D3DKMT_DEVICEESCAPE_RESTOREGAMMA = 1
-make_global(D3DKMT_DEVICEESCAPE_TYPE)
-
-class D3DKMT_DMMESCAPETYPE(Enum):
-    D3DKMT_DMMESCAPETYPE_UNINITIALIZED = 0
-    D3DKMT_DMMESCAPETYPE_GET_SUMMARY_INFO = 1
-    D3DKMT_DMMESCAPETYPE_GET_VIDEO_PRESENT_SOURCES_INFO = 2
-    D3DKMT_DMMESCAPETYPE_GET_VIDEO_PRESENT_TARGETS_INFO = 3
-    D3DKMT_DMMESCAPETYPE_GET_ACTIVEVIDPN_INFO = 4
-    D3DKMT_DMMESCAPETYPE_GET_MONITORS_INFO = 5
-    D3DKMT_DMMESCAPETYPE_RECENTLY_COMMITTED_VIDPNS_INFO = 6
-    D3DKMT_DMMESCAPETYPE_RECENT_MODECHANGE_REQUESTS_INFO = 7
-    D3DKMT_DMMESCAPETYPE_RECENTLY_RECOMMENDED_VIDPNS_INFO = 8
-    D3DKMT_DMMESCAPETYPE_RECENT_MONITOR_PRESENCE_EVENTS_INFO = 9
-    D3DKMT_DMMESCAPETYPE_ACTIVEVIDPN_SOURCEMODESET_INFO = 10
-    D3DKMT_DMMESCAPETYPE_ACTIVEVIDPN_COFUNCPATHMODALITY_INFO = 11
-    D3DKMT_DMMESCAPETYPE_GET_LASTCLIENTCOMMITTEDVIDPN_INFO = 12
-    D3DKMT_DMMESCAPETYPE_GET_VERSION_INFO = 13
-    D3DKMT_DMMESCAPETYPE_VIDPN_MGR_DIAGNOSTICS = 14
-make_global(D3DKMT_DMMESCAPETYPE)
-
-class D3DKMT_ACTIVATE_SPECIFIC_DIAG_TYPE(Enum):
-    D3DKMT_ACTIVATE_SPECIFIC_DIAG_TYPE_EXTRA_CCD_DATABASE_INFO = 0
-    D3DKMT_ACTIVATE_SPECIFIC_DIAG_TYPE_MODES_PRUNED = 15
-make_global(D3DKMT_ACTIVATE_SPECIFIC_DIAG_TYPE)
 
 class WOW64_SHARED_INFORMATION(Enum):
     SharedNtdll32LdrInitializeThunk = 0
@@ -2114,19 +2374,19 @@ class WOW64_SHARED_INFORMATION(Enum):
 make_global(WOW64_SHARED_INFORMATION)
 
 class DOMAIN_INFORMATION_CLASS(Enum):
-    DomainPasswordInformation = 1
-    DomainGeneralInformation = 2
-    DomainLogoffInformation = 3
-    DomainOemInformation = 4
-    DomainNameInformation = 5
-    DomainReplicationInformation = 6
-    DomainServerRoleInformation = 7
-    DomainModifiedInformation = 8
-    DomainStateInformation = 9
-    DomainUasInformation = 10
-    DomainGeneralInformation2 = 11
-    DomainLockoutInformation = 12
-    DomainModifiedInformation2 = 13
+    DomainPasswordInformation = 1  # q; s: DOMAIN_PASSWORD_INFORMATION
+    DomainGeneralInformation = 2  # q: DOMAIN_GENERAL_INFORMATION
+    DomainLogoffInformation = 3  # q; s: DOMAIN_LOGOFF_INFORMATION
+    DomainOemInformation = 4  # q; s: DOMAIN_OEM_INFORMATION
+    DomainNameInformation = 5  # q: DOMAIN_NAME_INFORMATION
+    DomainReplicationInformation = 6  # q; s: DOMAIN_REPLICATION_INFORMATION
+    DomainServerRoleInformation = 7  # q; s: DOMAIN_SERVER_ROLE_INFORMATION
+    DomainModifiedInformation = 8  # q: DOMAIN_MODIFIED_INFORMATION
+    DomainStateInformation = 9  # q; s: DOMAIN_STATE_INFORMATION
+    DomainUasInformation = 10  # q; s: DOMAIN_UAS_INFORMATION
+    DomainGeneralInformation2 = 11  # q: DOMAIN_GENERAL_INFORMATION2
+    DomainLockoutInformation = 12  # q; s: DOMAIN_LOCKOUT_INFORMATION
+    DomainModifiedInformation2 = 13  # q: DOMAIN_MODIFIED_INFORMATION2
 make_global(DOMAIN_INFORMATION_CLASS)
 
 class DOMAIN_SERVER_ENABLE_STATE(Enum):
@@ -2145,11 +2405,11 @@ class DOMAIN_PASSWORD_CONSTRUCTION(Enum):
 make_global(DOMAIN_PASSWORD_CONSTRUCTION)
 
 class DOMAIN_DISPLAY_INFORMATION(Enum):
-    DomainDisplayUser = 1
-    DomainDisplayMachine = 2
-    DomainDisplayGroup = 3
-    DomainDisplayOemUser = 4
-    DomainDisplayOemGroup = 5
+    DomainDisplayUser = 1  # DOMAIN_DISPLAY_USER
+    DomainDisplayMachine = 2  # DOMAIN_DISPLAY_MACHINE
+    DomainDisplayGroup = 3  # DOMAIN_DISPLAY_GROUP
+    DomainDisplayOemUser = 4  # DOMAIN_DISPLAY_OEM_USER
+    DomainDisplayOemGroup = 5  # DOMAIN_DISPLAY_OEM_GROUP
     DomainDisplayServer = 6
 make_global(DOMAIN_DISPLAY_INFORMATION)
 
@@ -2158,51 +2418,54 @@ class DOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION(Enum):
 make_global(DOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION)
 
 class GROUP_INFORMATION_CLASS(Enum):
-    GroupGeneralInformation = 1
-    GroupNameInformation = 2
-    GroupAttributeInformation = 3
-    GroupAdminCommentInformation = 4
+    GroupGeneralInformation = 1  # q: GROUP_GENERAL_INFORMATION
+    GroupNameInformation = 2  # q; s: GROUP_NAME_INFORMATION
+    GroupAttributeInformation = 3  # q; s: GROUP_ATTRIBUTE_INFORMATION
+    GroupAdminCommentInformation = 4  # q; s: GROUP_ADM_COMMENT_INFORMATION
     GroupReplicationInformation = 5
 make_global(GROUP_INFORMATION_CLASS)
 
 class ALIAS_INFORMATION_CLASS(Enum):
-    AliasGeneralInformation = 1
-    AliasNameInformation = 2
-    AliasAdminCommentInformation = 3
+    AliasGeneralInformation = 1  # q: ALIAS_GENERAL_INFORMATION
+    AliasNameInformation = 2  # q; s: ALIAS_NAME_INFORMATION
+    AliasAdminCommentInformation = 3  # q; s: ALIAS_ADM_COMMENT_INFORMATION
     AliasReplicationInformation = 4
     AliasExtendedInformation = 5
 make_global(ALIAS_INFORMATION_CLASS)
 
 class USER_INFORMATION_CLASS(Enum):
-    UserGeneralInformation = 1
-    UserPreferencesInformation = 2
-    UserLogonInformation = 3
-    UserLogonHoursInformation = 4
-    UserAccountInformation = 5
-    UserNameInformation = 6
-    UserAccountNameInformation = 7
-    UserFullNameInformation = 8
-    UserPrimaryGroupInformation = 9
-    UserHomeInformation = 10
-    UserScriptInformation = 11
-    UserProfileInformation = 12
-    UserAdminCommentInformation = 13
-    UserWorkStationsInformation = 14
-    UserSetPasswordInformation = 15
-    UserControlInformation = 16
-    UserExpiresInformation = 17
-    UserInternal1Information = 18
-    UserInternal2Information = 19
-    UserParametersInformation = 20
-    UserAllInformation = 21
-    UserInternal3Information = 22
-    UserInternal4Information = 23
-    UserInternal5Information = 24
-    UserInternal4InformationNew = 25
-    UserInternal5InformationNew = 26
-    UserInternal6Information = 27
-    UserExtendedInformation = 28
-    UserLogonUIInformation = 29
+    UserGeneralInformation = 1  # q: USER_GENERAL_INFORMATION
+    UserPreferencesInformation = 2  # q; s: USER_PREFERENCES_INFORMATION
+    UserLogonInformation = 3  # q: USER_LOGON_INFORMATION
+    UserLogonHoursInformation = 4  # q; s: USER_LOGON_HOURS_INFORMATION
+    UserAccountInformation = 5  # q: USER_ACCOUNT_INFORMATION
+    UserNameInformation = 6  # q; s: USER_NAME_INFORMATION
+    UserAccountNameInformation = 7  # q; s: USER_ACCOUNT_NAME_INFORMATION
+    UserFullNameInformation = 8  # q; s: USER_FULL_NAME_INFORMATION
+    UserPrimaryGroupInformation = 9  # q; s: USER_PRIMARY_GROUP_INFORMATION
+    UserHomeInformation = 10  # q; s: USER_HOME_INFORMATION // 10
+    UserScriptInformation = 11  # q; s: USER_SCRIPT_INFORMATION
+    UserProfileInformation = 12  # q; s: USER_PROFILE_INFORMATION
+    UserAdminCommentInformation = 13  # q; s: USER_ADMIN_COMMENT_INFORMATION
+    UserWorkStationsInformation = 14  # q; s: USER_WORKSTATIONS_INFORMATION
+    UserSetPasswordInformation = 15  # s: USER_SET_PASSWORD_INFORMATION
+    UserControlInformation = 16  # q; s: USER_CONTROL_INFORMATION
+    UserExpiresInformation = 17  # q; s: USER_EXPIRES_INFORMATION
+    UserInternal1Information = 18  # USER_INTERNAL1_INFORMATION
+    UserInternal2Information = 19  # USER_INTERNAL2_INFORMATION
+    UserParametersInformation = 20  # q; s: USER_PARAMETERS_INFORMATION // 20
+    UserAllInformation = 21  # USER_ALL_INFORMATION
+    UserInternal3Information = 22  # USER_INTERNAL3_INFORMATION
+    UserInternal4Information = 23  # USER_INTERNAL4_INFORMATION
+    UserInternal5Information = 24  # USER_INTERNAL5_INFORMATION
+    UserInternal4InformationNew = 25  # USER_INTERNAL4_INFORMATION_NEW
+    UserInternal5InformationNew = 26  # USER_INTERNAL5_INFORMATION_NEW
+    UserInternal6Information = 27  # USER_INTERNAL6_INFORMATION
+    UserExtendedInformation = 28  # USER_EXTENDED_INFORMATION
+    UserLogonUIInformation = 29  # USER_LOGON_UI_INFORMATION
+    UserUnknownTodoInformation = 30
+    UserInternal7Information = 31  # USER_INTERNAL7_INFORMATION
+    UserInternal8Information = 32  # USER_INTERNAL8_INFORMATION
 make_global(USER_INFORMATION_CLASS)
 
 class SECURITY_DB_DELTA_TYPE(Enum):
@@ -2273,32 +2536,39 @@ class VDMSERVICECLASS(Enum):
     VdmAdlibEmulation = 12
     VdmPMCliControl = 13
     VdmQueryVdmProcess = 14
+    VdmPreInitialize = 15
 make_global(VDMSERVICECLASS)
 
 class TRACE_CONTROL_INFORMATION_CLASS(Enum):
-    TraceControlStartLogger = 1
-    TraceControlStopLogger = 2
-    TraceControlQueryLogger = 3
-    TraceControlUpdateLogger = 4
-    TraceControlFlushLogger = 5
-    TraceControlIncrementLoggerFile = 6
+    TraceControlStartLogger = 1  # inout WMI_LOGGER_INFORMATION
+    TraceControlStopLogger = 2  # inout WMI_LOGGER_INFORMATION
+    TraceControlQueryLogger = 3  # inout WMI_LOGGER_INFORMATION
+    TraceControlUpdateLogger = 4  # inout WMI_LOGGER_INFORMATION
+    TraceControlFlushLogger = 5  # inout WMI_LOGGER_INFORMATION
+    TraceControlIncrementLoggerFile = 6  # inout WMI_LOGGER_INFORMATION
+    TraceControlUnknown = 7
     TraceControlRealtimeConnect = 11
+    TraceControlActivityIdCreate = 12
     TraceControlWdiDispatchControl = 13
-    TraceControlRealtimeDisconnectConsumerByHandle = 14
+    TraceControlRealtimeDisconnectConsumerByHandle = 14  # in HANDLE
+    TraceControlRegisterGuidsCode = 15
     TraceControlReceiveNotification = 16
-    TraceControlEnableGuid = 17
+    TraceControlSendDataBlock = 17  # ETW_ENABLE_NOTIFICATION_PACKET
     TraceControlSendReplyDataBlock = 18
     TraceControlReceiveReplyDataBlock = 19
     TraceControlWdiUpdateSem = 20
-    TraceControlGetTraceGuidList = 21
-    TraceControlGetTraceGuidInfo = 22
+    TraceControlEnumTraceGuidList = 21  # out GUID[]
+    TraceControlGetTraceGuidInfo = 22  # in GUID, out TRACE_GUID_INFO
     TraceControlEnumerateTraceGuids = 23
+    TraceControlRegisterSecurityProv = 24
     TraceControlQueryReferenceTime = 25
-    TraceControlTrackProviderBinary = 26
+    TraceControlTrackProviderBinary = 26  # in HANDLE
     TraceControlAddNotificationEvent = 27
     TraceControlUpdateDisallowList = 28
-    TraceControlUseDescriptorTypeUm = 31
-    TraceControlGetTraceGroupList = 32
+    TraceControlSetEnableAllKeywordsCode = 29
+    TraceControlSetProviderTraitsCode = 30
+    TraceControlUseDescriptorTypeCode = 31
+    TraceControlEnumTraceGroupList = 32
     TraceControlGetTraceGroupInfo = 33
     TraceControlTraceSetDisallowList = 34
     TraceControlSetCompressionSettings = 35
@@ -2308,8 +2578,10 @@ class TRACE_CONTROL_INFORMATION_CLASS(Enum):
     TraceControlRegisterPrivateSession = 39
     TraceControlQuerySessionDemuxObject = 40
     TraceControlSetProviderBinaryTracking = 41
-    TraceControlMaxLoggers = 42
-    TraceControlMaxPmcCounter = 43
+    TraceControlMaxLoggers = 42  # out ULONG
+    TraceControlMaxPmcCounter = 43  # out ULONG
+    TraceControlQueryUsedProcessorCount = 44  # ULONG // since WIN11
+    TraceControlGetPmcOwnership = 45
 make_global(TRACE_CONTROL_INFORMATION_CLASS)
 
 class AUDIT_EVENT_TYPE(Enum):
@@ -2361,7 +2633,7 @@ class JOBOBJECTINFOCLASS(Enum):
     JobObjectBasicLimitInformation = 2
     JobObjectBasicProcessIdList = 3
     JobObjectBasicUIRestrictions = 4
-    JobObjectSecurityLimitInformation = 5
+    JobObjectSecurityLimitInformation = 5  # deprecated
     JobObjectEndOfJobTimeInformation = 6
     JobObjectAssociateCompletionPortInformation = 7
     JobObjectBasicAndIoAccountingInformation = 8
@@ -2404,7 +2676,9 @@ class JOBOBJECTINFOCLASS(Enum):
     JobObjectReserved23Information = 45
     JobObjectReserved24Information = 46
     JobObjectReserved25Information = 47
-    MaxJobObjectInfoClass = 48
+    JobObjectReserved26Information = 48
+    JobObjectReserved27Information = 49
+    MaxJobObjectInfoClass = 50
 make_global(JOBOBJECTINFOCLASS)
 
 class RESOURCEMANAGER_INFORMATION_CLASS(Enum):
@@ -2460,8 +2734,8 @@ class TOKEN_INFORMATION_CLASS(Enum):
     TokenChildProcessFlags = 45
     TokenIsLessPrivilegedAppContainer = 46
     TokenIsSandboxed = 47
-    TokenOriginatingProcessTrustLevel = 48
-    MaxTokenInfoClass = 49
+    TokenIsAppSilo = 48
+    MaxTokenInfoClass = 49  # MaxTokenInfoClass should always be the last enum
 make_global(TOKEN_INFORMATION_CLASS)
 
 class TRANSACTION_INFORMATION_CLASS(Enum):
@@ -2469,8 +2743,8 @@ class TRANSACTION_INFORMATION_CLASS(Enum):
     TransactionPropertiesInformation = 1
     TransactionEnlistmentInformation = 2
     TransactionSuperiorEnlistmentInformation = 3
-    TransactionBindInformation = 4
-    TransactionDTCPrivateInformation = 5
+    TransactionBindInformation = 4  # private and deprecated
+    TransactionDTCPrivateInformation = 5  # private and deprecated
 make_global(TRANSACTION_INFORMATION_CLASS)
 
 class TRANSACTIONMANAGER_INFORMATION_CLASS(Enum):

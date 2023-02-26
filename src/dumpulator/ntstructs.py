@@ -99,6 +99,9 @@ class IO_STATUS_BLOCK:
 class JOB_SET_ARRAY:
     pass
 
+class KEY_LOAD_ENTRY:
+    pass
+
 class KEY_VALUE_ENTRY:
     pass
 
@@ -130,6 +133,9 @@ class OBJECT_ATTRIBUTES:
             s.skip(4)
         self.SecurityDescriptor = s.read_ptr()
         self.SecurityQualityOfService = s.read_ptr()
+
+class OBJECT_BOUNDARY_DESCRIPTOR:
+    pass
 
 class OBJECT_TYPE_LIST:
     pass
@@ -234,5 +240,8 @@ class WNF_DELIVERY_DESCRIPTOR:
     pass
 
 class WNF_STATE_NAME:
+    pass
+
+class WORKER_FACTORY_DEFERRED_WORK:
     pass
 
