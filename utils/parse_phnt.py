@@ -30,15 +30,24 @@ def filter_by_kind(
         if i.kind in kinds:
             yield i
 
+class EnumValue:
+    def __init__(self, name: str, value: int):
+        self.name = name
+        self.value = value
+        self.comment = ""
+
 class EnumType:
     def __init__(self, name: str):
-        self.name = name.lstrip('_')
-        self.values: [(str, int)] = []
+        self.name: str = name.lstrip("_")
+        self.values: List[EnumValue] = []
 
     def format_python(self):
         r = f"class {self.name}(Enum):\n"
-        for name, value in self.values:
-            r += f"    {name} = {value}\n"
+        for evalue in self.values:
+            r += f"    {evalue.name} = {evalue.value}"
+            if evalue.comment:
+                r += f"  # {evalue.comment}"
+            r += "\n"
         r += f"make_global({self.name})\n"
         return r
 
@@ -48,6 +57,7 @@ class FunctionArgument:
         self.typename = ""
         self.is_ptr = False
         self.sal = ""
+        self.comment = ""
 
 class FunctionType:
     def __init__(self, name: str):
@@ -57,14 +67,19 @@ class FunctionType:
     def format_python(self, body: Optional[str]):
         r = "@syscall\n"
         r += f"def {self.name}(dp: Dumpulator"
-        indent = (len(self.name) + 5) * ' '
+        indent = (len(self.name) + 5) * " "
         a: FunctionArgument
         for i, a in enumerate(self.arguments):
             r += ",\n"
             pytype = f"P({a.typename})" if a.is_ptr else a.typename
             if len(a.sal) > 0:
                 assert "\"" not in a.sal and "\\" not in a.sal
-                r += f"{indent}{a.name}: Annotated[{pytype}, \"{a.sal}\"]"
+                sal = f"SAL(\"{a.sal}\""
+                if a.comment:
+                    assert "\"" not in a.comment and "\\" not in a.comment
+                    sal += f", \"{a.comment}\""
+                sal += ")"
+                r += f"{indent}{a.name}: Annotated[{pytype}, {sal}]"
             else:
                 r += f"{indent}{a.name}: {pytype}"
         r += "\n"
@@ -143,6 +158,39 @@ class FunctionBodies:
     def get(self, name) -> Optional[str]:
         return self.functions.get(name, None)
 
+class FileState:
+    def __init__(self):
+        self.files: Dict[str, List[str]] = {}
+
+    def lines(self, file_name: str):
+        if file_name not in self.files:
+            with open(file_name, "r") as fp:
+                self.files[file_name] = [line.rstrip("\n") for line in fp.readlines()]
+        return self.files[file_name]
+
+def extract_line_comment(file_state: FileState, cursor: Cursor):
+    end: clang.cindex.SourceLocation = cursor.extent.end
+    line = file_state.lines(cursor.location.file.name)[end.line - 1]
+    if end.column - 1 < len(line):
+        comment = line[end.column - 1:]
+        if comment.startswith(","):
+            comment = comment[1:]
+        comment = comment.strip()
+        if comment.startswith("//"):
+            return comment[2:].strip()
+    return ""
+
+def add_enum(file_state: FileState, enums : Dict[str, EnumType], edecl: Cursor):
+    if edecl.spelling:
+        et = EnumType(edecl.spelling)
+        v: Cursor
+        for v in edecl.get_children():
+            ev = EnumValue(v.spelling, v.enum_value)
+            ev.comment = extract_line_comment(file_state, v)
+            et.values.append(ev)
+        if len(et.values) > 0:
+            enums[et.name] = et
+
 # This script was only tested on Windows, Visual Studio 2019
 # phnt version: https://github.com/processhacker/phnt/commit/49539260245f4291b699884a9ef4552530c8cfa4
 def main():
@@ -150,6 +198,7 @@ def main():
         print("Usage: parse_phnt.py c:\\projects\\phnt")
         sys.exit(1)
 
+    file_state = FileState()
     phnt_dir = sys.argv[1]
     index = Index.create()
     tu = index.parse("phnt.c", args=[f"-I{phnt_dir}"], options=TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
@@ -164,29 +213,18 @@ def main():
 
     cursor: Cursor = tu.cursor
     phnt_nodes = list(filter_by_folder(cursor.get_children(), phnt_dir))
-    edecl: Cursor
-    system_enums = OrderedDict()
+    system_enums: Dict[str, EnumType] = OrderedDict()
 
     # This is bad, these CursorKind.XXX are added in cindex.py, no autocomplete possible :(
+    edecl: Cursor
     for edecl in filter_by_kind(cursor.get_children(), [CursorKind.ENUM_DECL]):
         if phnt_dir not in str(edecl.location.file):
-            if edecl.spelling:
-                et = EnumType(edecl.spelling)
-                v: Cursor
-                for v in edecl.get_children():
-                    et.values.append((v.spelling, v.enum_value))
-                if len(et.values) > 0:
-                    system_enums[et.name] = et
+            add_enum(file_state, system_enums, edecl)
 
-    phnt_enums = OrderedDict()
+    phnt_enums: Dict[str, EnumType] = OrderedDict()
     for edecl in filter_by_kind(phnt_nodes, [CursorKind.ENUM_DECL]):
         if edecl.spelling:
-            et = EnumType(edecl.spelling)
-            v: Cursor
-            for v in edecl.get_children():
-                et.values.append((v.spelling, v.enum_value))
-            if len(et.values) > 0:
-                phnt_enums[et.name] = et
+            add_enum(file_state, phnt_enums, edecl)
 
     primitive_types = {
         "PVOID",
@@ -220,17 +258,12 @@ def main():
         "PWSTR",  # PVOID
     }
 
-    file_data: Dict[str, List[str]] = {}
     fdecl: Cursor
     functions: List[FunctionType] = []
     for fdecl in filter_by_kind(phnt_nodes, [CursorKind.FUNCTION_DECL]):
         if fdecl.spelling.startswith("Zw"):
             loc: clang.cindex.SourceLocation = fdecl.location
-            file_name = loc.file.name
-            if file_name not in file_data:
-                with open(file_name, "r") as fp:
-                    file_data[file_name] = [line.rstrip("\n") for line in fp.readlines()]
-            file_lines = file_data[file_name]
+            file_lines = file_state.lines(loc.file.name)
             ft = FunctionType(fdecl.spelling)
             a: Cursor
             for a in fdecl.get_arguments():
@@ -242,6 +275,7 @@ def main():
                 start: clang.cindex.SourceLocation = extent.start
                 line = file_lines[loc.line - 1]
                 at.sal = line[:start.column - 1].strip()
+                at.comment = extract_line_comment(file_state, a)
 
                 # Extract argument type
                 at.typename = str(a.type.spelling) \
@@ -316,9 +350,10 @@ def main():
                 arg: FunctionArgument
                 for arg in fn.arguments:
                     args.append({
-                        'name': arg.name,
-                        'type': arg.typename + ("*" if arg.is_ptr else ""),
-                        'sal': arg.sal
+                        "name": arg.name,
+                        "type": arg.typename + ("*" if arg.is_ptr else ""),
+                        "sal": arg.sal,
+                        "comment": arg.comment
                     })
                 data[fn.name] = args
             f.write(json.dumps(data, indent=2))
@@ -327,10 +362,11 @@ def main():
             e: EnumType
             for e in phnt_enums.values():
                 values = []
-                for name, value in e.values:
+                for evalue in e.values:
                     values.append({
-                        'name': name,
-                        'value': value
+                        "name": evalue.name,
+                        "value": evalue.value,
+                        "comment": evalue.comment
                     })
                 data[e.name] = values
             f.write(json.dumps(data, indent=2))
@@ -371,5 +407,5 @@ from .ntprimitives import make_global
                 f.write("    pass\n")
                 f.write("\n")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
