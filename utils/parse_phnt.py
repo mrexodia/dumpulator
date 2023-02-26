@@ -2,6 +2,8 @@
 import json
 import sys
 from typing import *
+
+import clang.cindex
 from clang.cindex import *
 from collections import OrderedDict
 
@@ -44,7 +46,7 @@ class FunctionArgument:
         self.name = name
         self.typename = ""
         self.is_ptr = False
-
+        self.sal = ""
 
 class FunctionType:
     def __init__(self, name: str):
@@ -59,7 +61,11 @@ class FunctionType:
         for i, a in enumerate(self.arguments):
             r += ",\n"
             pytype = f"P({a.typename})" if a.is_ptr else a.typename
-            r += f"{indent}{a.name}: {pytype}"
+            if len(a.sal) > 0:
+                assert "\"" not in a.sal and "\\" not in a.sal
+                r += f"{indent}{a.name}: Annotated[{pytype}, \"{a.sal}\"]"
+            else:
+                r += f"{indent}{a.name}: {pytype}"
         r += "\n"
         r += f"{indent}):\n"
         r += "    raise NotImplementedError()\n"
@@ -143,14 +149,30 @@ def main():
         "PWSTR",  # PVOID
     }
 
+    file_data: Dict[str, List[str]] = {}
     f: Cursor
     functions = []
     for f in filter_by_kind(phnt_nodes, [CursorKind.FUNCTION_DECL]):
         if f.spelling.startswith("Zw"):
+            loc: clang.cindex.SourceLocation = f.location
+            file_name = loc.file.name
+            if file_name not in file_data:
+                with open(file_name, "r") as fp:
+                    file_data[file_name] = [line.rstrip("\n") for line in fp.readlines()]
+            file_lines = file_data[file_name]
             ft = FunctionType(f.spelling)
             a: Cursor
             for a in f.get_arguments():
                 at = FunctionArgument(a.spelling)
+
+                # Extract argument SAL annotation
+                loc = a.location
+                extent: clang.cindex.SourceRange = a.extent
+                start: clang.cindex.SourceLocation = extent.start
+                line = file_lines[loc.line - 1]
+                at.sal = line[:start.column - 1].strip()
+
+                # Extract argument type
                 at.typename = str(a.type.spelling) \
                     .replace("volatile ", "") \
                     .replace("const ", "")
@@ -177,6 +199,10 @@ def main():
                     assert not at.is_ptr
                     at.is_ptr = True
                     at.typename = at.typename[:-3]
+                elif at.typename.endswith("[]"):
+                    assert not at.is_ptr
+                    at.is_ptr = True
+                    at.typename = at.typename[:-2]
 
                 # Make sure the typename is a valid identifier
                 if " " in at.typename:
@@ -205,6 +231,8 @@ def main():
                     phnt_enums[at.typename] = system_enums[at.typename]
                 else:
                     struct_types.add(at.typename)
+
+    # Anything printed here needs to be adjusted earlier on
     print(f"Found {len(unknown_types)} unknown primitive types:")
     for t in unknown_types:
         print("  " + t + ";")
@@ -218,7 +246,8 @@ def main():
                 for arg in fn.arguments:
                     args.append({
                         'name': arg.name,
-                        'type': arg.typename + ("*" if arg.is_ptr else "")
+                        'type': arg.typename + ("*" if arg.is_ptr else ""),
+                        'sal': arg.sal
                     })
                 data[fn.name] = args
             f.write(json.dumps(data, indent=2))
@@ -260,7 +289,7 @@ from .ntprimitives import make_global
 
             for t in sorted(struct_types):
                 if t == "CONTEXT":
-                    pass
+                    continue
                 f.write(f"class {t}:\n")
                 f.write("    pass\n")
                 f.write("\n")

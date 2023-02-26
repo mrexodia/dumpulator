@@ -8,7 +8,6 @@ from .handles import *
 from .memory import *
 from pathlib import Path
 
-
 def syscall(func):
     name: str = func.__name__
     if name.startswith("Nt"):

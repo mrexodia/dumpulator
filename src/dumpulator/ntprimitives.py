@@ -1,7 +1,8 @@
 import struct
 import ctypes
-from typing import Optional
+from typing import Optional, Annotated
 from enum import Enum
+from dataclasses import dataclass
 
 class Architecture(object):
     def __init__(self, x64: bool):
@@ -287,3 +288,11 @@ class LATENCY_TIME(Enum):
     LT_DONT_CARE = 0
     LT_LOWEST_LATENCY = 1
 make_global(LATENCY_TIME)
+
+@dataclass
+class SAL:
+    annotation: str
+    comment: str = ""
+
+    def __str__(self):
+        return self.annotation
