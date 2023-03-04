@@ -1392,7 +1392,7 @@ def _arg_to_string(dp: Dumpulator, arg):
         if arg.type is OBJECT_ATTRIBUTES:
             tstr = _object_attributes_to_string(dp, arg)
         elif arg.type is UNICODE_STRING:
-            tstr = _unicode_string_to_string(dp, arg)
+            tstr = f"\"{_unicode_string_to_string(dp, arg)}\""
         if tstr is not None:
             str += f" /* {tstr} */"
         return str
