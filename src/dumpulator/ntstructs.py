@@ -89,6 +89,7 @@ class IO_STATUS_BLOCK:
 
     @staticmethod
     def write(ptr: PVOID, Status: int, Information: int):
+        # https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_io_status_block
         pointer_data = ptr.read_ptr()
         pointer_data &= 0xFFFFFFFF00000000
         pointer_data |= Status

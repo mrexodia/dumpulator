@@ -910,7 +910,7 @@ rsp in KiUserExceptionDispatcher:
         self.regs.csp = csp
         return self.KiUserExceptionDispatcher
 
-    def start(self, begin, end=0xffffffffffffffff, count=0):
+    def start(self, begin, end=0xffffffffffffffff, count=0) -> None:
         # Clear exceptions before starting
         self.exception = ExceptionInfo()
         emu_begin = begin
@@ -966,7 +966,7 @@ rsp in KiUserExceptionDispatcher:
                     traceback.print_exc()
                 break
 
-    def stop(self, exit_code=None):
+    def stop(self, exit_code=None) -> None:
         try:
             self.exit_code = None
             if exit_code is not None:
@@ -1016,7 +1016,7 @@ rsp in KiUserExceptionDispatcher:
 
         # https://vtopan.wordpress.com/2019/04/12/patching-resolving-imports-in-a-pe-file-python-pefile/
         # manually resolve imports
-        if hasattr(pe, "DIRECTORY_ENTRY_IMPORT"):
+        if resolve_imports and hasattr(pe, "DIRECTORY_ENTRY_IMPORT"):
             ordinal_flag = 2 ** (bits - 1)
             for iid in pe.DIRECTORY_ENTRY_IMPORT:
                 dll_name = iid.dll.decode("utf-8").lower()
