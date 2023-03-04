@@ -786,6 +786,10 @@ class Dumpulator(Architecture):
                 self.KiUserExceptionDispatcher = export.address
             elif export.name == "LdrLoadDll":
                 self.LdrLoadDll = export.address
+            elif export.name == "RtlLookupFunctionEntry":
+                self.RtlLookupFunctionEntry = export.address
+            elif export.name == "RtlVirtualUnwind":
+                self.RtlVirtualUnwind = export.address
 
         syscalls.sort()
         for index, (rva, name) in enumerate(syscalls):
@@ -819,12 +823,22 @@ class Dumpulator(Architecture):
 
         if not isinstance(addr, int):
             addr = int(addr)
+
+        # save old values
+        old_csp = self.regs.csp
+        old_quiet = self._quiet
+
         # allow passing custom registers
         for name, value in regs.items():
             self.regs.__setattr__(name, value)
 
         # set up arguments
         if self._x64:
+            # shadow stack + arguments
+            #self.regs.rsp -= min(4, len(args)) * 8
+            # align the stack
+            if self.regs.rsp & 0xF != 0:
+                self.push(0)
             for index, value in enumerate(args):
                 self.args[index] = value
         else:
@@ -833,7 +847,11 @@ class Dumpulator(Architecture):
         # push return address
         self.push(USER_CAVE)
         # start emulation
+
+        self._quiet = True
         self.start(addr, end=USER_CAVE, count=count)
+        self.regs.csp = old_csp
+        self._quiet = old_quiet
         return self.regs.cax
 
     def allocate(self, size, page_align=False):
@@ -1164,6 +1182,69 @@ rsp in KiUserExceptionDispatcher:
 
         # Add the module to the module manager
         return self.modules.add(pe, file_path)
+
+    # Reference: https://github.com/electronicarts/EAThread/blob/b05f3b308a9be1b525f09c79bd66ce8736fe5630/source/pc/eathread_callstack_win64.cpp#L264
+    def unwind(self, *, cip: Optional[int] = None, csp: Optional[int] = None, cbp: Optional[int] = None):
+        if cip is None:
+            cip = self.regs.cip
+        if csp is None:
+            csp = self.regs.csp
+        if cbp is None:
+            cbp = self.regs.cbp
+
+        callstack = []
+        if self._x64:
+            assert self.regs.cs == 0x33
+            assert self.RtlLookupFunctionEntry != 0
+            assert self.RtlVirtualUnwind != 0
+
+            context = CONTEXT()
+            context.ContextFlags = CONTEXT_CONTROL
+            context.Rip = cip
+            context.Rsp = csp
+            context.Rbp = cbp
+            if context.Rip == 0 and context.Rsp != 0:
+                print("deref?")
+                context.Rip = self.read_ptr(context.Rsp)
+                context.Rsp += self.ptr_size()
+
+            context_len = ctypes.sizeof(context)
+            scratch_ptr = self.allocate(4 * self.ptr_size() + context_len)
+            image_base_ptr = scratch_ptr
+            handler_data_ptr = image_base_ptr + self.ptr_size()
+            frame_pointers_ptr = handler_data_ptr + self.ptr_size()
+            context_ptr = frame_pointers_ptr + 2 * self.ptr_size()
+
+            while context.Rip != 0:
+                callstack.append(context.Rip)
+                print(f"Function: {hex(context.Rip)}")
+                runtime_function = self.call(self.RtlLookupFunctionEntry, [context.Rip, image_base_ptr, 0])
+                image_base = self.read_ptr(image_base_ptr)
+                if runtime_function != 0:
+                    self.write(context_ptr, bytes(context))
+                    UNW_FLAG_NHANDLER = 0
+                    exception_routine = self.call(self.RtlVirtualUnwind, [
+                        UNW_FLAG_NHANDLER,
+                        image_base,
+                        context.Rip,
+                        runtime_function,
+                        context_ptr,
+                        handler_data_ptr,
+                        frame_pointers_ptr,
+                        0
+                    ])
+                    print(hex(exception_routine))
+                    context = CONTEXT.from_buffer(self.read(context_ptr, context_len))
+                else:
+                    try:
+                        context.Rip = self.read_ptr(context.Rip)
+                    except UcError:
+                        context.Rip = 0
+
+        else:
+            assert False  # TODO: implement heuristics for x86
+
+        return callstack
 
     def load_dll(self, file_name: str, file_data: bytes):
         self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))

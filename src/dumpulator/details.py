@@ -427,7 +427,8 @@ class Arguments:
         elif index == 3:
             regs.r9 = value
         else:
-            raise Exception("not implemented!")
+            arg_addr = regs.rsp + index * 8
+            self._uc.mem_write(arg_addr, struct.pack("<Q", value))
 
 """
 These values are copied from a live Windows 10 VM.
