@@ -13,7 +13,7 @@ from unicorn import *
 from unicorn.x86_const import *
 from pefile import *
 
-from .handles import HandleManager, FileObject
+from .handles import *
 from .native import *
 from .details import *
 from .memory import *
@@ -292,10 +292,10 @@ class Dumpulator(Architecture):
         self.syscalls = []
         self._setup_syscalls()
         self._setup_emulator(thread)
+        self._setup_handles()
         self.kill_me = None
         self.exit_code = None
         self.exports = self._all_exports()
-        self.handles = HandleManager()
         self.exception = ExceptionInfo()
         self.last_exception: Optional[ExceptionInfo] = None
         if not self._quiet:
@@ -518,6 +518,55 @@ class Dumpulator(Architecture):
         self.memory.set_region_info(activation_context_data, "Activation context data")
         self.memory.set_region_info(default_activation_context_data, "Default activation context data")
         self.memory.set_region_info(leap_second_data, "Leap second data")
+
+    def _setup_handles(self):
+        self.handles = HandleManager()
+
+        # TODO: attempt to extract handles from the dump stream and add them as UnknownObject
+        if self._minidump.handles is not None:
+            by_type: Dict[str, List[minidump.MinidumpHandleDescriptor]] = {}
+            minidump_handle: minidump.MinidumpHandleDescriptor
+            for minidump_handle in self._minidump.handles.handles:
+                type_name = minidump_handle.TypeName
+                if type_name is None:
+                    type_name = "Unknown"
+                if type_name not in by_type:
+                    by_type[type_name] = []
+                by_type[type_name].append(minidump_handle)
+            def default_fn(o):
+                if isinstance(o, bytes):
+                    return o.hex()
+                else:
+                    return o.__dict__
+            for type_name, handles in by_type.items():
+                for minidump_handle in handles:
+                    handle_value = minidump_handle.Handle
+                    handle_data = self.handles.get(handle_value, None)
+                    if handle_data is not None:
+                        self.debug(f"handle already added: {hex(handle_value)} = {self.handles.get(handle_value, None)}")
+                        continue
+
+                    obj: AbstractObject
+                    if type_name == "Unknown":
+                        obj = UnknownObject()
+                    elif type_name == "File":
+                        path = minidump_handle.ObjectName
+                        if path is None:
+                            path = "???"
+                        obj = AbstractFileObject(path)
+                    elif type_name == "Event":
+                        # TODO: parse the ObjectInfos when available
+                        event_type = EVENT_TYPE.SynchronizationEvent
+                        event_signalled = False
+                        obj = EventObject(event_type, event_signalled)
+                    elif type_name == "Key":
+                        key = minidump_handle.ObjectName
+                        if key is None:
+                            key = "???"
+                        obj = RegistryKeyObject(key)
+                    else:
+                        obj = UnsupportedObject(type_name)
+                    self.handles.add(handle_value, obj)
 
     def _setup_emulator(self, thread):
         self._setup_pebteb(thread)
@@ -910,7 +959,7 @@ rsp in KiUserExceptionDispatcher:
         self.regs.csp = csp
         return self.KiUserExceptionDispatcher
 
-    def start(self, begin, end=0xffffffffffffffff, count=0):
+    def start(self, begin, end=0xffffffffffffffff, count=0) -> None:
         # Clear exceptions before starting
         self.exception = ExceptionInfo()
         emu_begin = begin
@@ -966,7 +1015,7 @@ rsp in KiUserExceptionDispatcher:
                     traceback.print_exc()
                 break
 
-    def stop(self, exit_code=None):
+    def stop(self, exit_code=None) -> None:
         try:
             self.exit_code = None
             if exit_code is not None:
@@ -992,7 +1041,7 @@ rsp in KiUserExceptionDispatcher:
     def NtCurrentThread(self):
         return 0xFFFFFFFFFFFFFFFE if self._x64 else 0xFFFFFFFE
 
-    def map_module(self, file_data: bytes, file_path: str = "", requested_base: int = 0, resolve_imports = True):
+    def map_module(self, file_data: bytes, file_path: str = "", requested_base: int = 0, resolve_imports=True):
         if not file_path:
             file_path = "<unnamed>"
         print(f"Mapping module {file_path}")
@@ -1016,7 +1065,7 @@ rsp in KiUserExceptionDispatcher:
 
         # https://vtopan.wordpress.com/2019/04/12/patching-resolving-imports-in-a-pe-file-python-pefile/
         # manually resolve imports
-        if hasattr(pe, "DIRECTORY_ENTRY_IMPORT"):
+        if resolve_imports and hasattr(pe, "DIRECTORY_ENTRY_IMPORT"):
             ordinal_flag = 2 ** (bits - 1)
             for iid in pe.DIRECTORY_ENTRY_IMPORT:
                 dll_name = iid.dll.decode("utf-8").lower()
