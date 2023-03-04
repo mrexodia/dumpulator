@@ -1201,7 +1201,7 @@ def ZwCreateSection(dp: Dumpulator,
     assert MaximumSize == 0
     assert SectionPageProtection == PAGE_EXECUTE
     assert AllocationAttributes == MEM_IMAGE
-    file = dp.handles.get(FileHandle, FileObject)
+    file = dp.handles.get(FileHandle, AbstractFileObject)
     assert file is not None
     section_handle = dp.handles.new(SectionObject(file))
     SectionHandle.write_ptr(section_handle)
@@ -1524,42 +1524,33 @@ def ZwDeviceIoControlFile(dp: Dumpulator,
                           OutputBuffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(OutputBufferLength)")],
                           OutputBufferLength: Annotated[ULONG, SAL("_In_")]
                           ):
-    if FileHandle == dp.console_handle:
-        if IoControlCode == 0x500016:
-            in_data = InputBuffer.read(InputBufferLength)
-            print(f"InputBuffer: {in_data.hex()}")
-
-            # TODO: this is totally wrong, but seems to work?
-            if dp.ptr_size() == 4:
-                buf = InputBuffer.ptr
-                params = struct.unpack("<IIII", dp.read(buf, 4 * 4))
-                for i, p in enumerate(params):
-                    print(f"params[{i}] = {p}")
-
-                length = dp.read_ptr(buf + 4 * 4)
-                buffer = dp.read_ptr(buf + 4 * 4 + dp.ptr_size())
-
-                ptr1 = dp.read_ptr(buf + 0x18)
-                ptr2 = dp.read_ptr(buf + 0x28)
-                print(f"ptr1: {ptr1:x}, ptr2: {ptr2:x}")
-                dp.write_ptr(ptr2, 0xffffffff)
-                print(f"{dp.read_ptr(ptr1):x}")
-
-                print(f"Length: {length}, Buffer: 0x{buffer:x}")
-                return STATUS_SUCCESS
-        elif IoControlCode == 0x500037:  # ConsoleLaunchServerProcess (AllocConsole)
-            return STATUS_SUCCESS
-    elif dp.handles.valid(FileHandle):
+    assert Event == 0
+    assert ApcRoutine == 0
+    assert ApcContext == 0
+    assert OutputBufferLength == 0
+    if dp.handles.valid(FileHandle):
         device = dp.handles.get(FileHandle, DeviceObject)
-        in_data = dp.read(InputBuffer.ptr, InputBufferLength)
-        out_data = device.io_control(dp, IoControlCode, in_data)  # TODO: allow changing the status code
-        assert OutputBuffer == 0
-        written = 0  # TODO: change io_control interface
-        # Put the number of bytes written in the status block
-        IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, written))
-        return STATUS_SUCCESS
-    assert False
-    return STATUS_INVALID_HANDLE
+        in_data = bytes(dp.read(InputBuffer.ptr, InputBufferLength))
+        control = DeviceControlData(dp, IoControlCode, in_data)
+        out_data = device.io_control(dp, control)  # TODO: allow changing the status code
+        if out_data is not None:
+            written = len(out_data)
+            raise NotImplementedError()
+        else:
+            written = 0
+            assert OutputBuffer == 0
+
+        # Construct the status block
+        io_status = control.io_status
+        if io_status is None:
+            io_status = STATUS_SUCCESS
+        io_information = control.io_information
+        if io_information is None:
+            io_information = written
+        IO_STATUS_BLOCK.write(IoStatusBlock, io_status, io_information)
+        return STATUS_SUCCESS  # TODO: figure out if the control implementation can make this fail
+
+    raise NotImplementedError()  # TODO: INVALID_HANDLE_VALUE
 
 @syscall
 def ZwDisableLastKnownGood(dp: Dumpulator
@@ -2713,7 +2704,7 @@ def ZwQueryAttributesFile(dp: Dumpulator,
     print(f"query attributes {file_name}")
     handle = dp.handles.open_file(file_name)
     assert handle is not None
-    file_data = dp.handles.get(handle, FileObject)
+    file_data = dp.handles.get(handle, AbstractFileObject)
     attr = FILE_BASIC_INFORMATION(dp)
     attr.CreationTime = 0
     attr.LastAccessTime = 0
@@ -2881,10 +2872,10 @@ def ZwQueryInformationFile(dp: Dumpulator,
     if dp.handles.valid(FileHandle):
         if FileInformationClass == FILE_INFORMATION_CLASS.FileStandardInformation:
             assert Length == 0x18
-            assert FileInformation.ptr != 0
-            assert IoStatusBlock.ptr != 0
+            assert FileInformation != 0
+            assert IoStatusBlock != 0
 
-            file = dp.handles.get(FileHandle, FileObject)
+            file = dp.handles.get(FileHandle, AbstractFileObject)
 
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/5afa7f66-619c-48f3-955f-68c4ece704ae
             # return FILE_STANDARD_INFORMATION
@@ -2899,14 +2890,14 @@ def ZwQueryInformationFile(dp: Dumpulator,
             FileInformation.write(info)
 
             # Put the number of bytes written in the status block
-            IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, len(info)))
+            IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, len(info))
             return STATUS_SUCCESS
         elif FileInformationClass == FILE_INFORMATION_CLASS.FilePositionInformation:
             assert Length == 0x8
-            assert FileInformation.ptr != 0
-            assert IoStatusBlock.ptr != 0
+            assert FileInformation != 0
+            assert IoStatusBlock != 0
 
-            file_handle_data = dp.handles.get(FileHandle, FileObject)
+            file_handle_data = dp.handles.get(FileHandle, AbstractFileObject)
 
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e3ce4a39-327e-495c-99b6-6b61606b6f16
             # return FILE_POSITION_INFORMATION
@@ -2914,13 +2905,13 @@ def ZwQueryInformationFile(dp: Dumpulator,
             FileInformation.write(info)
 
             # Put the number of bytes written in the status block
-            IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, len(info)))
+            IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, len(info))
             return STATUS_SUCCESS
 
     if FileInformationClass == FILE_INFORMATION_CLASS.FileAttributeTagInformation:
         assert Length == 8
-        assert FileInformation.ptr != 0
-        assert IoStatusBlock.ptr != 0
+        assert FileInformation != 0
+        assert IoStatusBlock != 0
         assert dp.ptr_size() == 8  # TODO: implement 32-bit
 
         # Return file attributes
@@ -2930,7 +2921,7 @@ def ZwQueryInformationFile(dp: Dumpulator,
         FileInformation.write(info)
 
         # Put the number of bytes written in the status block
-        IoStatusBlock.write(struct.pack("<QQ" if dp.ptr_size() == 8 else "<II", STATUS_SUCCESS, len(info)))
+        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, len(info))
         return STATUS_SUCCESS
     raise NotImplementedError()
 
@@ -3360,17 +3351,14 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
                                  ):
     if FsInformationClass == FSINFOCLASS.FileFsDeviceInformation:
         assert Length == 8
-        if not dp.handles.valid(FileHandle):
-            assert FileHandle in [dp.stdout_handle, dp.stdin_handle, dp.stderr_handle]
-        # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/616b66d5-b335-4e1c-8f87-b4a55e8d3e4a
-        # FILE_DEVICE_DISK, FILE_CHARACTERISTIC_TS_DEVICE
-        result = struct.pack('<II', 0x7, 0x1000)
-        FsInformation.write(result)
-        # https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_io_status_block
-        dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
-        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
-        return STATUS_SUCCESS
-    #elif FsInformationClass == FSINFOCLASS.FileStandardInformation:
+        data = dp.handles.get(FileHandle, AbstractFileObject)
+        if isinstance(data, ConsoleFileObject):
+            # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/616b66d5-b335-4e1c-8f87-b4a55e8d3e4a
+            # FILE_DEVICE_DISK, FILE_CHARACTERISTIC_TS_DEVICE
+            result = struct.pack('<II', 0x7, 0x1000)
+            FsInformation.write(result)
+            IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, len(result))
+            return STATUS_SUCCESS
 
     raise NotImplementedError()
 
@@ -3466,23 +3454,15 @@ def ZwReadFile(dp: Dumpulator,
                ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
                Key: Annotated[P(ULONG), SAL("_In_opt_")]
                ):
-    if FileHandle == dp.stdin_handle:
-        result = b"some console input"
-
-        assert Buffer != 0
-        assert len(result) <= Length
-
-        Buffer.write(result)
-
-        # https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_io_status_block
-        dp.write_ptr(IoStatusBlock.ptr, STATUS_SUCCESS)
-        dp.write_ptr(IoStatusBlock.ptr + dp.ptr_size(), len(result))
-
-        return STATUS_SUCCESS
-    elif dp.handles.valid(FileHandle):
+    assert Event == 0
+    assert ApcRoutine == 0
+    assert ApcContext == 0
+    assert ByteOffset == 0
+    assert Key == 0
+    if dp.handles.valid(FileHandle):
         assert Buffer != 0
 
-        file = dp.handles.get(FileHandle, FileObject)
+        file = dp.handles.get(FileHandle, AbstractFileObject)
         buffer = file.read(Length)
 
         print(f"reading {file.path}: {buffer}")
@@ -3965,7 +3945,7 @@ def ZwSetInformationFile(dp: Dumpulator,
             assert FileInformation.ptr != 0
             assert Length == 8
 
-            handle_data = dp.handles.get(FileHandle, FileObject)
+            handle_data = dp.handles.get(FileHandle, AbstractFileObject)
 
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e3ce4a39-327e-495c-99b6-6b61606b6f16
             info = FileInformation.read(Length)
@@ -4651,21 +4631,16 @@ def ZwWriteFile(dp: Dumpulator,
                 ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
                 Key: Annotated[P(ULONG), SAL("_In_opt_")]
                 ):
-    if FileHandle == dp.stdout_handle:
-        # after debugging seems data gets mangled within unicorn
-        # TODO: look into why unicorn is mangling console output
-        data = Buffer.read_byte_str(Length)
-        print(f"stdout: {data}")
-        return STATUS_SUCCESS
-    elif FileHandle == dp.stdin_handle:
-        data = Buffer.read_byte_str(Length)
-        print(f"stdin: {data}")
-        return STATUS_SUCCESS
-    elif dp.handles.valid(FileHandle):
+    assert Event == 0
+    assert ApcRoutine == 0
+    assert ApcContext == 0
+    assert ByteOffset == 0
+    assert Key == 0
+    if dp.handles.valid(FileHandle):
         assert Buffer != 0
 
-        file = dp.handles.get(FileHandle, FileObject)
-        buffer = Buffer.read(Length)
+        file = dp.handles.get(FileHandle, AbstractFileObject)
+        buffer = bytes(Buffer.read(Length))
 
         print(f"writing {file.path}: {buffer}")
         file.write(buffer, Length)
