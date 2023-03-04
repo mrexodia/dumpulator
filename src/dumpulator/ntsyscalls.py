@@ -3280,6 +3280,49 @@ def ZwQueryValueKey(dp: Dumpulator,
                     Length: Annotated[ULONG, SAL("_In_")],
                     ResultLength: Annotated[P(ULONG), SAL("_Out_")]
                     ):
+    key = dp.handles.get(KeyHandle, RegistryKeyObject)
+    name = ValueName[0].read_str()
+    if KeyValueInformationClass == KEY_VALUE_INFORMATION_CLASS.KeyValueFullInformation:
+        value = key.values.get(name.lower(), None)
+        assert value is not None, "value not found"
+        info = KEY_VALUE_FULL_INFORMATION()
+        info.TitleIndex = 0
+
+        if len(name) == 0:
+            info.NameLength = 0
+            appended_data = b""
+        else:
+            name_data = name.encode("utf-16-le")
+            info.NameLength = len(name_data)
+            appended_data = name_data
+
+        # Align to 4 bytes
+        remain = 4 - len(appended_data) % 4
+        if remain > 0:
+            appended_data += b"\0" * remain
+            assert (len(appended_data) % 4) == 0
+
+        if isinstance(value, str):
+            info.Type = REG_SZ
+            value_data = value.encode("utf-16-le") + b"\0\0"
+        elif isinstance(value, int):
+            info.Type = REG_DWORD
+            value_data = struct.pack("<I", value)
+        else:
+            raise NotImplementedError()
+
+        info.DataLength = len(value_data)
+        info.DataOffset = ctypes.sizeof(info) + len(appended_data)
+        appended_data += value_data
+
+        final_data = bytes(info) + appended_data
+        assert len(final_data) <= Length
+        if ResultLength != 0:
+            dp.write_ulong(ResultLength, len(final_data))
+        KeyValueInformation.write(final_data)
+
+        return STATUS_SUCCESS
+
     raise NotImplementedError()
 
 @syscall
