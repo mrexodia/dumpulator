@@ -292,7 +292,9 @@ class Dumpulator(Architecture):
         self.syscalls = []
         self._setup_syscalls()
         self._setup_emulator(thread)
+        self.handles = HandleManager()
         self._setup_handles()
+        self._setup_registry()
         self.kill_me = None
         self.exit_code = None
         self.exports = self._all_exports()
@@ -519,9 +521,19 @@ class Dumpulator(Architecture):
         self.memory.set_region_info(default_activation_context_data, "Default activation context data")
         self.memory.set_region_info(leap_second_data, "Leap second data")
 
-    def _setup_handles(self):
-        self.handles = HandleManager()
+    def _setup_registry(self):
+        self.handles.create_key(r"\Registry\Machine\System\CurrentControlSet\Control\Nls\Sorting\Versions", {
+            "": "00060305",
+            "000601xx": "SortWindows61.dll",
+            "000602xx": "SortWindows62.dll",
+            "000603xx": "kernel32.dll",
+            "FF0000xx": "SortServer2003Compat.dll",
+            "FF0406xx": "SortWindows6Compat.dll",
+            "FF0502xx": "SortWindows6Compat.dll",
+            "000604xx": "SortWindows64.dll",
+        })
 
+    def _setup_handles(self):
         import dumpulator.ntdevices as ntdevices
         self.console = ntdevices.ConsoleDeviceObject(R"\Device\ConDrv")
         self.stdin = ConsoleFileObject(ConsoleType.In)
