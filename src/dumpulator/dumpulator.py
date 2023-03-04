@@ -522,6 +522,21 @@ class Dumpulator(Architecture):
     def _setup_handles(self):
         self.handles = HandleManager()
 
+        import dumpulator.ntdevices as ntdevices
+        self.console = ntdevices.ConsoleDeviceObject(R"\Device\ConDrv")
+        self.stdin = ConsoleFileObject(ConsoleType.In)
+        self.stdout = ConsoleFileObject(ConsoleType.Out)
+        self.stderr = ConsoleFileObject(ConsoleType.Err)
+
+        if self.console_handle != 0:
+            self.handles.add(self.console_handle, self.console)
+        if self.stdin_handle != 0:
+            self.handles.add(self.stdin_handle, self.stdin)
+        if self.stdout_handle != 0:
+            self.handles.add(self.stdout_handle, self.stdout)
+        if self.stderr_handle != 0:
+            self.handles.add(self.stderr_handle, self.stderr)
+
         # TODO: attempt to extract handles from the dump stream and add them as UnknownObject
         if self._minidump.handles is not None:
             by_type: Dict[str, List[minidump.MinidumpHandleDescriptor]] = {}
