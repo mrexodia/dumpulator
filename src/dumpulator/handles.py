@@ -47,7 +47,7 @@ class AbstractFileObject(AbstractObject):
 @dataclass
 class FileObject(AbstractFileObject):
     data: Optional[bytes] = None
-    file_offset = 0
+    file_offset: int = 0
 
     def __str__(self):
         return self.pretty("path", "file_offset")
