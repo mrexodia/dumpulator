@@ -88,6 +88,45 @@ class FileObject(AbstractFileObject):
                 self.data = self.data[:self.file_offset] + buffer + self.data[self.file_offset + len(buffer):]
                 self.file_offset += len(buffer)
 
+class ConsoleType(Enum):
+    In = 0
+    Out = 1
+    Err = 2
+
+class ConsoleFileObject(AbstractFileObject):
+    def __init__(self, console_type: ConsoleType, lines: Optional[List[str]] = None):
+        self.type = console_type
+        # Reference: https://learn.microsoft.com/en-us/windows/console/setconsolemode
+        self.mode = 0x1F7 if console_type == ConsoleType.In else 0x7
+        self.lines = [] if lines is None else lines
+        self.current_line = 0
+        console_files = {
+            ConsoleType.In: "CONIN$",
+            ConsoleType.Out: "CONOUT$",
+            ConsoleType.Err: "CONERR$",
+        }
+        super().__init__(console_files[console_type])
+
+    def __str__(self):
+        return self.pretty("path")
+
+    def read(self, size: Optional[int] = None) -> bytes:
+        assert self.type == ConsoleType.In, "cannot read from stdin"
+        if len(self.lines) == 0:
+            text = input("stdin: ")
+        else:
+            assert self.current_line < len(self.lines), "no more data"
+            text = self.lines[self.current_line]
+            self.current_line += 1
+        text += "\r\n"
+        data = text.encode("utf-8")
+        assert len(data) < size
+        return data
+
+    def write(self, buffer: bytes, size: Optional[int] = None):
+        assert self.type != ConsoleType.In, "cannot write to stdin"
+        print(f"std{'out' if self.type == ConsoleType.Out else 'err'}: {buffer}")
+
 @dataclass
 class SectionObject(AbstractObject):
     file: FileObject
