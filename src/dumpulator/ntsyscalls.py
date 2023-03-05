@@ -37,7 +37,7 @@ def ZwAccessCheck(dp: Dumpulator,
                   GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_")],
                   AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_")]
                   ):
-    return STATUS_SUCCESS
+    raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckAndAuditAlarm(dp: Dumpulator,
@@ -333,7 +333,7 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
         dp.memory.reserve(base, size, protect)
         dp.memory.commit(base, size)
     else:
-        assert False
+        raise NotImplementedError()
     return STATUS_SUCCESS
 
 @syscall
@@ -634,7 +634,7 @@ def ZwCancelTimer(dp: Dumpulator,
                   TimerHandle: Annotated[HANDLE, SAL("_In_")],
                   CurrentState: Annotated[P(BOOLEAN), SAL("_Out_opt_")]
                   ):
-    return STATUS_SUCCESS
+    raise NotImplementedError()
 
 @syscall
 def ZwCancelTimer2(dp: Dumpulator,
@@ -2471,7 +2471,7 @@ def ZwOpenProcessToken(dp: Dumpulator,
     assert ProcessHandle == dp.NtCurrentProcess()
     assert DesiredAccess == 0x20
     # TODO: TokenHandle should be -6 or something
-    handle = dp.handles.new(ProcessTokenHandle(ProcessHandle))
+    handle = dp.handles.new(ProcessTokenObject(ProcessHandle))
     print(f"process token: {hex(handle)}")
     TokenHandle.write_ptr(handle)
     return STATUS_SUCCESS
@@ -2501,7 +2501,7 @@ def ZwOpenSection(dp: Dumpulator,
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                   ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
                   ):
-    return STATUS_NOT_IMPLEMENTED
+    raise NotImplementedError()
 
 @syscall
 def ZwOpenSemaphore(dp: Dumpulator,
@@ -4476,7 +4476,7 @@ def ZwTerminateThread(dp: Dumpulator,
                       ExitStatus: Annotated[NTSTATUS, SAL("_In_")]
                       ):
     assert ThreadHandle == dp.NtCurrentThread()
-    return STATUS_NOT_IMPLEMENTED
+    raise NotImplementedError()
 
 @syscall
 def ZwTestAlert(dp: Dumpulator
