@@ -869,10 +869,11 @@ class Dumpulator(Architecture):
         self.exception.handling = True
 
         if self.exception.type == ExceptionType.ContextSwitch:
-            self.info(f"switching context, cip: {hex(self.regs.cip)}")
+            self.info(f"context switch, cip: {hex(self.regs.cip)}")
             # Clear the pending exception
             self.last_exception = self.exception
             self.exception = ExceptionInfo()
+            # NOTE: the context has already been restored using context_restore in the caller
             return self.regs.cip
 
         self.info(f"handling exception...")

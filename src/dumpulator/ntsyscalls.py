@@ -775,6 +775,7 @@ def ZwContinue(dp: Dumpulator,
                ContextRecord: Annotated[P(CONTEXT), SAL("_In_")],
                TestAlert: Annotated[BOOLEAN, SAL("_In_")]
                ):
+    # Trigger a context switch
     assert not TestAlert
     exception = ExceptionInfo()
     exception.type = ExceptionType.ContextSwitch
@@ -784,6 +785,12 @@ def ZwContinue(dp: Dumpulator,
     data = dp.read(ContextRecord.ptr, context_size)
     context = context_type.from_buffer(data)
     context.to_regs(dp.regs)
+    # Modifying fs/gs also appears to reset fs_base/gs_base
+    if dp.x64:
+        dp.regs.gs_base = dp.teb
+    else:
+        dp.regs.fs_base = dp.teb
+        dp.regs.gs_base = dp.teb - 2 * PAGE_SIZE
     exception.context = dp._uc.context_save()
     return exception
 
