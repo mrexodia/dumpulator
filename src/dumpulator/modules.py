@@ -87,6 +87,7 @@ class ModuleManager:
     _memory: MemoryManager
     _name_lookup: Dict[str, int] = field(default_factory=dict)
     _modules: Dict[int, Module] = field(default_factory=dict)
+    main: int = 0
 
     def add(self, pe: pefile.PE, path: str):
         module = Module(pe, path)
