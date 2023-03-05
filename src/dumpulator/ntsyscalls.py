@@ -2984,6 +2984,33 @@ def ZwQueryInformationProcess(dp: Dumpulator,
         if ReturnLength.ptr:
             dp.write_ulong(ReturnLength.ptr, 4)
         return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessImageInformation:
+        sii = SECTION_IMAGE_INFORMATION(dp)
+        assert ProcessInformationLength == ctypes.sizeof(sii)
+        module = dp.modules[dp.modules.main]
+        pe = module.pe
+        opt = pe.OPTIONAL_HEADER
+        sii.TransferAddress = module.entry
+        sii.ZeroBits = 0
+        sii.MaximumStackSize = opt.SizeOfStackReserve
+        sii.CommittedStackSize = opt.SizeOfStackCommit  # TODO: more might be committed, check PEB
+        sii.SubSystemType = opt.Subsystem
+        sii.SubSystemMinorVersion = opt.MinorSubsystemVersion
+        sii.SubSystemMajorVersion = opt.MajorSubsystemVersion
+        sii.MinorOperatingSystemVersion = opt.MinorOperatingSystemVersion
+        sii.MajorOperatingSystemVersion = opt.MajorOperatingSystemVersion
+        sii.ImageCharacteristics = pe.FILE_HEADER.Characteristics  # TODO
+        sii.DllCharacteristics = opt.DllCharacteristics  # TODO
+        sii.Machine = pe.FILE_HEADER.Machine
+        sii.ImageContainsCode = 1
+        sii.ImageFlags = 1  # TODO
+        sii.LoaderFlags = 0  # TODO
+        sii.ImageFileSize = module.size  # TODO: best we can do?
+        sii.CheckSum = opt.CheckSum
+        ProcessInformation.write(bytes(sii))
+        if ReturnLength.ptr:
+            dp.write_ulong(ReturnLength.ptr, ctypes.sizeof(sii))
+        return STATUS_SUCCESS
     raise NotImplementedError()
 
 @syscall

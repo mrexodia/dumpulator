@@ -572,6 +572,30 @@ def FILE_BASIC_INFORMATION(arch: Architecture):
         ]
     return FILE_BASIC_INFORMATION()
 
+def SECTION_IMAGE_INFORMATION(arch: Architecture):
+    class SECTION_IMAGE_INFORMATION(ctypes.Structure):
+        _alignment_ = arch.alignment()
+        _fields_ = [
+            ("TransferAddress", arch.ptr_type()),
+            ("ZeroBits", ctypes.c_uint32),
+            ("MaximumStackSize", arch.ptr_type()),
+            ("CommittedStackSize", arch.ptr_type()),
+            ("SubSystemType", ctypes.c_uint32),
+            ("SubSystemMinorVersion", ctypes.c_uint16),
+            ("SubSystemMajorVersion", ctypes.c_uint16),
+            ("MajorOperatingSystemVersion", ctypes.c_uint16),
+            ("MinorOperatingSystemVersion", ctypes.c_uint16),
+            ("ImageCharacteristics", ctypes.c_uint16),
+            ("DllCharacteristics", ctypes.c_uint16),
+            ("Machine", ctypes.c_uint16),
+            ("ImageContainsCode", ctypes.c_uint8),
+            ("ImageFlags", ctypes.c_uint8),
+            ("LoaderFlags", ctypes.c_uint32),
+            ("ImageFileSize", ctypes.c_uint32),
+            ("CheckSum", ctypes.c_uint32),
+        ]
+    return SECTION_IMAGE_INFORMATION()
+
 def P(t):
     class P(PVOID):
         def __init__(self, ptr, mem_read):
