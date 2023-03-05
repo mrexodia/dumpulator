@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HarnessMinimal", "HarnessMi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HarnessFull", "HarnessFull\HarnessFull.vcxproj", "{1FD2D0B5-53E2-4E9E-AA4B-2E822ABD2D49}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExceptionTest", "ExceptionTest\ExceptionTest.vcxproj", "{8D02ACE7-0361-45F7-B173-3188B235F2DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Release|Win32 = Release|Win32
@@ -33,6 +35,10 @@ Global
 		{1FD2D0B5-53E2-4E9E-AA4B-2E822ABD2D49}.Release|Win32.Build.0 = Release|Win32
 		{1FD2D0B5-53E2-4E9E-AA4B-2E822ABD2D49}.Release|x64.ActiveCfg = Release|x64
 		{1FD2D0B5-53E2-4E9E-AA4B-2E822ABD2D49}.Release|x64.Build.0 = Release|x64
+		{8D02ACE7-0361-45F7-B173-3188B235F2DC}.Release|Win32.ActiveCfg = Release|Win32
+		{8D02ACE7-0361-45F7-B173-3188B235F2DC}.Release|Win32.Build.0 = Release|Win32
+		{8D02ACE7-0361-45F7-B173-3188B235F2DC}.Release|x64.ActiveCfg = Release|x64
+		{8D02ACE7-0361-45F7-B173-3188B235F2DC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

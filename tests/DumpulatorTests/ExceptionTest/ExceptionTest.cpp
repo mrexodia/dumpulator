@@ -1,4 +1,7 @@
-#include "debug.h"
+#include <Windows.h>
+#include <cstdio>
+
+#include "../Tests/debug.h"
 
 static LONG WINAPI VectoredHandler(struct _EXCEPTION_POINTERS* ExceptionInfo)
 {
@@ -61,4 +64,11 @@ extern "C" __declspec(dllexport) bool Exception_Test()
 	__debugbreak();
 	DebugPrint(L"Finished!");
 	return true;
+}
+
+
+int main(int argc, char** argv)
+{
+    auto exitCode = Exception_Test() ? EXIT_SUCCESS : EXIT_FAILURE;
+    ExitProcess(exitCode);
 }
