@@ -857,8 +857,14 @@ def ZwCreateEvent(dp: Dumpulator,
                   InitialState: Annotated[BOOLEAN, SAL("_In_")]
                   ):
     assert DesiredAccess == 0x1f0003
-    assert ObjectAttributes == 0
-    event = EventObject(EventType, InitialState)
+    if ObjectAttributes != 0:
+        attributes = ObjectAttributes[0]
+        assert attributes.ObjectName == 0
+        assert attributes.RootDirectory == 0
+        assert attributes.SecurityDescriptor == 0
+        assert attributes.SecurityQualityOfService == 0
+        assert attributes.Attributes == 2  # OBJ_INHERIT
+    event = EventObject(EventType, InitialState != 0)
     handle = dp.handles.new(event)
     EventHandle.write_ptr(handle)
     return STATUS_SUCCESS
