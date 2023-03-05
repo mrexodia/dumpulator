@@ -251,6 +251,7 @@ class Dumpulator(Architecture):
     def __init__(self, minidump_file, *, trace=False, quiet=False, thread_id=None, debug_logs=False):
         self._quiet = quiet
         self._debug = debug_logs
+        self.sequence_id = 0
 
         # Load the minidump
         self._minidump = minidump.MinidumpFile.parse(minidump_file)
@@ -1322,6 +1323,7 @@ def _get_regs(instr, include_write=False):
     return regs
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
+    code = b""
     try:
         code = dp.read(address, min(size, 15))
         instr = next(dp.cs.disasm(code, address, 1))
@@ -1329,7 +1331,6 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
         instr = None  # Unsupported instruction
     except IndexError:
         instr = None  # Likely invalid memory
-        code = b""
     address_name = dp.exports.get(address, "")
 
     module = ""
@@ -1355,6 +1356,8 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
             line += instr.op_str
         for reg in _get_regs(instr):
             line += f"|{reg}=0x{dp.regs.__getattr__(reg):x}"
+        if instr.mnemonic in {"syscall", "sysenter"}:
+            line += f"|sequence_id=[{dp.sequence_id}]"
     else:
         line += f"??? (code: {code.hex()}, size: {hex(size)})"
     line += "\n"
@@ -1461,7 +1464,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     return dp.regs.r10
                 return dp.args[index]
 
-            dp.info(f"syscall: {name}(")
+            dp.info(f"[{dp.sequence_id}] syscall: {name}(")
             for i in range(0, argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
@@ -1506,7 +1509,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 else:
                     dp.info(f"status = {status:x}")
                     dp.regs.cax = status
-                    if dp._x64:
+                    if dp.x64:
                         dp.regs.rcx = dp.regs.cip + 2
                         dp.regs.r11 = dp.regs.eflags
             except UcError as err:
@@ -1515,6 +1518,8 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 traceback.print_exc()
                 dp.error(f"Exception thrown during syscall implementation, stopping emulation!")
                 dp.raise_kill(exc)
+            finally:
+                dp.sequence_id += 1
         else:
             dp.error(f"syscall index: {index:x} -> {name} not implemented!")
             dp.raise_kill(NotImplementedError())
@@ -1526,7 +1531,7 @@ def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
     if instr.id == X86_INS_RDRAND:
         op: X86Op = instr.operands[0]
         regname = instr.reg_name(op.reg)
-        if dp._x64 and op.size * 8 == 32:
+        if dp.x64 and op.size * 8 == 32:
             regname = "r" + regname[1:]
         print(f"emulated rdrand {regname}:{op.size * 8}, cip = {hex(instr.address)}+{instr.size}")
         dp.regs[regname] = 42  # TODO: PRNG based on dmp hash
