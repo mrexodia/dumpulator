@@ -1474,7 +1474,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 # It looks like the python designers did an oopsie, so we're going
                 # the fully-undocumented route.
                 sal = None
-                if argtype.__name__ == "Annotated":
+                if "Annotated" in type(argtype).__name__:
                     sal, = argtype.__metadata__
                     argtype = argtype.__origin__
 
