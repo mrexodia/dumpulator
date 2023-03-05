@@ -717,7 +717,7 @@ class Dumpulator(Architecture):
     def _parse_module_exports(self, module):
         try:
             module_data = self.read(module.baseaddress, module.size)
-        except UcError:
+        except IndexError:
             self.error(f"Failed to read module data")
             return []
         pe = PE(data=module_data, fast_load=True)
@@ -757,7 +757,7 @@ class Dumpulator(Architecture):
                 try:
                     data = self.read(va, size)
                     mapped_data[rva:size] = data
-                except UcError:
+                except IndexError:
                     self.error(f"Failed to read section {name} from module {path}")
             # Load the PE dumped from memory
             pe = PE(data=mapped_data, fast_load=True)
@@ -1325,9 +1325,9 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
         instr = next(dp.cs.disasm(code, address, 1))
     except StopIteration:
         instr = None  # Unsupported instruction
-    except UcError:
-        instr = None # Likely invalid memory
-        code = []
+    except IndexError:
+        instr = None  # Likely invalid memory
+        code = b""
     address_name = dp.exports.get(address, "")
 
     module = ""
@@ -1361,13 +1361,13 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
 def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
     try:
         return arg[0].read_str()
-    except UcError:
+    except IndexError:
         return None
 
 def _object_attributes_to_string(dp: Dumpulator, arg: P(OBJECT_ATTRIBUTES)):
     try:
         return arg[0].ObjectName[0].read_str()
-    except UcError:
+    except IndexError:
         pass
     return None
 
@@ -1555,6 +1555,6 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
             return False  # NOTE: returning True would stop emulation
     except StopIteration:
         pass  # Unsupported instruction
-    except UcError:
+    except IndexError:
         pass  # Invalid memory access (NOTE: this should not be possible actually)
     raise NotImplementedError("TODO: throw invalid instruction exception")
