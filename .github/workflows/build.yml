@@ -7,6 +7,9 @@ jobs:
     # Skip building pull requests from the same repository
     if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
     runs-on: windows-2019
+    env:
+      # Disable output buffering in an attempt to get readable errors
+      PYTHONUNBUFFERED: '1'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -17,19 +20,66 @@ jobs:
         python-version: '3.9'
         architecture: 'x64'
     
-    - name: Build
+    - name: Python setup
       run: |
         python setup.py develop
 
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.3.1
+
+    - name: Cache build
+      uses: actions/cache@v3
+      id: cache-build
+      with:
+        path: 'tests/DumpulatorTests/bin'
+        key: ${{ runner.os }}-${{ hashFiles('tests/DumpulatorTests/**') }}
+
+    - name: Build DumpulatorTests
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      run: |
+        msbuild /p:Configuration=Release /p:Platform=Win32 tests\DumpulatorTests\DumpulatorTests.sln
+        msbuild /p:Configuration=Release /p:Platform=x64 tests\DumpulatorTests\DumpulatorTests.sln
+
+    - name: Cache dumps
+      uses: actions/cache@v3
+      id: cache-dumps
+      with:
+        path: 'tests/*.dmp'
+        key: ${{ runner.os }}-${{ hashFiles('tests/download_artifacts.py') }}
+
+    - name: Download dumps
+      if: steps.cache-dumps.outputs.cache-hit != 'true'
+      run: |
+        cd tests
+        curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x64.dmp
+        curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x86.dmp
+        python download_artifacts.py
+
     - name: StringEncryptionFun_x64
       run: |
-        curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x64.dmp
-        python tests/getting-started.py
+        cd tests
+        python getting-started.py
 
     - name: StringEncryptionFun_x86
       run: |
-        curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x86.dmp
-        python tests/getting-started32.py
+        cd tests
+        python getting-started32.py
+
+    - name: Run DumpulatorTests
+      run: |
+        cd tests
+        python harness-tests.py
+
+    - name: ExceptionTest_x64
+      run: |
+        cd tests
+        python execute-dump.py ExceptionTest_x64.dmp
+
+    # TODO: remove the trace argument once the bug is fixed
+    - name: ExceptionTest_x86
+      run: |
+        cd tests
+        python execute-dump.py ExceptionTest_x86.dmp trace
 
   publish:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
