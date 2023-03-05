@@ -7,39 +7,88 @@ jobs:
     # Skip building pull requests from the same repository
     if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
     runs-on: windows-2019
+    env:
+      # Disable output buffering in an attempt to get readable errors
+      PYTHONUNBUFFERED: '1'
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Python environment
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
         architecture: 'x64'
     
-    - name: Build
+    - name: Python setup
       run: |
         python setup.py develop
 
-    - name: StringEncryptionFun_x64
-      run: |
-        curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x64.dmp
-        python tests/getting-started.py
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.3.1
 
-    - name: StringEncryptionFun_x86
+    - name: Cache build
+      uses: actions/cache@v3
+      id: cache-build
+      with:
+        path: 'tests/DumpulatorTests/bin'
+        key: ${{ runner.os }}-${{ hashFiles('tests/DumpulatorTests/**') }}
+
+    - name: Build DumpulatorTests
+      if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
+        msbuild /p:Configuration=Release /p:Platform=Win32 tests\DumpulatorTests\DumpulatorTests.sln
+        msbuild /p:Configuration=Release /p:Platform=x64 tests\DumpulatorTests\DumpulatorTests.sln
+
+    - name: Cache dumps
+      uses: actions/cache@v3
+      id: cache-dumps
+      with:
+        path: 'tests/*.dmp'
+        key: ${{ runner.os }}-${{ hashFiles('tests/download_artifacts.py') }}
+
+    - name: Download dumps
+      if: steps.cache-dumps.outputs.cache-hit != 'true'
+      run: |
+        cd tests
+        curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x64.dmp
         curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x86.dmp
-        python tests/getting-started32.py
+        python download_artifacts.py
+
+    - name: 'Test: StringEncryptionFun_x64'
+      run: |
+        cd tests
+        python getting-started.py
+
+    - name: 'Test: StringEncryptionFun_x86'
+      run: |
+        cd tests
+        python getting-started32.py
+
+    - name: 'Test: DumpulatorTests'
+      run: |
+        cd tests
+        python harness-tests.py
+
+    - name: 'Test: ExceptionTest_x64'
+      run: |
+        cd tests
+        python execute-dump.py ExceptionTest_x64.dmp
+
+    - name: 'Test: ExceptionTest_x86'
+      run: |
+        cd tests
+        python execute-dump.py ExceptionTest_x86.dmp
 
   publish:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Python environment
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
         architecture: 'x64'
@@ -49,7 +98,8 @@ jobs:
         python setup.py sdist
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      # https://github.com/pypa/gh-action-pypi-publish/releases/tag/v1.6.4
+      uses: pypa/gh-action-pypi-publish@c7f29f7adef1a245bd91520e94867e5c6eedddcc
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
 
