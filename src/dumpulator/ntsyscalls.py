@@ -4475,7 +4475,11 @@ def ZwTerminateProcess(dp: Dumpulator,
                        ):
     assert ProcessHandle == 0 or ProcessHandle == dp.NtCurrentProcess()
     dp.stop(ExitStatus)
-    return STATUS_SUCCESS
+    exception = ExceptionInfo()
+    exception.type = ExceptionType.Terminate
+    exception.final = True
+    exception.context = dp._uc.context_save()
+    return exception
 
 @syscall
 def ZwTerminateThread(dp: Dumpulator,

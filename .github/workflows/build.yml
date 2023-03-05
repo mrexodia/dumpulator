@@ -55,31 +55,30 @@ jobs:
         curl -sSOJL https://github.com/mrexodia/dumpulator/releases/download/v0.0.1/StringEncryptionFun_x86.dmp
         python download_artifacts.py
 
-    - name: StringEncryptionFun_x64
+    - name: 'Test: StringEncryptionFun_x64'
       run: |
         cd tests
         python getting-started.py
 
-    - name: StringEncryptionFun_x86
+    - name: 'Test: StringEncryptionFun_x86'
       run: |
         cd tests
         python getting-started32.py
 
-    - name: Run DumpulatorTests
+    - name: 'Test: DumpulatorTests'
       run: |
         cd tests
         python harness-tests.py
 
-    - name: ExceptionTest_x64
+    - name: 'Test: ExceptionTest_x64'
       run: |
         cd tests
         python execute-dump.py ExceptionTest_x64.dmp
 
-    # TODO: remove the trace argument once the bug is fixed
-    - name: ExceptionTest_x86
+    - name: 'Test: ExceptionTest_x86'
       run: |
         cd tests
-        python execute-dump.py ExceptionTest_x86.dmp trace
+        python execute-dump.py ExceptionTest_x86.dmp
 
   publish:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}

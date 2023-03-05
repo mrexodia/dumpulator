@@ -37,6 +37,7 @@ class ExceptionType(Enum):
     Memory = 1
     Interrupt = 2
     ContextSwitch = 3
+    Terminate = 4
 
 @dataclass
 class ExceptionInfo:
@@ -783,7 +784,7 @@ class Dumpulator(Architecture):
                 self.info(f"Patching Wow64Transition: {export.address:x} -> {patch_addr:x}")
                 # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
                 # mov edx, esp; sysenter; ret
-                KiFastSystemCall = b"\x8B\xD4\x0F\x34\xC3"
+                KiFastSystemCall = b"\x8B\xD4\x0F\x34\x90\x90\xC3"
                 self.write(patch_addr, KiFastSystemCall)
             elif export.name == "KiUserExceptionDispatcher":
                 self.KiUserExceptionDispatcher = export.address
@@ -1003,6 +1004,12 @@ rsp in KiUserExceptionDispatcher:
                         # Restore the context (unicorn might mess with it before stopping)
                         if self.exception.context is not None:
                             self._uc.context_restore(self.exception.context)
+
+                        if self.exception.type == ExceptionType.Terminate:
+                            if self.exit_code is not None:
+                                self.info(f"exit code: {self.exit_code:x}")
+                            break
+
                         try:
                             emu_begin = self.handle_exception()
                         except:
@@ -1465,7 +1472,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     return dp.regs.r10
                 return dp.args[index]
 
-            dp.info(f"[{dp.sequence_id}] syscall: {name}(")
+            dp.info(f"[{dp.sequence_id}] syscall (index: {hex(index)}): {name}(")
             for i in range(0, argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
@@ -1513,6 +1520,9 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     if dp.x64:
                         dp.regs.rcx = dp.regs.cip + 2
                         dp.regs.r11 = dp.regs.eflags
+                    else:
+                        # HACK: there is a bug in unicorn that doesn't increment EIP
+                        dp.regs.eip += 2
             except UcError as err:
                 raise err
             except Exception as exc:
