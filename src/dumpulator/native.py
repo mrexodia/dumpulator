@@ -19,6 +19,7 @@ STATUS_OBJECT_NAME_NOT_FOUND = 0xC0000034
 STATUS_NOT_FOUND = 0xC0000225
 STATUS_MEMORY_NOT_ALLOCATED = 0xC00000A0
 STATUS_CONFLICTING_ADDRESSES = 0xC0000018
+STATUS_PORT_NOT_SET = 0xC0000353
 
 # Exceptions
 DBG_PRINTEXCEPTION_C = 0x40010006
@@ -570,6 +571,30 @@ def FILE_BASIC_INFORMATION(arch: Architecture):
             ("Flags", ctypes.c_uint32),
         ]
     return FILE_BASIC_INFORMATION()
+
+def SECTION_IMAGE_INFORMATION(arch: Architecture):
+    class SECTION_IMAGE_INFORMATION(ctypes.Structure):
+        _alignment_ = arch.alignment()
+        _fields_ = [
+            ("TransferAddress", arch.ptr_type()),
+            ("ZeroBits", ctypes.c_uint32),
+            ("MaximumStackSize", arch.ptr_type()),
+            ("CommittedStackSize", arch.ptr_type()),
+            ("SubSystemType", ctypes.c_uint32),
+            ("SubSystemMinorVersion", ctypes.c_uint16),
+            ("SubSystemMajorVersion", ctypes.c_uint16),
+            ("MajorOperatingSystemVersion", ctypes.c_uint16),
+            ("MinorOperatingSystemVersion", ctypes.c_uint16),
+            ("ImageCharacteristics", ctypes.c_uint16),
+            ("DllCharacteristics", ctypes.c_uint16),
+            ("Machine", ctypes.c_uint16),
+            ("ImageContainsCode", ctypes.c_uint8),
+            ("ImageFlags", ctypes.c_uint8),
+            ("LoaderFlags", ctypes.c_uint32),
+            ("ImageFileSize", ctypes.c_uint32),
+            ("CheckSum", ctypes.c_uint32),
+        ]
+    return SECTION_IMAGE_INFORMATION()
 
 def P(t):
     class P(PVOID):

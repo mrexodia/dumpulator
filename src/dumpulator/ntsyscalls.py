@@ -37,7 +37,7 @@ def ZwAccessCheck(dp: Dumpulator,
                   GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_")],
                   AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_")]
                   ):
-    return STATUS_SUCCESS
+    raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckAndAuditAlarm(dp: Dumpulator,
@@ -333,7 +333,7 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
         dp.memory.reserve(base, size, protect)
         dp.memory.commit(base, size)
     else:
-        assert False
+        raise NotImplementedError()
     return STATUS_SUCCESS
 
 @syscall
@@ -634,7 +634,7 @@ def ZwCancelTimer(dp: Dumpulator,
                   TimerHandle: Annotated[HANDLE, SAL("_In_")],
                   CurrentState: Annotated[P(BOOLEAN), SAL("_Out_opt_")]
                   ):
-    return STATUS_SUCCESS
+    raise NotImplementedError()
 
 @syscall
 def ZwCancelTimer2(dp: Dumpulator,
@@ -775,6 +775,7 @@ def ZwContinue(dp: Dumpulator,
                ContextRecord: Annotated[P(CONTEXT), SAL("_In_")],
                TestAlert: Annotated[BOOLEAN, SAL("_In_")]
                ):
+    # Trigger a context switch
     assert not TestAlert
     exception = ExceptionInfo()
     exception.type = ExceptionType.ContextSwitch
@@ -784,6 +785,12 @@ def ZwContinue(dp: Dumpulator,
     data = dp.read(ContextRecord.ptr, context_size)
     context = context_type.from_buffer(data)
     context.to_regs(dp.regs)
+    # Modifying fs/gs also appears to reset fs_base/gs_base
+    if dp.x64:
+        dp.regs.gs_base = dp.teb
+    else:
+        dp.regs.fs_base = dp.teb
+        dp.regs.gs_base = dp.teb - 2 * PAGE_SIZE
     exception.context = dp._uc.context_save()
     return exception
 
@@ -857,8 +864,14 @@ def ZwCreateEvent(dp: Dumpulator,
                   InitialState: Annotated[BOOLEAN, SAL("_In_")]
                   ):
     assert DesiredAccess == 0x1f0003
-    assert ObjectAttributes == 0
-    event = EventObject(EventType, InitialState)
+    if ObjectAttributes != 0:
+        attributes = ObjectAttributes[0]
+        assert attributes.ObjectName == 0
+        assert attributes.RootDirectory == 0
+        assert attributes.SecurityDescriptor == 0
+        assert attributes.SecurityQualityOfService == 0
+        assert attributes.Attributes == 2  # OBJ_INHERIT
+    event = EventObject(EventType, InitialState != 0)
     handle = dp.handles.new(event)
     EventHandle.write_ptr(handle)
     return STATUS_SUCCESS
@@ -2465,7 +2478,7 @@ def ZwOpenProcessToken(dp: Dumpulator,
     assert ProcessHandle == dp.NtCurrentProcess()
     assert DesiredAccess == 0x20
     # TODO: TokenHandle should be -6 or something
-    handle = dp.handles.new(ProcessTokenHandle(ProcessHandle))
+    handle = dp.handles.new(ProcessTokenObject(ProcessHandle))
     print(f"process token: {hex(handle)}")
     TokenHandle.write_ptr(handle)
     return STATUS_SUCCESS
@@ -2495,7 +2508,7 @@ def ZwOpenSection(dp: Dumpulator,
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                   ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
                   ):
-    return STATUS_NOT_IMPLEMENTED
+    raise NotImplementedError()
 
 @syscall
 def ZwOpenSemaphore(dp: Dumpulator,
@@ -2953,13 +2966,19 @@ def ZwQueryInformationProcess(dp: Dumpulator,
                               ProcessInformationLength: Annotated[ULONG, SAL("_In_")],
                               ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
                               ):
-    assert (ProcessHandle == dp.NtCurrentProcess())
-    if ProcessInformationClass in [PROCESSINFOCLASS.ProcessDebugPort, PROCESSINFOCLASS.ProcessDebugObjectHandle]:
+    assert ProcessHandle == dp.NtCurrentProcess()
+    if ProcessInformationClass == PROCESSINFOCLASS.ProcessDebugPort:
         assert ProcessInformationLength == dp.ptr_size()
         dp.write_ptr(ProcessInformation.ptr, 0)
         if ReturnLength != 0:
             dp.write_ulong(ReturnLength.ptr, dp.ptr_size())
         return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessDebugObjectHandle:
+        assert ProcessInformationLength == dp.ptr_size()
+        dp.write_ptr(ProcessInformation.ptr, 0)
+        if ReturnLength != 0:
+            dp.write_ulong(ReturnLength.ptr, dp.ptr_size())
+        return STATUS_PORT_NOT_SET
     elif ProcessInformationClass == PROCESSINFOCLASS.ProcessDefaultHardErrorMode:
         assert ProcessInformationLength == 4
         dp.write_ulong(ProcessInformation.ptr, 1)
@@ -2971,6 +2990,33 @@ def ZwQueryInformationProcess(dp: Dumpulator,
         dp.write_ulong(ProcessInformation.ptr, 0xD)
         if ReturnLength.ptr:
             dp.write_ulong(ReturnLength.ptr, 4)
+        return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessImageInformation:
+        sii = SECTION_IMAGE_INFORMATION(dp)
+        assert ProcessInformationLength == ctypes.sizeof(sii)
+        module = dp.modules[dp.modules.main]
+        pe = module.pe
+        opt = pe.OPTIONAL_HEADER
+        sii.TransferAddress = module.entry
+        sii.ZeroBits = 0
+        sii.MaximumStackSize = opt.SizeOfStackReserve
+        sii.CommittedStackSize = opt.SizeOfStackCommit  # TODO: more might be committed, check PEB
+        sii.SubSystemType = opt.Subsystem
+        sii.SubSystemMinorVersion = opt.MinorSubsystemVersion
+        sii.SubSystemMajorVersion = opt.MajorSubsystemVersion
+        sii.MinorOperatingSystemVersion = opt.MinorOperatingSystemVersion
+        sii.MajorOperatingSystemVersion = opt.MajorOperatingSystemVersion
+        sii.ImageCharacteristics = pe.FILE_HEADER.Characteristics  # TODO
+        sii.DllCharacteristics = opt.DllCharacteristics  # TODO
+        sii.Machine = pe.FILE_HEADER.Machine
+        sii.ImageContainsCode = 1
+        sii.ImageFlags = 1  # TODO
+        sii.LoaderFlags = 0  # TODO
+        sii.ImageFileSize = module.size  # TODO: best we can do?
+        sii.CheckSum = opt.CheckSum
+        ProcessInformation.write(bytes(sii))
+        if ReturnLength.ptr:
+            dp.write_ulong(ReturnLength.ptr, ctypes.sizeof(sii))
         return STATUS_SUCCESS
     raise NotImplementedError()
 
@@ -4437,7 +4483,7 @@ def ZwTerminateThread(dp: Dumpulator,
                       ExitStatus: Annotated[NTSTATUS, SAL("_In_")]
                       ):
     assert ThreadHandle == dp.NtCurrentThread()
-    return STATUS_NOT_IMPLEMENTED
+    raise NotImplementedError()
 
 @syscall
 def ZwTestAlert(dp: Dumpulator
