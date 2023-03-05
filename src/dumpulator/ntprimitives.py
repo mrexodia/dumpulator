@@ -8,8 +8,18 @@ class Architecture(object):
     def __init__(self, x64: bool):
         self._x64 = x64
 
+    @property
+    def x64(self):
+        return self._x64
+
     def ptr_size(self):
         return 8 if self._x64 else 4
+
+    def ptr_type(self, t=None):  # TODO: implement type
+        return ctypes.c_uint64 if self._x64 else ctypes.c_uint32
+
+    def alignment(self):
+        return 16 if self._x64 else 8
 
     def read(self, addr: int, size: int) -> bytes:
         raise NotImplementedError()
@@ -73,12 +83,6 @@ class Architecture(object):
             data = data[:nullidx]
 
         return data.decode(encoding)
-
-    def ptr_type(self, t=None):  # TODO: implement type
-        return ctypes.c_uint64 if self._x64 else ctypes.c_uint32
-
-    def alignment(self):
-        return 16 if self._x64 else 8
 
 class PVOID:
     def __init__(self, ptr: int, arch: Architecture):
