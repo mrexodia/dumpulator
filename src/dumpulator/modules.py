@@ -38,11 +38,7 @@ class Module:
         pe_exports = self.pe.DIRECTORY_ENTRY_EXPORT.symbols if hasattr(self.pe, "DIRECTORY_ENTRY_EXPORT") else []
 
         for pe_export in pe_exports:
-            if pe_export.name:
-                name = pe_export.name.decode("ascii")
-            else:
-                name = None
-
+            name = pe_export.name.decode("ascii") if pe_export.name else None
             if pe_export.forwarder is not None:
                 va = 0
                 forward = pe_export.forwarder.decode().split(".")
@@ -63,14 +59,10 @@ class Module:
             index = self._exports_by_ordinal.get(key, None)
             if index is None:
                 index = self._exports_by_address.get(key, None)
-            if index is None:
-                return None
-            return self.exports[index]
+            return None if index is None else self.exports[index]
         elif isinstance(key, str):
             index = self._exports_by_name.get(key)
-            if index is None:
-                return None
-            return self.exports[index]
+            return None if index is None else self.exports[index]
         raise TypeError()
 
     def __repr__(self):
@@ -111,9 +103,7 @@ class ModuleManager:
             base = self._name_lookup.get(key, None)
             if base is None:
                 base = self._name_lookup.get(key.lower(), None)
-            if base is None:
-                return None
-            return self.find(base)
+            return None if base is None else self.find(base)
         raise TypeError()
 
     def resolve_export(self, module_key: Union[str, int], function_key: Union[str, int]):

@@ -101,18 +101,15 @@ class LazyPageManager(PageManager):
 
     @staticmethod
     def iter_pages(addr: int, size: int):
-        for i in range(0, size // PAGE_SIZE):
-            page_addr = addr + i * PAGE_SIZE
-            yield page_addr
+        for i in range(size // PAGE_SIZE):
+            yield addr + i * PAGE_SIZE
 
     @staticmethod
     def iter_chunks(addr: int, size: int):
         # TODO: rewrite this to not be so disgusting
         page = addr & ~0xFFF
         index = addr & 0xFFF
-        while True:
-            if page >= addr + size:
-                break
+        while not page >= addr + size:
             length = min(PAGE_SIZE, (addr + size) - (page + index))
             yield page, index, length
             page += PAGE_SIZE
@@ -194,21 +191,19 @@ class LazyPageManager(PageManager):
                 raise IndexError(f"Could not find page {hex(page_addr)} while reading {hex(addr)}[{hex(size)}]")
             pages.append((page, index, length))
 
-        if all([page.committed for page, _, _ in pages]):
+        if all(page.committed for page, _, _ in pages):
             return self.child.read(addr, size)
-        else:
-            data = bytearray(size)
-            for page, index, length in pages:
-                data_index = (page.addr + index) - addr
-                if page.committed:
-                    data[data_index:data_index + length] = self.child.read(page.addr + index, length)
-                else:
-                    if page.data is None:
-                        page.data = bytearray(page.size)
-                    data_chunk = page.data[index:index + length]
-                    data[data_index:data_index + length] = data_chunk
-            assert len(data) == size
-            return data
+        data = bytearray(size)
+        for page, index, length in pages:
+            data_index = (page.addr + index) - addr
+            if page.committed:
+                data[data_index:data_index + length] = self.child.read(page.addr + index, length)
+            else:
+                if page.data is None:
+                    page.data = bytearray(page.size)
+                data[data_index:data_index + length] = page.data[index:index + length]
+        assert len(data) == size
+        return data
 
     def write(self, addr: int, data: bytes) -> None:
         pages = []
@@ -218,7 +213,7 @@ class LazyPageManager(PageManager):
                 raise IndexError(f"Could not find page {hex(page_addr)} while writing {hex(addr)}[{hex(len(data))}]")
             pages.append((page, index, length))
 
-        if all([page.committed for page, _, _ in pages]):
+        if all(page.committed for page, _, _ in pages):
             self.child.write(addr, data)
         else:
             for page, index, length in pages:
@@ -266,11 +261,7 @@ class Dumpulator(Architecture):
         super().__init__(type(thread.ContextObject) is not minidump.WOW64_CONTEXT)
         self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
 
-        if trace:
-            self.trace = open(minidump_file + ".trace", "w")
-        else:
-            self.trace = None
-
+        self.trace = open(f"{minidump_file}.trace", "w") if trace else None
         self.last_module: Optional[Module] = None
 
         self._uc = Uc(UC_ARCH_X86, UC_MODE_64)
@@ -332,7 +323,7 @@ class Dumpulator(Architecture):
         print(format_table(table))
 
     def _find_thread(self, thread_id):
-        for i in range(0, len(self._minidump.threads.threads)):
+        for i in range(len(self._minidump.threads.threads)):
             thread = self._minidump.threads.threads[i]
             if thread.ThreadId == thread_id:
                 return thread
@@ -367,7 +358,7 @@ class Dumpulator(Architecture):
         # TODO: is the TSS actually necessary?
         self._pages.commit(TSS_BASE, PAGE_SIZE, MemoryProtect.PAGE_READWRITE)
         self._pages.commit(GDT_BASE, PAGE_SIZE, MemoryProtect.PAGE_READWRITE)
-        for i in range(0, len(windows_gdt)):
+        for i in range(len(windows_gdt)):
             self.write(GDT_BASE + 8 * i, struct.pack("<Q", windows_gdt[i]))
         self.regs.gdtr = (0, GDT_BASE, 8 * len(windows_gdt) - 1, 0x0)
 
@@ -378,15 +369,19 @@ class Dumpulator(Architecture):
         for info in self._minidump.memory_info.infos:
             info.AllocationBase &= mask
             info.BaseAddress &= mask
-            if len(regions) == 0 or info.AllocationBase != regions[-1][0].AllocationBase or info.State == minidump.MemoryState.MEM_FREE:
+            if (
+                not regions
+                or info.AllocationBase != regions[-1][0].AllocationBase
+                or info.State == minidump.MemoryState.MEM_FREE
+            ):
                 regions.append([])
             regions[-1].append(info)
         # NOTE: The HYPERVISOR_SHARED_DATA does not respect the allocation granularity
         potential_hv = []
         old_granularity = self.memory._granularity
         self.memory._granularity = PAGE_SIZE
-        for i in range(len(regions)):
-            region = regions[i]
+        for region_ in regions:
+            region = region_
             reserve_addr = None
             reserve_size = 0
             assert len(region) >= 1
@@ -432,7 +427,7 @@ class Dumpulator(Architecture):
         self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
         is_wow64 = self.modules["ntdll.dll"].find_export("Wow64Transition") is not None
 
-        for i in range(0, len(self._minidump.threads.threads)):
+        for i in range(len(self._minidump.threads.threads)):
             thread = self._minidump.threads.threads[i]
             teb = thread.Teb & 0xFFFFFFFFFFFFF000
             tid = thread.ThreadId
@@ -511,7 +506,7 @@ class Dumpulator(Architecture):
         self.info(f"  StandardError: 0x{self.stderr_handle:x}")
 
         process_heaps = []
-        for i in range(0, min(number_of_heaps, 0x1000)):
+        for i in range(min(number_of_heaps, 0x1000)):
             heap_ptr = self.read_ptr(process_heaps_ptr + self.ptr_size() * i)
             process_heaps.append(heap_ptr)
             self.memory.set_region_info(heap_ptr, f"Heap (ID {i})")
@@ -565,10 +560,8 @@ class Dumpulator(Architecture):
                     by_type[type_name] = []
                 by_type[type_name].append(minidump_handle)
             def default_fn(o):
-                if isinstance(o, bytes):
-                    return o.hex()
-                else:
-                    return o.__dict__
+                return o.hex() if isinstance(o, bytes) else o.__dict__
+
             for type_name, handles in by_type.items():
                 for minidump_handle in handles:
                     handle_value = minidump_handle.Handle
@@ -711,10 +704,7 @@ class Dumpulator(Architecture):
         exports: Dict[int, str] = {}
         for module in self.modules:
             for export in module.exports:
-                if export.name:
-                    name = export.name
-                else:
-                    name = f"#{export.ordinal}"
+                name = export.name or f"#{export.ordinal}"
                 exports[export.address] = f"{module.name}:{name}"
         return exports
 
@@ -722,7 +712,7 @@ class Dumpulator(Architecture):
         try:
             module_data = self.read(module.baseaddress, module.size)
         except IndexError:
-            self.error(f"Failed to read module data")
+            self.error("Failed to read module data")
             return []
         pe = PE(data=module_data, fast_load=True)
         # Hack to adjust pefile to accept in-memory modules
@@ -877,7 +867,7 @@ class Dumpulator(Architecture):
             # NOTE: the context has already been restored using context_restore in the caller
             return self.regs.cip
 
-        self.info(f"handling exception...")
+        self.info("handling exception...")
 
         if self._x64:
             # Stack layout (x64):
@@ -1014,7 +1004,7 @@ rsp in KiUserExceptionDispatcher:
                             emu_begin = self.handle_exception()
                         except:
                             traceback.print_exc()
-                            self.error(f"exception during exception handling (stack overflow?)")
+                            self.error("exception during exception handling (stack overflow?)")
                             break
                         emu_until = end
                         emu_count = 0
@@ -1030,7 +1020,7 @@ rsp in KiUserExceptionDispatcher:
                         self._uc.context_restore(self.exception.context)
 
                         # Restart emulation
-                        self.info(f"restarting emulation to handle exception...")
+                        self.info("restarting emulation to handle exception...")
                         emu_begin = self.regs.cip
                         emu_until = 0xffffffffffffffff
                         emu_count = self.exception.tb_icount + 1
@@ -1048,9 +1038,8 @@ rsp in KiUserExceptionDispatcher:
                 if self.exception.type != ExceptionType.NoException:
                     # Handle the exception outside of the except handler
                     continue
-                else:
-                    self.error(f'error: {err}, cip = {self.regs.cip:x}')
-                    traceback.print_exc()
+                self.error(f'error: {err}, cip = {self.regs.cip:x}')
+                traceback.print_exc()
                 break
 
     def stop(self, exit_code=None) -> None:
@@ -1069,9 +1058,8 @@ rsp in KiUserExceptionDispatcher:
         self.kill_me = exc
         if exc is not None:
             raise exc
-        else:
-            self.kill_me = True
-            self._uc.emu_stop()
+        self.kill_me = True
+        self._uc.emu_stop()
 
     def NtCurrentProcess(self):
         return 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
@@ -1088,7 +1076,7 @@ rsp in KiUserExceptionDispatcher:
         section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
         assert section_alignment == 0x1000, f"Unsupported section alignment {hex(section_alignment)}"
         bits = 64 if pe.PE_TYPE == OPTIONAL_HEADER_MAGIC_PE_PLUS else 32
-        assert bits == 8 * self.ptr_size(), f"PE architecture mismatch"
+        assert bits == 8 * self.ptr_size(), "PE architecture mismatch"
 
         if requested_base == 0:
             image_base = self.memory.find_free(image_size)
@@ -1179,8 +1167,8 @@ rsp in KiUserExceptionDispatcher:
     def load_dll(self, file_name: str, file_data: bytes):
         self.handles.map_file("\\??\\" + file_name, FileObject(file_name, file_data))
         argument_ptr = self.allocate(PAGE_SIZE)
-        utf16 = file_name.encode("utf-16-le")
         if self._x64:
+            utf16 = file_name.encode("utf-16-le")
             argument_data = struct.pack("<IIQHHIQ", 0, 0, 0, len(utf16), len(utf16) + 2, 0, argument_ptr + 32)
             argument_data += utf16
             argument_data += b"\0"
@@ -1206,7 +1194,7 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
         if ex.step_count >= ex.tb_icount:
             raise Exception("Stepped past the basic block without reaching exception")
     except UcError as err:
-        dp.error(f"Exception during unicorn hook, please report this as a bug")
+        dp.error("Exception during unicorn hook, please report this as a bug")
         raise err
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
@@ -1303,16 +1291,16 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         traceback.print_exc()
         raise err
     except UcError as err:
-        dp.error(f"Exception during unicorn hook, please report this as a bug")
+        dp.error("Exception during unicorn hook, please report this as a bug")
         raise err
     except Exception as err:
         raise err
 
 def _get_regs(instr, include_write=False):
     regs = OrderedDict()
-    operands = instr.operands
     if instr.id != X86_INS_NOP:
-        for i in range(0, len(operands)):
+        operands = instr.operands
+        for i in range(len(operands)):
             op = operands[i]
             if op.type == CS_OP_REG:
                 is_write_op = (i == 0 and instr.id in [X86_INS_MOV, X86_INS_MOVZX, X86_INS_LEA])
@@ -1335,26 +1323,21 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     try:
         code = dp.read(address, min(size, 15))
         instr = next(dp.cs.disasm(code, address, 1))
-    except StopIteration:
+    except (StopIteration, IndexError):
         instr = None  # Unsupported instruction
-    except IndexError:
-        instr = None  # Likely invalid memory
     address_name = dp.exports.get(address, "")
 
     module = ""
-    if dp.last_module and address in dp.last_module:
-        # same module again
-        pass
-    else:
+    if not dp.last_module or address not in dp.last_module:
         # new module
         dp.last_module = dp.modules.find(address)
         if dp.last_module:
             module = dp.last_module.name
 
     if address_name:
-        address_name = " " + address_name
+        address_name = f" {address_name}"
     elif module:
-        address_name = " " + module
+        address_name = f" {module}"
 
     line = f"0x{address:x}{address_name}|"
     if instr is not None:
@@ -1415,7 +1398,7 @@ def _arg_to_string(dp: Dumpulator, arg):
 
 def _arg_type_string(arg):
     if isinstance(arg, PVOID) and arg.type is not None:
-        return arg.type.__name__ + "*"
+        return f"{arg.type.__name__}*"
     return type(arg).__name__
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
@@ -1448,7 +1431,7 @@ def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
         traceback.print_exc()
         raise err
     except UcError as err:
-        dp.error(f"Exception during unicorn hook, please report this as a bug")
+        dp.error("Exception during unicorn hook, please report this as a bug")
         raise err
     except Exception as err:
         raise err
@@ -1468,12 +1451,10 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             args = []
 
             def syscall_arg(index):
-                if index == 0 and dp.ptr_size() == 8:
-                    return dp.regs.r10
-                return dp.args[index]
+                return dp.regs.r10 if index == 0 and dp.ptr_size() == 8 else dp.args[index]
 
             dp.info(f"[{dp.sequence_id}] syscall (index: {hex(index)}): {name}(")
-            for i in range(0, argcount):
+            for i in range(argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
                 # Extract the type information from the annotation
@@ -1485,11 +1466,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     sal, = argtype.__metadata__
                     argtype = argtype.__origin__
 
-                if sal is None:
-                    sal_pretty = ""
-                else:
-                    sal_pretty = str(sal) + " "
-
+                sal_pretty = "" if sal is None else f"{str(sal)} "
                 argvalue = syscall_arg(i)
                 if issubclass(argtype, PVOID):
                     argvalue = argtype(argvalue, dp)
@@ -1527,7 +1504,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 raise err
             except Exception as exc:
                 traceback.print_exc()
-                dp.error(f"Exception thrown during syscall implementation, stopping emulation!")
+                dp.error("Exception thrown during syscall implementation, stopping emulation!")
                 dp.raise_kill(exc)
             finally:
                 dp.sequence_id += 1
@@ -1539,17 +1516,16 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
         dp.raise_kill(IndexError())
 
 def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
-    if instr.id == X86_INS_RDRAND:
-        op: X86Op = instr.operands[0]
-        regname = instr.reg_name(op.reg)
-        if dp.x64 and op.size * 8 == 32:
-            regname = "r" + regname[1:]
-        print(f"emulated rdrand {regname}:{op.size * 8}, cip = {hex(instr.address)}+{instr.size}")
-        dp.regs[regname] = 42  # TODO: PRNG based on dmp hash
-        dp.regs.cip += instr.size
-    else:
+    if instr.id != X86_INS_RDRAND:
         # Unsupported instruction
         return False
+    op: X86Op = instr.operands[0]
+    regname = instr.reg_name(op.reg)
+    if dp.x64 and op.size == 4:
+        regname = f"r{regname[1:]}"
+    print(f"emulated rdrand {regname}:{op.size * 8}, cip = {hex(instr.address)}+{instr.size}")
+    dp.regs[regname] = 42  # TODO: PRNG based on dmp hash
+    dp.regs.cip += instr.size
     # Resume execution
     return True
 
@@ -1557,7 +1533,7 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
     address = dp.regs.cip
     # HACK: unicorn cannot gracefully exit in all contexts
     if dp.kill_me:
-        dp.error(f"terminating emulation...")
+        dp.error("terminating emulation...")
         return False
     dp.error(f"invalid instruction at {address:x}")
     try:

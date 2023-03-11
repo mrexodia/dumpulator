@@ -26,4 +26,4 @@ class CommentStreamW:
 		return csa
 		
 	def __str__(self):
-		return 'CommentW: %s' % self.data
+		return f'CommentW: {self.data}'

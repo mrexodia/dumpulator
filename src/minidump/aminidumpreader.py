@@ -33,9 +33,7 @@ class AMinidumpBufferedMemorySegment:
 		return self.start_address <= position < self.end_address
 
 	def remaining_len(self, position):
-		if not self.inrange(position):
-			return None
-		return self.end_address - position
+		return self.end_address - position if self.inrange(position) else None
 
 	async def find(self, file_handle, pattern, startpos):
 		data = await self.read(file_handle, 0, -1)
@@ -192,10 +190,10 @@ class AMinidumpBufferedReader:
 		"""
 		if self.reader.sysinfo.ProcessorArchitecture == PROCESSOR_ARCHITECTURE.AMD64:
 			t = await self.read(8)
-			return int.from_bytes(t, byteorder = 'little', signed = True)
 		else:
 			t = t = await self.read(4)
-			return int.from_bytes(t, byteorder = 'little', signed = True)
+
+		return int.from_bytes(t, byteorder = 'little', signed = True)
 
 	async def read_uint(self):
 		"""
@@ -205,19 +203,17 @@ class AMinidumpBufferedReader:
 		"""
 		if self.reader.sysinfo.ProcessorArchitecture == PROCESSOR_ARCHITECTURE.AMD64:
 			t = await self.read(8)
-			return int.from_bytes(t, byteorder = 'little', signed = False)
 		else:
 			t = await self.read(4)
-			return int.from_bytes(t, byteorder = 'little', signed = False)
+
+		return int.from_bytes(t, byteorder = 'little', signed = False)
 
 	async def find(self, pattern):
 		"""
 		Searches for a pattern in the current memory segment
 		"""
 		pos = await self.current_segment.find(self.reader.file_handle, pattern)
-		if pos == -1:
-			return -1
-		return pos + self.current_position
+		return -1 if pos == -1 else pos + self.current_position
 
 	async def find_all(self, pattern):
 		"""
@@ -239,10 +235,7 @@ class AMinidumpBufferedReader:
 		This is exhaustive!
 		"""
 		pos_s = await self.reader.search(pattern)
-		if len(pos_s) == 0:
-			return -1
-
-		return pos_s[0]
+		return -1 if len(pos_s) == 0 else pos_s[0]
 
 	async def find_all_global(self, pattern):
 		"""
@@ -268,8 +261,13 @@ class AMinidumpBufferedReader:
 			return await self.read_uint()
 
 	async def find_in_module(self, module_name, pattern, find_first = False, reverse_order = False):
-		t = await self.reader.search_module(module_name, pattern, find_first = find_first, reverse_order = reverse_order,chunksize = self.segment_chunk_size)
-		return t
+		return await self.reader.search_module(
+			module_name,
+			pattern,
+			find_first=find_first,
+			reverse_order=reverse_order,
+			chunksize=self.segment_chunk_size,
+		)
 
 
 
@@ -301,21 +299,27 @@ class AMinidumpFileReader:
 			self.sizeof_ptr = 4
 			self.unpack_ptr = '<L'
 		else:
-			raise Exception('Unknown processor architecture %s! Please fix and submit PR!' % self.sysinfo.ProcessorArchitecture)
+			raise Exception(
+				f'Unknown processor architecture {self.sysinfo.ProcessorArchitecture}! Please fix and submit PR!'
+			)
 
 	def get_buffered_reader(self, segment_chunk_size = 10*1024):
 		return AMinidumpBufferedReader(self, segment_chunk_size = segment_chunk_size)
 
 	def get_module_by_name(self, module_name):
-		for mod in self.modules:
-			if ntpath.basename(mod.name).lower().find(module_name.lower()) != -1:
-				return mod
-		return None
+		return next(
+			(
+				mod
+				for mod in self.modules
+				if ntpath.basename(mod.name).lower().find(module_name.lower()) != -1
+			),
+			None,
+		)
 
 	async def search_module(self, module_name, pattern, find_first = False, reverse_order = False, chunksize = 10*1024):
 		mod = self.get_module_by_name(module_name)
 		if mod is None:
-			raise Exception('Could not find module! %s' % module_name)
+			raise Exception(f'Could not find module! {module_name}')
 		needles = []
 		for ms in self.memory_segments:
 			if mod.baseaddress <= ms.start_virtual_address < mod.endaddress:
@@ -336,5 +340,5 @@ class AMinidumpFileReader:
 		for segment in self.memory_segments:
 			if segment.inrange(virt_addr):
 				return await segment.aread(virt_addr, size, self.file_handle)
-		raise Exception('Address not in memory range! %s' % hex(virt_addr))
+		raise Exception(f'Address not in memory range! {hex(virt_addr)}')
 

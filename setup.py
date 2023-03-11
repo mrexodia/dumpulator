@@ -6,8 +6,7 @@ import setuptools
 import os
 
 if __name__ == "__main__":
-    ref_name = os.getenv("GITHUB_REF_NAME")
-    if ref_name:
+    if ref_name := os.getenv("GITHUB_REF_NAME"):
         from pkg_resources import parse_version
         try:
             parse_version(ref_name)

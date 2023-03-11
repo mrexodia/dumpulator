@@ -37,7 +37,7 @@ def EnumProcessModules(hProcess):
         if needed <= size:
             break
         size = needed
-    return [ lphModule[index] for index in range(0, int(needed // unit)) ]
+    return [lphModule[index] for index in range(int(needed // unit))]
 
 def GetModuleFileNameExW(hProcess, hModule = None):
     _GetModuleFileNameExW = ctypes.windll.psapi.GetModuleFileNameExW

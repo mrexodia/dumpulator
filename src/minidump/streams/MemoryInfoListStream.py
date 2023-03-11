@@ -105,10 +105,9 @@ class MINIDUMP_MEMORY_INFO:
 		return 8+8+4+4+8+4+4+4+4
 
 	def __str__(self):
-		t = ''
-		for k in self.__dict__:
-			t += '%s : %s\r\n' % (k, str(self.__dict__[k]))
-		return t
+		return ''.join(
+			'%s : %s\r\n' % (k, str(self.__dict__[k])) for k in self.__dict__
+		)
 
 	def to_bytes(self):
 		t = self.BaseAddress.to_bytes(8, byteorder = 'little', signed = False)
@@ -170,7 +169,7 @@ class MinidumpMemoryInfo:
 	
 	@staticmethod
 	def get_header():
-		t = [
+		return [
 			'BaseAddress',
 			'AllocationBase',
 			'AllocationProtect',
@@ -179,10 +178,9 @@ class MinidumpMemoryInfo:
 			'Protect',
 			'Type',
 		]
-		return t
 
 	def to_row(self):
-		t = [
+		return [
 			hex(self.BaseAddress),
 			hex(self.AllocationBase),
 			str(self.AllocationProtect),
@@ -191,7 +189,6 @@ class MinidumpMemoryInfo:
 			self.Protect.name if self.Protect else 'N/A',
 			self.Type.name if self.Type else 'N/A',
 		]
-		return t
 		
 		
 class MinidumpMemoryInfoList:
@@ -226,10 +223,8 @@ class MinidumpMemoryInfoList:
 		return t
 		
 	def to_table(self):
-		t = []
-		t.append(MinidumpMemoryInfo.get_header())
-		for info in self.infos:
-			t.append(info.to_row())
+		t = [MinidumpMemoryInfo.get_header()]
+		t.extend(info.to_row() for info in self.infos)
 		return t
 	
 	def __str__(self):

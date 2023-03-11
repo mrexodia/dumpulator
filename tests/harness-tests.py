@@ -27,7 +27,7 @@ def collect_environments():
             # Extract the first capital word from the class name
             match = re.match(r"^([A-Z][a-z]+)", name)
             assert match is not None
-            prefix = match.group(1)
+            prefix = match[1]
             environments[prefix] = obj
     return environments
 
@@ -113,7 +113,7 @@ def build_tests():
         # Extract the first capital word from the class name
         match = re.match(r"Microsoft\.VCToolsVersion\.v(\d+)\.default\.props", str(prop.name))
         assert match is not None, "No match found"
-        latest_toolset = max(latest_toolset, int(match.group(1)))
+        latest_toolset = max(latest_toolset, int(match[1]))
     print(f"Latest platform toolset: v{latest_toolset}")
 
     def build(platform):

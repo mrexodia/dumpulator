@@ -160,9 +160,12 @@ class MinidumpHandleDescriptor:
 		mhd.GrantedAccess = t.GrantedAccess
 		mhd.HandleCount = t.HandleCount
 		mhd.PointerCount = t.PointerCount
-		if isinstance(t, MINIDUMP_HANDLE_DESCRIPTOR_2):
-			if t.ObjectInfoRva is not None and t.ObjectInfoRva != 0:
-				MinidumpHandleDescriptor.walk_objectinfo(mhd, t.ObjectInfoRva, buff)
+		if (
+			isinstance(t, MINIDUMP_HANDLE_DESCRIPTOR_2)
+			and t.ObjectInfoRva is not None
+			and t.ObjectInfoRva != 0
+		):
+			MinidumpHandleDescriptor.walk_objectinfo(mhd, t.ObjectInfoRva, buff)
 		return mhd
 
 	@staticmethod
@@ -177,9 +180,12 @@ class MinidumpHandleDescriptor:
 		mhd.GrantedAccess = t.GrantedAccess
 		mhd.HandleCount = t.HandleCount
 		mhd.PointerCount = t.PointerCount
-		if isinstance(t, MINIDUMP_HANDLE_DESCRIPTOR_2):
-			if t.ObjectInfoRva is not None and t.ObjectInfoRva != 0:
-				await MinidumpHandleDescriptor.awalk_objectinfo(mhd, t.ObjectInfoRva, buff)
+		if (
+			isinstance(t, MINIDUMP_HANDLE_DESCRIPTOR_2)
+			and t.ObjectInfoRva is not None
+			and t.ObjectInfoRva != 0
+		):
+			await MinidumpHandleDescriptor.awalk_objectinfo(mhd, t.ObjectInfoRva, buff)
 		return mhd
 	
 	@staticmethod
@@ -204,12 +210,12 @@ class MinidumpHandleDescriptor:
 	def __str__(self):
 		t = '== MinidumpHandleDescriptor == \n'
 		t += 'Handle 0x%08x ' % self.Handle
-		t += 'TypeName %s ' % self.TypeName
-		t += 'ObjectName %s ' % self.ObjectName
-		t += 'Attributes %s ' % self.Attributes
-		t += 'GrantedAccess %s ' % self.GrantedAccess
-		t += 'HandleCount %s ' % self.HandleCount
-		t += 'PointerCount %s ' % self.PointerCount
+		t += f'TypeName {self.TypeName} '
+		t += f'ObjectName {self.ObjectName} '
+		t += f'Attributes {self.Attributes} '
+		t += f'GrantedAccess {self.GrantedAccess} '
+		t += f'HandleCount {self.HandleCount} '
+		t += f'PointerCount {self.PointerCount} '
 		for oi in self.ObjectInfos:
 			t += str(oi)
 		return t
@@ -228,10 +234,9 @@ class MinidumpHandleDataStream:
 		for _ in range(t.header.NumberOfDescriptors):
 			if t.header.SizeOfDescriptor == MINIDUMP_HANDLE_DESCRIPTOR.size:
 				mhd = MINIDUMP_HANDLE_DESCRIPTOR.parse(chunk)
-				t.handles.append(MinidumpHandleDescriptor.parse(mhd, buff))
 			else:
 				mhd = MINIDUMP_HANDLE_DESCRIPTOR_2.parse(chunk)
-				t.handles.append(MinidumpHandleDescriptor.parse(mhd, buff))
+			t.handles.append(MinidumpHandleDescriptor.parse(mhd, buff))
 		return t
 
 	@staticmethod
@@ -244,12 +249,10 @@ class MinidumpHandleDataStream:
 		for _ in range(t.header.NumberOfDescriptors):
 			if t.header.SizeOfDescriptor == MINIDUMP_HANDLE_DESCRIPTOR.size:
 				mhd = MINIDUMP_HANDLE_DESCRIPTOR.parse(chunk)
-				r = await MinidumpHandleDescriptor.aparse(mhd, buff)
-				t.handles.append(r)
 			else:
 				mhd = MINIDUMP_HANDLE_DESCRIPTOR_2.parse(chunk)
-				r = await MinidumpHandleDescriptor.aparse(mhd, buff)
-				t.handles.append(r)
+			r = await MinidumpHandleDescriptor.aparse(mhd, buff)
+			t.handles.append(r)
 		return t
 		
 	def __str__(self):

@@ -99,14 +99,14 @@ class PVOID:
     def __getitem__(self, index):
         if self.type is None:
             return self.arch.read_ptr(self.ptr + index * self.arch.ptr_size())
-        else:
-            assert index == 0  # TODO: sizeof() not yet implemented
-            sizeof = self.arch.ptr_size()
-            ptr = self.ptr + index * sizeof
-            if issubclass(self.type, PVOID):
-                return self.type(self.arch.read_ptr(ptr), self.arch)
-            else:
-                return self.type(PVOID(ptr, self.arch))
+        assert index == 0  # TODO: sizeof() not yet implemented
+        sizeof = self.arch.ptr_size()
+        ptr = self.ptr + index * sizeof
+        return (
+            self.type(self.arch.read_ptr(ptr), self.arch)
+            if issubclass(self.type, PVOID)
+            else self.type(PVOID(ptr, self.arch))
+        )
 
     def __int__(self):
         return self.ptr

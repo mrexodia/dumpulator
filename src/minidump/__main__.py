@@ -30,7 +30,7 @@ def run():
 	parser.add_argument('--all', action='store_true', help='Show all info')
 	parser.add_argument('-r', '--read-addr', type=lambda x: int(x,0), help='Dump a memory region from the process\'s addres space')
 	parser.add_argument('-s', '--read-size', type=lambda x: int(x,0), default = 0x20, help='Dump a memory region from the process\'s addres space')
-	
+
 	args = parser.parse_args()
 	if args.verbose == 0:
 		logging.basicConfig(level=logging.INFO)
@@ -40,7 +40,7 @@ def run():
 		logging.basicConfig(level=1)
 
 	print(__banner__)
-	
+
 	if args.interactive:
 		shell = MinidumpShell()
 		shell.do_open(args.minidumpfile)
@@ -50,46 +50,42 @@ def run():
 		
 		mf = MinidumpFile.parse(args.minidumpfile)
 		reader = mf.get_reader()
-		
+
 		if args.all or args.threads:
 			if mf.threads is not None:
-				print(str(mf.threads))
+				print(mf.threads)
 			if mf.threads_ex is not None:
-				print(str(mf.threads_ex))
+				print(mf.threads_ex)
 			if mf.thread_info is not None:
-				print(str(mf.thread_info))
+				print(mf.thread_info)
 		if args.all or args.modules:
 			if mf.modules is not None:
-				print(str(mf.modules))
+				print(mf.modules)
 			if mf.unloaded_modules is not None:
-				print(str(mf.unloaded_modules))
+				print(mf.unloaded_modules)
 		if args.all or args.memory:
 			if mf.memory_segments is not None:
-				print(str(mf.memory_segments))
+				print(mf.memory_segments)
 			if mf.memory_segments_64 is not None:
-				print(str(mf.memory_segments_64))
+				print(mf.memory_segments_64)
 			if mf.memory_info is not None:
-				print(str(mf.memory_info))
-		if args.all or args.sysinfo:
-			if mf.sysinfo is not None:
-				print(str(mf.sysinfo))
-		if args.all or args.exception:
-			if mf.exception is not None:
-				print(str(mf.exception))
+				print(mf.memory_info)
+		if (args.all or args.sysinfo) and mf.sysinfo is not None:
+			print(mf.sysinfo)
+		if (args.all or args.exception) and mf.exception is not None:
+			print(mf.exception)
 		if args.all or args.comments:
 			if mf.comment_a is not None:
-				print(str(mf.comment_a))
+				print(mf.comment_a)
 			if mf.comment_w is not None:
-				print(str(mf.comment_w))
-		if args.all or args.handles:
-			if mf.handles is not None:
-				print(str(mf.handles))
-		if args.all or args.misc:
-			if mf.misc_info is not None:
-				print(str(mf.misc_info))
+				print(mf.comment_w)
+		if (args.all or args.handles) and mf.handles is not None:
+			print(mf.handles)
+		if (args.all or args.misc) and mf.misc_info is not None:
+			print(mf.misc_info)
 		if args.all or args.header:
-			print(str(mf.header))
-				
+			print(mf.header)
+
 		if args.read_addr:
 			buff_reader = reader.get_buffered_reader()
 			buff_reader.move(args.read_addr)

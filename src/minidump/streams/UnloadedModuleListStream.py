@@ -102,7 +102,7 @@ class MinidumpUnloadedModule:
 				self.memorysegments.append(segment)
 		
 	def __str__(self):
-		return 'Unloaded Module name: %s Size: %s BaseAddress: %s' % (self.name, hex(self.size), hex(self.baseaddress))	
+		return f'Unloaded Module name: {self.name} Size: {hex(self.size)} BaseAddress: {hex(self.baseaddress)}'	
 
 	@staticmethod
 	def get_header():
@@ -153,12 +153,9 @@ class MinidumpUnloadedModuleList:
 		return t
 		
 	def to_table(self):
-		t = []
-		t.append(MinidumpUnloadedModule.get_header())
-		for mod in self.modules:
-			t.append(mod.to_row())
+		t = [MinidumpUnloadedModule.get_header()]
+		t.extend(mod.to_row() for mod in self.modules)
 		return t
 		
 	def __str__(self):
-		t  = '== UnloadedModuleList ==\n' + construct_table(self.to_table())
-		return t
+		return '== UnloadedModuleList ==\n' + construct_table(self.to_table())

@@ -107,21 +107,17 @@ class MinidumpMiscInfo:
 		chunk = io.BytesIO(buff.read(dir.Location.DataSize))
 		if dir.Location.DataSize == MINIDUMP_MISC_INFO.size:
 			misc = MINIDUMP_MISC_INFO.parse(chunk)
-			t.ProcessId = misc.ProcessId
-			t.ProcessCreateTime = misc.ProcessCreateTime
-			t.ProcessUserTime = misc.ProcessUserTime
-			t.ProcessKernelTime = misc.ProcessKernelTime
 		else:
 			misc = MINIDUMP_MISC_INFO_2.parse(chunk)
-			t.ProcessId = misc.ProcessId
-			t.ProcessCreateTime = misc.ProcessCreateTime
-			t.ProcessUserTime = misc.ProcessUserTime
-			t.ProcessKernelTime = misc.ProcessKernelTime
 			t.ProcessorMaxMhz = misc.ProcessorMaxMhz
 			t.ProcessorCurrentMhz = misc.ProcessorCurrentMhz
 			t.ProcessorMhzLimit = misc.ProcessorMhzLimit
 			t.ProcessorMaxIdleState = misc.ProcessorMaxIdleState
 			t.ProcessorCurrentIdleState = misc.ProcessorCurrentIdleState
+		t.ProcessKernelTime = misc.ProcessKernelTime
+		t.ProcessUserTime = misc.ProcessUserTime
+		t.ProcessCreateTime = misc.ProcessCreateTime
+		t.ProcessId = misc.ProcessId
 		return t
 
 	@staticmethod
@@ -132,21 +128,17 @@ class MinidumpMiscInfo:
 		chunk = io.BytesIO(chunk_data)
 		if dir.Location.DataSize == MINIDUMP_MISC_INFO.size:
 			misc = MINIDUMP_MISC_INFO.parse(chunk)
-			t.ProcessId = misc.ProcessId
-			t.ProcessCreateTime = misc.ProcessCreateTime
-			t.ProcessUserTime = misc.ProcessUserTime
-			t.ProcessKernelTime = misc.ProcessKernelTime
 		else:
 			misc = MINIDUMP_MISC_INFO_2.parse(chunk)
-			t.ProcessId = misc.ProcessId
-			t.ProcessCreateTime = misc.ProcessCreateTime
-			t.ProcessUserTime = misc.ProcessUserTime
-			t.ProcessKernelTime = misc.ProcessKernelTime
 			t.ProcessorMaxMhz = misc.ProcessorMaxMhz
 			t.ProcessorCurrentMhz = misc.ProcessorCurrentMhz
 			t.ProcessorMhzLimit = misc.ProcessorMhzLimit
 			t.ProcessorMaxIdleState = misc.ProcessorMaxIdleState
 			t.ProcessorCurrentIdleState = misc.ProcessorCurrentIdleState
+		t.ProcessKernelTime = misc.ProcessKernelTime
+		t.ProcessUserTime = misc.ProcessUserTime
+		t.ProcessCreateTime = misc.ProcessCreateTime
+		t.ProcessId = misc.ProcessId
 		return t
 		
 	def __str__(self):

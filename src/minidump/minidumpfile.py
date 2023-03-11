@@ -81,11 +81,9 @@ class MinidumpFile:
 
 	def __parse_header(self):
 		self.header = MinidumpHeader.parse(self.file_handle)
-		for i in range(0, self.header.NumberOfStreams):
+		for i in range(self.header.NumberOfStreams):
 			self.file_handle.seek(self.header.StreamDirectoryRva + i * 12, 0 )
-			minidump_dir = MINIDUMP_DIRECTORY.parse(self.file_handle)
-			
-			if minidump_dir:
+			if minidump_dir := MINIDUMP_DIRECTORY.parse(self.file_handle):
 				self.directories.append(minidump_dir)
 			else:
 				self.file_handle.seek(self.header.StreamDirectoryRva + i * 12, 0 )
@@ -222,8 +220,7 @@ class MinidumpFile:
 			
 
 	def __str__(self):
-		t = '== Minidump File ==\n'
-		t += str(self.header)
+		t = '== Minidump File ==\n' + str(self.header)
 		t += str(self.sysinfo)
 		for dir in self.directories:
 			t += str(dir) + '\n'

@@ -69,7 +69,7 @@ class FunctionType:
         r += f"def {self.name}(dp: Dumpulator"
         indent = (len(self.name) + 5) * " "
         a: FunctionArgument
-        for i, a in enumerate(self.arguments):
+        for a in self.arguments:
             r += ",\n"
             pytype = f"P({a.typename})" if a.is_ptr else a.typename
             if len(a.sal) > 0:
@@ -84,11 +84,7 @@ class FunctionType:
                 r += f"{indent}{a.name}: {pytype}"
         r += "\n"
         r += f"{indent}):\n"
-        if body is None:
-            r += "    raise NotImplementedError()\n"
-        else:
-            r += body
-
+        r += "    raise NotImplementedError()\n" if body is None else body
         return r
 
 class FunctionBodies:
@@ -139,7 +135,7 @@ class FunctionBodies:
             self.add_function_body(current_name, current_body)
 
     def add_function_body(self, name: str, body: List[str]):
-        assert len(body) > 0
+        assert body
         if body[-1] == "":
             body.pop()
 
@@ -290,7 +286,7 @@ def main():
                 if at.typename == "LPGUID":
                     at.is_ptr = True
                     at.typename = "GUID"
-                elif at.typename == "VOID *" or at.typename == "void *":
+                elif at.typename in ["VOID *", "void *"]:
                     at.typename = "PVOID"
                 elif at.typename.startswith("struct _") and at.typename.endswith(" *"):
                     assert not at.is_ptr
@@ -340,34 +336,36 @@ def main():
     # Anything printed here needs to be adjusted earlier on
     print(f"Found {len(unknown_types)} unknown primitive types:")
     for t in unknown_types:
-        print("  " + t + ";")
+        print(f"  {t};")
 
     if len(sys.argv) > 2 and sys.argv[2] == "json":
         with open("ntsyscalls.json", "w") as f:
             data = {}
             for fn in functions:
-                args = []
                 arg: FunctionArgument
-                for arg in fn.arguments:
-                    args.append({
+                args = [
+                    {
                         "name": arg.name,
                         "type": arg.typename + ("*" if arg.is_ptr else ""),
                         "sal": arg.sal,
-                        "comment": arg.comment
-                    })
+                        "comment": arg.comment,
+                    }
+                    for arg in fn.arguments
+                ]
                 data[fn.name] = args
             f.write(json.dumps(data, indent=2))
         with open("ntenums.json", "w") as f:
             data = {}
             e: EnumType
             for e in phnt_enums.values():
-                values = []
-                for evalue in e.values:
-                    values.append({
+                values = [
+                    {
                         "name": evalue.name,
                         "value": evalue.value,
-                        "comment": evalue.comment
-                    })
+                        "comment": evalue.comment,
+                    }
+                    for evalue in e.values
+                ]
                 data[e.name] = values
             f.write(json.dumps(data, indent=2))
     else:

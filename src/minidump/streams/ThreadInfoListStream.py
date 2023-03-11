@@ -180,10 +180,8 @@ class MinidumpThreadInfoList:
 		return t
 		
 	def to_table(self):
-		t = []
-		t.append(MinidumpThreadInfo.get_header())
-		for info in self.infos:
-			t.append(info.to_row())
+		t = [MinidumpThreadInfo.get_header()]
+		t.extend(info.to_row() for info in self.infos)
 		return t
 		
 	def __str__(self):

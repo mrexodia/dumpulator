@@ -213,10 +213,14 @@ class TraceData:
         Returns:
             Bookmark: Returns A Bookmark if found, None otherwise.
         """
-        for bookmark in self.bookmarks:
-            if bookmark.startrow <= row <= bookmark.endrow:
-                return bookmark
-        return None
+        return next(
+            (
+                bookmark
+                for bookmark in self.bookmarks
+                if bookmark.startrow <= row <= bookmark.endrow
+            ),
+            None,
+        )
 
     def get_bookmarks(self):
         """Returns all bookmarks
@@ -294,9 +298,9 @@ X64_REGS = [
 
 def _get_regs(instr, include_write=False):
     regs = OrderedDict()
-    operands = instr.operands
     if instr.id != X86_INS_NOP:
-        for i in range(0, len(operands)):
+        operands = instr.operands
+        for i in range(len(operands)):
             op = operands[i]
             if op.type == CS_OP_REG:
                 is_write_op = (i == 0 and instr.id in [X86_INS_MOV, X86_INS_MOVZX, X86_INS_LEA])
@@ -371,7 +375,7 @@ def open_x64dbg_trace(filename, tracef):
 
         if pointer_size == 8:
             for reg in X32_REGS[:9]:
-                add_reg("r" + reg[1:], reg, 0xFFFFFFFF)
+                add_reg(f"r{reg[1:]}", reg, 0xFFFFFFFF)
 
             add_reg("r8", "r8d", 0xFFFFFFFF)
             add_reg("r9", "r9d", 0xFFFFFFFF)
@@ -493,7 +497,7 @@ def open_x64dbg_trace(filename, tracef):
             for _address, _size, mnemonic, op_str in md.disasm_lite(opcodes, ip):
                 disasm = mnemonic
                 if op_str:
-                    disasm += " " + op_str
+                    disasm += f" {op_str}"
 
             def get_reg(name):
                 if len(name) == 2 and name[1] == 's':
@@ -516,11 +520,7 @@ def open_x64dbg_trace(filename, tracef):
                 line += " "
                 line += instr.op_str
             for reg in _get_regs(instr):
-                if reg in reg_indexes:
-                    line += f"|{reg}=0x{get_reg(reg):x}"
-                else:
-                    line += f"|{reg}=0x???"  # TODO: add xmm support
-
+                line += f"|{reg}=0x{get_reg(reg):x}" if reg in reg_indexes else f"|{reg}=0x???"
             line += "\n"
             tracef.write(line)
 
@@ -535,12 +535,6 @@ def open_x64dbg_trace(filename, tracef):
                     value = memory_access_new_data[new_data_counter]
                     mem["access"] = "WRITE"
                     new_data_counter += 1
-                else:
-                    pass
-                    # memory value didn't change
-                    # (it is read or overwritten with identical value)
-                    # this has to be fixed somehow in x64dbg
-
                 mem["addr"] = memory_access_addresses[i]
 
                 # fix value (x64dbg saves all values as qwords)
@@ -578,7 +572,7 @@ def main():
         print("Usage: x64dbg-tracedump my.trace64")
         return
     trace_file = sys.argv[1]
-    with open(trace_file + ".txt", "w") as tracef:
+    with open(f"{trace_file}.txt", "w") as tracef:
         data = open_x64dbg_trace(trace_file, tracef)
 
 if __name__ == '__main__':

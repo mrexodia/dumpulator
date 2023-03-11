@@ -64,8 +64,8 @@ class MINIDUMP_MEMORY_DESCRIPTOR64:
 		return md
 		
 	def __str__(self):
-		t = 'Start: %s' % hex(self.StartOfMemoryRange)
-		t += 'Size: %s' % self.DataSize
+		t = f'Start: {hex(self.StartOfMemoryRange)}'
+		t += f'Size: {self.DataSize}'
 		return t
 
 class MinidumpMemory64List:
@@ -99,10 +99,8 @@ class MinidumpMemory64List:
 		return mml
 		
 	def to_table(self):
-		t = []
-		t.append(MinidumpMemorySegment.get_header())
-		for mod in self.memory_segments:
-			t.append(mod.to_row())
+		t = [MinidumpMemorySegment.get_header()]
+		t.extend(mod.to_row() for mod in self.memory_segments)
 		return t
 		
 	def __str__(self):

@@ -136,12 +136,8 @@ class MemoryManager:
         index = bisect.bisect_right(self._regions, region)
         if index == 0:
             return None
-        else:
-            closest = self._regions[index - 1]
-            if region in closest:
-                return closest
-            else:
-                return None
+        closest = self._regions[index - 1]
+        return closest if region in closest else None
 
     def find_commit(self, addr: int) -> Optional[MemoryRegion]:
         addr = self.containing_page(addr)
@@ -211,9 +207,9 @@ class MemoryManager:
         if parent_region is None:
             raise KeyError(f"Could not find parent for {hex(start)}")
         if parent_region.start != start:
-            raise KeyError(f"You can only release the whole parent region")
+            raise KeyError("You can only release the whole parent region")
 
-        if all([page in self._committed for page in parent_region.pages()]):
+        if all(page in self._committed for page in parent_region.pages()):
             self._page_manager.decommit(parent_region.start, parent_region.size)
             for page in parent_region.pages():
                 del self._committed[page]
@@ -240,7 +236,7 @@ class MemoryManager:
             protect = parent_region.protect
 
         if parent_region.commit_count == 0:
-            assert all([page not in self._committed for page in region.pages()])
+            assert all(page not in self._committed for page in region.pages())
             self._page_manager.commit(region.start, region.size, protect)
             for page in region.pages():
                 self._committed[page] = MemoryRegion(page, PAGE_SIZE, protect, parent_region.type)
@@ -265,7 +261,7 @@ class MemoryManager:
         if parent_region is None:
             raise KeyError(f"Could not find parent for {region}")
 
-        if all([page in self._committed for page in region.pages()]):
+        if all(page in self._committed for page in region.pages()):
             self._page_manager.decommit(region.start, region.size)
             for page in self._committed:
                 del self._committed[page]
@@ -328,6 +324,7 @@ class MemoryManager:
             if memory_region.info in result_info:
                 return
             result_info[memory_region.info] = memory_region.start
+
         for page in parent_region.pages():
             if page < start:
                 continue
@@ -369,7 +366,7 @@ class MemoryManager:
             for info, start_addr in result_info.items():
                 if start_addr >= result.base:
                     result.info.append(info)
-            if len(result.info) == 0 and len(result_info) > 0:
+            if not result.info and result_info:
                 result.info = list(result_info.keys())[:1]
 
         return result
@@ -403,8 +400,8 @@ class MemoryManager:
                 commit = self._committed.get(page)
                 if commit is not None and commit.info is None:
                     commit.info = info
-        else:
-            if region.info is not None:
-                return False
+        elif region.info is None:
             region.info = info
+        else:
+            return False
         return True

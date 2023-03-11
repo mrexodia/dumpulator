@@ -330,8 +330,6 @@ class CONTEXT(ctypes.Structure):
                 except Exception:
                     traceback.print_exc()
         if (ContextFlags & CONTEXT_MMX_REGISTERS) == CONTEXT_MMX_REGISTERS:
-            # TODO implement
-            pass
             """
             xmm = self.FltSave.Xmm
             for key in CONTEXT._mmx:

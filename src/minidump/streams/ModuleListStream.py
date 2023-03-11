@@ -134,10 +134,9 @@ class VS_FIXEDFILEINFO:
 		return vf
 
 	def __str__(self):
-		t = ''
-		for k in self.__dict__:
-			t += '%s : %s\r\n' % (k, str(self.__dict__[k]))
-		return t
+		return ''.join(
+			'%s : %s\r\n' % (k, str(self.__dict__[k])) for k in self.__dict__
+		)
 
 # https://msdn.microsoft.com/en-us/library/windows/desktop/ms680392(v=vs.85).aspx
 class MINIDUMP_MODULE:
@@ -188,10 +187,9 @@ class MINIDUMP_MODULE:
 		return mm
 
 	def __str__(self):
-		t = ''
-		for k in self.__dict__:
-			t += '%s : %s\r\n' % (k, str(self.__dict__[k]))
-		return t
+		return ''.join(
+			'%s : %s\r\n' % (k, str(self.__dict__[k])) for k in self.__dict__
+		)
   
 # https://msdn.microsoft.com/en-us/library/windows/desktop/ms680391(v=vs.85).aspx
 class MINIDUMP_MODULE_LIST:
@@ -244,13 +242,10 @@ class MinidumpModuleList:
 		return t
 		
 	def to_table(self):
-		t = []
-		t.append(MinidumpModule.get_header())
-		for mod in self.modules:
-			t.append(mod.to_row())
+		t = [MinidumpModule.get_header()]
+		t.extend(mod.to_row() for mod in self.modules)
 		return t
 		
 	def __str__(self):
-		t  = '== ModuleList ==\n' + construct_table(self.to_table())
-		return t
+		return '== ModuleList ==\n' + construct_table(self.to_table())
 		

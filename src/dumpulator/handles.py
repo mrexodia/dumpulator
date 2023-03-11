@@ -12,17 +12,15 @@ class AbstractObject:
         name = type(self).__name__
         if len(d) == 0:
             return name
+        values = []
+        if fields:
+            values.extend(f"{key}: {d[key]}" for key in fields)
         else:
-            values = []
-            if fields:
-                for key in fields:
-                    values.append(f"{key}: {d[key]}")
-            else:
-                for key in d.keys():
-                    if not key.startswith("_"):
-                        values.append(f"{key}: {d[key]}")
-                dd = d
-            return f"{name}({', '.join(values)})"
+            values.extend(
+                f"{key}: {d[key]}" for key in d.keys() if not key.startswith("_")
+            )
+            dd = d
+        return f"{name}({', '.join(values)})"
 
     def __str__(self):
         return self.pretty()
@@ -60,10 +58,9 @@ class FileObject(AbstractFileObject):
 
         if size is None:
             data = self.data[self.file_offset:]
-            self.file_offset += len(data)
         else:
             data = self.data[self.file_offset:self.file_offset+size]
-            self.file_offset += len(data)
+        self.file_offset += len(data)
         return bytes(data)
 
     def write(self, buffer: bytes, size: Optional[int] = None):
@@ -74,19 +71,18 @@ class FileObject(AbstractFileObject):
         # creation options
         # incase input size differs from actual buffer size
         if self.data is None:
-            if size is not None:
-                self.data = buffer[:size]
-                self.file_offset += size
-            else:
+            if size is None:
                 self.data = buffer
                 self.file_offset += len(buffer)
-        else:
-            if size is not None:
-                self.data = self.data[:self.file_offset] + buffer[:size] + self.data[self.file_offset+size:]
-                self.file_offset += size
             else:
-                self.data = self.data[:self.file_offset] + buffer + self.data[self.file_offset + len(buffer):]
-                self.file_offset += len(buffer)
+                self.data = buffer[:size]
+                self.file_offset += size
+        elif size is not None:
+            self.data = self.data[:self.file_offset] + buffer[:size] + self.data[self.file_offset+size:]
+            self.file_offset += size
+        else:
+            self.data = self.data[:self.file_offset] + buffer + self.data[self.file_offset + len(buffer):]
+            self.file_offset += len(buffer)
 
 class ConsoleType(Enum):
     In = 0
@@ -262,37 +258,31 @@ class HandleManager:
 
     def open_file(self, filename: str):
         data = self._mapped_files.get(filename.lower(), None)
-        if data is None:
-            return None
-        return self.new(data)
+        return None if data is None else self.new(data)
 
     def create_file(self, filename: str, options: int) -> bool:
         # TODO: this logic should be in ZwCreateFile
         # if file is already mapped just return true
         if filename.lower() in self._mapped_files:
             return True
-        # if file exists open and store contents in FileObject
-        elif options == FILE_OPEN or options == FILE_OVERWRITE:
+        elif options in [FILE_OPEN, FILE_OVERWRITE]:
             file = Path(filename)
             if file.exists():
                 with file.open("rb") as f:
                     file_data = f.read()
                     self.map_file(filename, FileObject(filename, file_data))
                 return True
-        # if file does not exist create a new FileObject
         elif options == FILE_CREATE:
             file = Path(filename)
             if not file.exists():
                 self.map_file(filename, FileObject(filename))
                 return True
-        # no matter what create a new FileObject
         elif options == FILE_SUPERSEDE:
             file = Path(filename)
             if not file.exists():
                 self.map_file(filename, FileObject(filename))
                 return True
-        # if file exists open if it doesn't create a new one then store contents in FileObject
-        elif options == FILE_OPEN_IF or options == FILE_OVERWRITE_IF:
+        elif options in [FILE_OPEN_IF, FILE_OVERWRITE_IF]:
             file = Path(filename)
             if file.exists():
                 with file.open("rb") as f:

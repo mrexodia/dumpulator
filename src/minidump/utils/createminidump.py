@@ -15,7 +15,7 @@ if platform.system() != 'Windows':
 	raise Exception('This script will ovbiously only work on Windows')
 
 # https://stackoverflow.com/questions/1405913/how-do-i-determine-if-my-python-shell-is-executing-in-32bit-or-64bit-mode-on-os
-IS_PYTHON_64 = False if (8 * struct.calcsize("P")) == 32 else True
+IS_PYTHON_64 = struct.calcsize("P") != 4
 
 class MINIDUMP_TYPE(enum.IntFlag): 
 	MiniDumpNormal						  = 0x00000000
@@ -41,7 +41,7 @@ class MINIDUMP_TYPE(enum.IntFlag):
 	MiniDumpWithModuleHeaders			   = 0x00080000
 	MiniDumpFilterTriage					= 0x00100000
 	MiniDumpValidTypeFlags				  = 0x001fffff
-	
+
 class WindowsBuild(enum.Enum):
 	WIN_XP  = 2600
 	WIN_2K3 = 3790
@@ -53,7 +53,7 @@ class WindowsBuild(enum.Enum):
 	WIN_10_1511 = 10586
 	WIN_10_1607 = 14393
 	WIN_10_1707 = 15063
-	
+
 class WindowsMinBuild(enum.Enum):
 	WIN_XP = 2500
 	WIN_2K3 = 3000
@@ -206,10 +206,10 @@ def enum_pids():
 	if res == 0:
 		logging.error(WinError(get_last_error()))
 		return []
-  
+
 	# get the number of returned processes
 	nReturned = int(pBytesReturned.value/ctypes.sizeof(c_ulong()))
-	return [i for i in pProcessIds[:nReturned]]
+	return list(pProcessIds[:nReturned])
 	
 #https://msdn.microsoft.com/en-us/library/windows/desktop/ms683217(v=vs.85).aspx
 def enum_process_names():
@@ -238,8 +238,8 @@ def create_dump(pid, output_filename, mindumptype, with_debug = False):
 		logging.debug('Enabling SeDebugPrivilege')
 		assigned = enable_debug_privilege()
 		msg = ['failure', 'success'][assigned]
-		logging.debug('SeDebugPrivilege assignment %s' % msg)
-	
+		logging.debug(f'SeDebugPrivilege assignment {msg}')
+
 	logging.debug('Opening process PID: %d' % pid)
 	process_handle = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
 	if process_handle is None:
@@ -249,8 +249,10 @@ def create_dump(pid, output_filename, mindumptype, with_debug = False):
 	logging.debug('Process handle: 0x%04x' % process_handle)
 	is64 = is64bitProc(process_handle)
 	if is64 != IS_PYTHON_64:
-		logging.warning('process architecture mismatch! This could case error! Python arch: %s Target process arch: %s' % ('x86' if not IS_PYTHON_64 else 'x64', 'x86' if not is64 else 'x64'))
-	
+		logging.warning(
+			f"process architecture mismatch! This could case error! Python arch: {'x64' if IS_PYTHON_64 else 'x86'} Target process arch: {'x64' if is64 else 'x86'}"
+		)
+
 	logging.debug('Creating file handle for output file')
 	file_handle = CreateFile(output_filename, FILE_GENERIC_READ | FILE_GENERIC_WRITE, 0, None,  FILE_CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, None)
 	if file_handle == -1:
@@ -272,7 +274,7 @@ def main():
 	parser = argparse.ArgumentParser(description='Tool to create process dumps using windows API')
 	parser.add_argument('-d', '--with-debug', action='store_true', help='enable SeDebugPrivilege, use this if target process is not in the same user context as your script')
 	parser.add_argument('-v', '--verbose', action='count', default=0, help = 'verbosity, add more - see more')
-	
+
 	subparsers = parser.add_subparsers(help = 'commands')
 	subparsers.required = True
 	subparsers.dest = 'command'
@@ -282,37 +284,36 @@ def main():
 	target_group.add_argument('-p', '--pid', type=int, help='PID of process to dump')
 	target_group.add_argument('-n', '--name', help='Name of process to dump')
 	dump_group.add_argument('-o', '--outfile', help='Output .dmp file name', required = True)
-	
+
 	args = parser.parse_args()
-	
+
 	if args.verbose == 0:
 		logging.basicConfig(level=logging.INFO)
 	elif args.verbose == 1:
 		logging.basicConfig(level=logging.DEBUG)
 	else:
 		logging.basicConfig(level=1)
-		
+
 	mindumptype = MINIDUMP_TYPE.MiniDumpNormal | MINIDUMP_TYPE.MiniDumpWithFullMemory
-		
+
 	if args.with_debug:
 		logging.debug('Enabling SeDebugPrivilege')
 		assigned = enable_debug_privilege()
 		msg = ['failure', 'success'][assigned]
-		logging.debug('SeDebugPrivilege assignment %s' % msg)
-	
+		logging.debug(f'SeDebugPrivilege assignment {msg}')
+
 	if args.command == 'enum':
 		pid_to_name = enum_process_names()
-		t = [p for p in pid_to_name]
-		t.sort()
+		t = sorted(pid_to_name)
 		for pid in t:
 			logging.info('PID: %d Name: %s' % (pid, pid_to_name[pid]))
 		return
-		
+
 	if args.command == 'dump':
 		if args.pid:
 			logging.info('Dumpig process PID %d' % args.pid)
 			create_dump(args.pid, args.outfile, mindumptype, with_debug = args.with_debug)
-		
+
 		if args.name:
 			pid_to_name = enum_process_names()
 			for pid in pid_to_name:

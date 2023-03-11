@@ -227,10 +227,8 @@ class ExceptionList:
 		return t
 	
 	def to_table(self):
-		t = []
-		t.append(MINIDUMP_EXCEPTION_STREAM.get_header())
-		for ex_record in self.exception_records:
-			t.append(ex_record.to_row())
+		t = [MINIDUMP_EXCEPTION_STREAM.get_header()]
+		t.extend(ex_record.to_row() for ex_record in self.exception_records)
 		return t
 
 	def __str__(self):

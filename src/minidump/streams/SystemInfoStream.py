@@ -104,16 +104,14 @@ class MINIDUMP_SYSTEM_INFO:
 		t += self.MinorVersion.to_bytes(4, byteorder = 'little', signed = False)
 		t += self.BuildNumber.to_bytes(4, byteorder = 'little', signed = False)
 		t += self.PlatformId.to_bytes(4, byteorder = 'little', signed = False)
-		if data_buffer is None:
-			t += self.CSDVersionRva.to_bytes(4, byteorder = 'little', signed = False)
-		else:
+		if data_buffer is not None:
 			pos = data_buffer.tell()
 			data_buffer.write(100*b'\x00')
 			self.CSDVersionRva = data_buffer.tell()
 			data_buffer.write(self.CSDVersion.encode('ascii') + b'\x00')
 			pos_end = data_buffer.tell()
 			data_buffer.seek(pos,0)
-			t += self.CSDVersionRva.to_bytes(4, byteorder = 'little', signed = False)
+		t += self.CSDVersionRva.to_bytes(4, byteorder = 'little', signed = False)
 		#missing filed here?
 		t += self.SuiteMask.to_bytes(2, byteorder = 'little', signed = False)
 		t += self.Reserved2.to_bytes(2, byteorder = 'little', signed = False)
@@ -163,10 +161,9 @@ class MINIDUMP_SYSTEM_INFO:
 		return msi
 
 	def __str__(self):
-		t = ''
-		for k in self.__dict__:
-			t += '%s : %s\r\n' % (k, str(self.__dict__[k]))
-		return t
+		return ''.join(
+			'%s : %s\r\n' % (k, str(self.__dict__[k])) for k in self.__dict__
+		)
 
 class MinidumpSystemInfo:
 	def __init__(self):
@@ -197,25 +194,20 @@ class MinidumpSystemInfo:
 			self.OperatingSystem =  "Windows Server 2016 Technical Preview"
 		elif self.MajorVersion == 6 and self.MinorVersion == 3 and self.ProductType == self.ProductType.VER_NT_WORKSTATION:
 			self.OperatingSystem =  "Windows 8.1"
-		elif self.MajorVersion == 6 and self.MinorVersion == 3 and self.ProductType != self.ProductType.VER_NT_WORKSTATION:
+		elif self.MajorVersion == 6 and self.MinorVersion == 3:
 			self.OperatingSystem =  "Windows Server 2012 R2"
 		elif self.MajorVersion == 6 and self.MinorVersion == 2 and self.ProductType == self.ProductType.VER_NT_WORKSTATION:
 			self.OperatingSystem =  "Windows 8"
-		elif self.MajorVersion == 6 and self.MinorVersion == 2 and self.ProductType != self.ProductType.VER_NT_WORKSTATION:
+		elif self.MajorVersion == 6 and self.MinorVersion == 2:
 			self.OperatingSystem =  "Windows Server 2012"
 		elif self.MajorVersion == 6 and self.MinorVersion == 1 and self.ProductType == self.ProductType.VER_NT_WORKSTATION:
 			self.OperatingSystem =  "Windows 7"
-		elif self.MajorVersion == 6 and self.MinorVersion == 1 and self.ProductType != self.ProductType.VER_NT_WORKSTATION:
+		elif self.MajorVersion == 6 and self.MinorVersion == 1:
 			self.OperatingSystem =  "Windows Server 2008 R2"
 		elif self.MajorVersion == 6 and self.MinorVersion == 0 and self.ProductType == self.ProductType.VER_NT_WORKSTATION:
 			self.OperatingSystem =  "Windows Vista"
-		elif self.MajorVersion == 6 and self.MinorVersion == 0 and self.ProductType != self.ProductType.VER_NT_WORKSTATION:
+		elif self.MajorVersion == 6 and self.MinorVersion == 0:
 			self.OperatingSystem =  "Windows Server 2008"
-		# Can't accurately report on Windows Server 2003/R2
-		# elif (MajorVersion == 5 and MinorVersion == 2 and ProductType == self.ProductType.VER_NT_WORKSTATION)
-		#	self.OperatingSystem =  "Windows Vista"
-		#elif (MajorVersion == 5 and MinorVersion == 2 and ProductType != self.ProductType.VER_NT_WORKSTATION)
-		#	self.OperatingSystem =  "Windows Server 2008"
 		elif self.MajorVersion == 5 and self.MinorVersion == 1:
 			self.OperatingSystem =  "Windows XP"
 		elif self.MajorVersion == 5 and self.MinorVersion == 0:
@@ -246,7 +238,10 @@ class MinidumpSystemInfo:
 		try:
 			t.guess_os()
 		except Exception as e:
-			logging.log(1, 'Failed to guess OS! MajorVersion: %s MinorVersion %s BuildNumber %s ProductType: %s' % (t.MajorVersion, t.MinorVersion, t.BuildNumber, t.ProductType ))
+			logging.log(
+				1,
+				f'Failed to guess OS! MajorVersion: {t.MajorVersion} MinorVersion {t.MinorVersion} BuildNumber {t.BuildNumber} ProductType: {t.ProductType}',
+			)
 			t.OperatingSystem = None
 		return t
 
@@ -276,7 +271,10 @@ class MinidumpSystemInfo:
 		try:
 			t.guess_os()
 		except Exception as e:
-			logging.log(1, 'Failed to guess OS! MajorVersion: %s MinorVersion %s BuildNumber %s ProductType: %s' % (t.MajorVersion, t.MinorVersion, t.BuildNumber, t.ProductType ))
+			logging.log(
+				1,
+				f'Failed to guess OS! MajorVersion: {t.MajorVersion} MinorVersion {t.MinorVersion} BuildNumber {t.BuildNumber} ProductType: {t.ProductType}',
+			)
 			t.OperatingSystem = None
 		return t
 

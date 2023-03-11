@@ -246,11 +246,7 @@ class GuessStringType(object):
         v_types.extend( [ type(value) for (key, value) in argd.iteritems() ] )
 
         # Get the appropriate function for the default type
-        if self.t_default == t_ansi:
-            fn = self.fn_ansi
-        else:
-            fn = self.fn_unicode
-
+        fn = self.fn_ansi if self.t_default == t_ansi else self.fn_unicode
         # If at least one argument is a Unicode string...
         if self.t_unicode in v_types:
 

@@ -15,7 +15,7 @@ def args2int(x):
 			return int(x)
 
 	else:
-		raise Exception('Unknown integer format! %s' % type(x))
+		raise Exception(f'Unknown integer format! {type(x)}')
 
 class MinidumpShell(cmd.Cmd):
 	intro  = 'Welcome to the minidump shell.   Type help or ? to list commands.\n'
@@ -32,54 +32,54 @@ class MinidumpShell(cmd.Cmd):
 	def do_threads(self, args):
 		"""Lists all thread information (if available)"""
 		if self.mini.threads is not None:
-			print(str(self.mini.threads))
+			print(self.mini.threads)
 		if self.mini.threads_ex is not None:
-			print(str(self.mini.threads_ex))
+			print(self.mini.threads_ex)
 		if self.mini.thread_info is not None:
-			print(str(self.mini.thread_info))
+			print(self.mini.thread_info)
 
 	def do_memory(self, args):
 		"""Lists all memory segments"""
 		if self.mini.memory_segments is not None:
-			print(str(self.mini.memory_segments))
+			print(self.mini.memory_segments)
 		if self.mini.memory_segments_64 is not None:
-			print(str(self.mini.memory_segments_64))
+			print(self.mini.memory_segments_64)
 		if self.mini.memory_info is not None:
-			print(str(self.mini.memory_info))
+			print(self.mini.memory_info)
 
 	def do_modules(self, args):
 		"""Lists all loaded and unloaded module information (if available)"""
 		if self.mini.modules is not None:
-			print(str(self.mini.modules))
+			print(self.mini.modules)
 		if self.mini.unloaded_modules is not None:
-			print(str(self.mini.unloaded_modules))
+			print(self.mini.unloaded_modules)
 
 	def do_sysinfo(self, args):
 		"""Shows sysinfo (if available)"""
 		if self.mini.sysinfo is not None:
-			print(str(self.mini.sysinfo))
+			print(self.mini.sysinfo)
 
 	def do_exception(self, args):
 		"""Shows exception information (if available)"""
 		if self.mini.exception is not None:
-			print(str(self.mini.exception))
+			print(self.mini.exception)
 
 	def do_comments(self, args):
 		"""Lists all comments (if any)"""
 		if self.mini.comment_a is not None:
-			print(str(self.mini.comment_a))
+			print(self.mini.comment_a)
 		if self.mini.comment_w is not None:
-			print(str(self.mini.comment_w))
+			print(self.mini.comment_w)
 
 	def do_handles(self, args):
 		"""Lists all handles (if available)"""
 		if self.mini.handles is not None:
-			print(str(self.mini.handles))
+			print(self.mini.handles)
 
 	def do_misc(self, args):
 		"""Lists all miscellaneous info (if available)"""
 		if self.mini.misc_info is not None:
-			print(str(self.mini.misc_info))
+			print(self.mini.misc_info)
 
 	#### Exit aliases
 	def do_quit(self, args):
@@ -101,7 +101,7 @@ class MinidumpShell(cmd.Cmd):
 		pos = self.reader.tell()
 		current_segment_start = self.reader.current_segment.start_address
 		segment_relative_position = pos - current_segment_start
-		self.prompt = "[%s %s+%s] " % (hex(pos), hex(current_segment_start), hex(segment_relative_position))
+		self.prompt = f"[{hex(pos)} {hex(current_segment_start)}+{hex(segment_relative_position)}] "
 
 	def do_tell(self, args):
 		"""Shows/refreshes the current position in the process' virtual memory space"""
@@ -127,15 +127,15 @@ class MinidumpShell(cmd.Cmd):
 	def do_readi(self, args):
 		"""Reads a signed integer starting the current position and updates the cursor with the bytes read. The integer size is determined automatically by the processor architecture information from the dump file"""
 		data = self.reader.read_int()
-		print('D: %s' % data)
-		print('H: %s' % hex(data))
+		print(f'D: {data}')
+		print(f'H: {hex(data)}')
 		self.update_prompt(None)
 
 	def do_readui(self, args):
 		"""Reads an unsigned integer starting the current position and updates the cursor with the bytes read. The integer size is determined automatically by the processor architecture information from the dump file"""
 		data = self.reader.read_uint()
-		print('D: %s' % data)
-		print('H: %s' % hex(data))
+		print(f'D: {data}')
+		print(f'H: {hex(data)}')
 		self.update_prompt(None)
 
 	def do_peek(self, count):

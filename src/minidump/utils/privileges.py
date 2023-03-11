@@ -129,7 +129,7 @@ def get_process_token():
     token = wintypes.HANDLE()
     TOKEN_ALL_ACCESS = 0xf01ff
     res = OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, token)
-    if not res > 0:
+    if res <= 0:
         raise RuntimeError("Couldn't get process token")
     return token
 
@@ -137,7 +137,7 @@ def get_debug_luid():
     symlink_luid = LUID()
     res = LookupPrivilegeValue(None, "SeDebugPrivilege",
                                symlink_luid)
-    if not res > 0:
+    if res <= 0:
         raise RuntimeError("Couldn't lookup privilege value")
     return symlink_luid
 
@@ -165,8 +165,7 @@ def get_privilege_information():
     res = GetTokenInformation(*params)
     assert res > 0, "Error in second GetTokenInformation (%d)" % res
 
-    privileges = ctypes.cast(buffer, ctypes.POINTER(TOKEN_PRIVILEGES)).contents
-    return privileges
+    return ctypes.cast(buffer, ctypes.POINTER(TOKEN_PRIVILEGES)).contents
 
 def report_privilege_information():
     "Report all privilege information assigned to the current process."

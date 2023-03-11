@@ -30,8 +30,7 @@ class MINIDUMP_LOCATION_DESCRIPTOR:
 		return mld
 	
 	def __str__(self):
-		t = 'Size: %s File offset: %s' % (self.DataSize, self.Rva)
-		return t
+		return f'Size: {self.DataSize} File offset: {self.Rva}'
 		
 class MINIDUMP_LOCATION_DESCRIPTOR64:
 	def __init__(self):
@@ -54,8 +53,7 @@ class MINIDUMP_LOCATION_DESCRIPTOR64:
 		return mld
 	
 	def __str__(self):
-		t = 'Size: %s File offset: %s' % (self.DataSize, self.Rva)
-		return t
+		return f'Size: {self.DataSize} File offset: {self.Rva}'
 		
 class MINIDUMP_STRING:
 	def __init__(self):
@@ -123,9 +121,7 @@ class MinidumpMemorySegment:
 		return mms		
 		
 	def inrange(self, virt_addr):
-		if self.start_virtual_address <= virt_addr < self.end_virtual_address:
-			return True
-		return False
+		return self.start_virtual_address <= virt_addr < self.end_virtual_address
 	
 	def read(self, virtual_address, size, file_handler):
 		if virtual_address > self.end_virtual_address or virtual_address < self.start_virtual_address:
@@ -167,22 +163,21 @@ class MinidumpMemorySegment:
 			i = 0
 			while len(data) < self.size:
 				i += 1
-				if chunksize > (self.size - len(data)):
-					chunksize = (self.size - len(data))
+				chunksize = min(chunksize, self.size - len(data))
 				data += file_handler.read(chunksize)
 				marker = data.find(pattern)
 				if marker != -1:
 					#print('FOUND! size: %s i: %s read: %s perc: %s' % (self.size, i, i*chunksize, 100*((i*chunksize)/self.size)))
 					file_handler.seek(pos, 0)
 					return [self.start_virtual_address + marker]
-			
-			
-			#print('NOTFOUND! size: %s i: %s read: %s perc %s' % (self.size, i, len(data), 100*(len(data)/self.size) ))
-			
+
+				
+				#print('NOTFOUND! size: %s i: %s read: %s perc %s' % (self.size, i, len(data), 100*(len(data)/self.size) ))
+
 		else:
 			data = file_handler.read(self.size)
 			file_handler.seek(pos, 0)
-			
+
 			offset = 0
 			while len(data) > len(pattern):
 				marker = data.find(pattern)
@@ -193,7 +188,7 @@ class MinidumpMemorySegment:
 				offset += marker + 1
 				if find_first is True:
 					return fl
-		
+
 		file_handler.seek(pos, 0)
 		return fl
 
@@ -203,25 +198,24 @@ class MinidumpMemorySegment:
 		pos = file_handler.tell()
 		await file_handler.seek(self.start_file_address, 0)
 		fl = []
-		
+
 		if find_first is True:
 			chunksize = min(chunksize, self.size)
 			data = b''
 			i = 0
 			while len(data) < self.size:
 				i += 1
-				if chunksize > (self.size - len(data)):
-					chunksize = (self.size - len(data))
+				chunksize = min(chunksize, self.size - len(data))
 				data += await file_handler.read(chunksize)
 				marker = data.find(pattern)
 				if marker != -1:
 					#print('FOUND! size: %s i: %s read: %s perc: %s' % (self.size, i, i*chunksize, 100*((i*chunksize)/self.size)))
 					await file_handler.seek(pos, 0)
 					return [self.start_virtual_address + marker]
-			
-			
-			#print('NOTFOUND! size: %s i: %s read: %s perc %s' % (self.size, i, len(data), 100*(len(data)/self.size) ))
-		
+
+				
+				#print('NOTFOUND! size: %s i: %s read: %s perc %s' % (self.size, i, len(data), 100*(len(data)/self.size) ))
+
 		else:
 			offset = 0
 			data = await file_handler.read(self.size)
@@ -235,31 +229,28 @@ class MinidumpMemorySegment:
 				offset += marker + 1
 				if find_first is True:
 					return fl
-		
+
 		await file_handler.seek(pos, 0)
 		return fl
 	
 	
 	@staticmethod
 	def get_header():
-		t = [
+		return [
 			'VA Start',
 			'RVA',
 			'Size',
 		]
-		return t
 	
 	def to_row(self):
-		t = [
+		return [
 			hex(self.start_virtual_address),
 			hex(self.start_file_address),
-			hex(self.size)
+			hex(self.size),
 		]
-		return t
 		
 	def __str__(self):
-		t = 'VA Start: %s, RVA: %s, Size: %s' % (hex(self.start_virtual_address), hex(self.start_file_address), hex(self.size))
-		return t
+		return f'VA Start: {hex(self.start_virtual_address)}, RVA: {hex(self.start_file_address)}, Size: {hex(self.size)}'
 		
 		
 
@@ -280,10 +271,10 @@ def hexdump( src, length=16, sep='.', start = 0):
 	except NameError:
 		xrange = range;
 
+	isMiddle = False;
 	for i in xrange(0, len(src), length):
 		subSrc = src[i:i+length];
 		hexa = '';
-		isMiddle = False;
 		for h in xrange(0,len(subSrc)):
 			if h == length/2:
 				hexa += ' ';
@@ -292,21 +283,21 @@ def hexdump( src, length=16, sep='.', start = 0):
 				h = ord(h);
 			h = hex(h).replace('0x','');
 			if len(h) == 1:
-				h = '0'+h;
-			hexa += h+' ';
+				h = f'0{h}';
+			hexa += f'{h} ';
 		hexa = hexa.strip(' ');
 		text = '';
 		for c in subSrc:
 			if not isinstance(c, int):
 				c = ord(c);
-			if 0x20 <= c < 0x7F:
-				text += chr(c);
-			else:
-				text += sep;
+			text += chr(c) if 0x20 <= c < 0x7F else sep
 		if start == 0:
-			result.append(('%08x:  %-'+str(length*(2+1)+1)+'s  |%s|') % (i, hexa, text));
+			result.append(f'%08x:  %-{str(length * (2 + 1) + 1)}s  |%s|' % (i, hexa, text));
 		else:
-			result.append(('%08x(+%04x):  %-'+str(length*(2+1)+1)+'s  |%s|') % (start+i, i, hexa, text));
+			result.append(
+				f'%08x(+%04x):  %-{str(length * (2 + 1) + 1)}s  |%s|'
+				% (start + i, i, hexa, text)
+			);
 	return '\n'.join(result);
 	
 def construct_table(lines, separate_head=True):
@@ -314,25 +305,24 @@ def construct_table(lines, separate_head=True):
 	#Count the column width
 	widths = []
 	for line in lines:
-			for i,size in enumerate([len(x) for x in line]):
-					while i >= len(widths):
-							widths.append(0)
-					if size > widths[i]:
-							widths[i] = size
-       
-	#Generate the format string to pad the columns
-	print_string = ""
-	for i,width in enumerate(widths):
-			print_string += "{" + str(i) + ":" + str(width) + "} | "
-	if (len(print_string) == 0):
-			return
+		for i, size in enumerate(len(x) for x in line):
+			while i >= len(widths):
+					widths.append(0)
+			if size > widths[i]:
+					widths[i] = size
+
+	print_string = "".join(
+		"{" + str(i) + ":" + str(width) + "} | " for i, width in enumerate(widths)
+	)
+	if not print_string:
+		return
 	print_string = print_string[:-3]
-       
+
 	#Print the actual data
 	t = ''
 	for i,line in enumerate(lines):
 			t += print_string.format(*line) + '\n'
 			if (i == 0 and separate_head):
 					t += "-"*(sum(widths)+3*(len(widths)-1)) + '\n'
-					
+
 	return t

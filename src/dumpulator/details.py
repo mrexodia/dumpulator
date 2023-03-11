@@ -22,10 +22,11 @@ def map_unicorn_perms(protect: MemoryProtect):
         MemoryProtect.PAGE_READWRITE: UC_PROT_READ | UC_PROT_WRITE,
         MemoryProtect.PAGE_WRITECOPY: UC_PROT_READ | UC_PROT_WRITE,
     }
-    perms = mapping[baseprotect]
-    if protect & MemoryProtect.PAGE_GUARD:
-        perms = UC_PROT_NONE
-    return perms
+    return (
+        UC_PROT_NONE
+        if protect & MemoryProtect.PAGE_GUARD
+        else mapping[baseprotect]
+    )
 
 
 class Registers:

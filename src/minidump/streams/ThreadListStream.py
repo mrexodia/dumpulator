@@ -108,10 +108,8 @@ class MinidumpThreadList:
 		return t
 		
 	def to_table(self):
-		t = []
-		t.append(MINIDUMP_THREAD.get_header())
-		for thread in self.threads:
-			t.append(thread.to_row())
+		t = [MINIDUMP_THREAD.get_header()]
+		t.extend(thread.to_row() for thread in self.threads)
 		return t
 		
 	def __str__(self):

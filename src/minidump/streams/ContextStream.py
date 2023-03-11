@@ -17,10 +17,7 @@ class M128A:
 
     @classmethod
     def parse_array(cls, buff, length):
-        arr = []
-        for i in range(length):
-            arr.append(cls.parse(buff))
-        return arr
+        return [cls.parse(buff) for _ in range(length)]
 
     def __str__(self):
         s = ""
@@ -75,8 +72,8 @@ class XMM_SAVE_AREA32:
         xmm.FloatRegisters = M128A.parse_array(buff, 8)
         xmm.XmmRegisters = M128A.parse_array(buff, 16)
         xmm.Reserved4 = [
-            chr(int.from_bytes(buff.read(1), byteorder = 'little', signed = False))
-            for i in range(96)
+            chr(int.from_bytes(buff.read(1), byteorder='little', signed=False))
+            for _ in range(96)
         ]
 
         return xmm
@@ -162,22 +159,22 @@ class CTX_DUMMYSTRUCTNAME:
         s += "%s:\n" % ("Legacy")
         for leg in self.Legacy:
             s += "\t%s" % (leg)
-        s += "%s: %s" % ("Xmm0", self.Xmm0)
-        s += "%s: %s" % ("Xmm1", self.Xmm1)
-        s += "%s: %s" % ("Xmm2", self.Xmm2)
-        s += "%s: %s" % ("Xmm3", self.Xmm3)
-        s += "%s: %s" % ("Xmm4", self.Xmm4)
-        s += "%s: %s" % ("Xmm5", self.Xmm5)
-        s += "%s: %s" % ("Xmm6", self.Xmm6)
-        s += "%s: %s" % ("Xmm7", self.Xmm7)
-        s += "%s: %s" % ("Xmm8", self.Xmm8)
-        s += "%s: %s" % ("Xmm9", self.Xmm9)
-        s += "%s: %s" % ("Xmm10", self.Xmm10)
-        s += "%s: %s" % ("Xmm11", self.Xmm11)
-        s += "%s: %s" % ("Xmm12", self.Xmm12)
-        s += "%s: %s" % ("Xmm13", self.Xmm13)
-        s += "%s: %s" % ("Xmm14", self.Xmm14)
-        s += "%s: %s" % ("Xmm15", self.Xmm15)
+        s += f"Xmm0: {self.Xmm0}"
+        s += f"Xmm1: {self.Xmm1}"
+        s += f"Xmm2: {self.Xmm2}"
+        s += f"Xmm3: {self.Xmm3}"
+        s += f"Xmm4: {self.Xmm4}"
+        s += f"Xmm5: {self.Xmm5}"
+        s += f"Xmm6: {self.Xmm6}"
+        s += f"Xmm7: {self.Xmm7}"
+        s += f"Xmm8: {self.Xmm8}"
+        s += f"Xmm9: {self.Xmm9}"
+        s += f"Xmm10: {self.Xmm10}"
+        s += f"Xmm11: {self.Xmm11}"
+        s += f"Xmm12: {self.Xmm12}"
+        s += f"Xmm13: {self.Xmm13}"
+        s += f"Xmm14: {self.Xmm14}"
+        s += f"Xmm15: {self.Xmm15}"
 
         return s
 
@@ -197,13 +194,13 @@ class CTX_DUMMYUNIONNAME:
         dun.FltSave = XMM_SAVE_AREA32.parse(buff)
         dun.Q = NEON128.parse_array(buff, 16)
         dun.D = [
-            int.from_bytes(buff.read(8), byteorder = 'little', signed = False)
-            for i in range(32)
+            int.from_bytes(buff.read(8), byteorder='little', signed=False)
+            for _ in range(32)
         ]
         dun.DUMMYSTRUCTNAME = CTX_DUMMYSTRUCTNAME.parse(buff)
         dun.S = [
-            int.from_bytes(buff.read(4), byteorder = 'little', signed = False)
-            for i in range(32)
+            int.from_bytes(buff.read(4), byteorder='little', signed=False)
+            for _ in range(32)
         ]
         return dun
 
@@ -215,7 +212,7 @@ class CTX_DUMMYUNIONNAME:
             s += "\t%s" % (q.__str__())
         for d in self.D:
             s += "\t%d" % (d)
-        s += "%s: %s" % ("DUMMYSTRUCTNAME", self.DUMMYSTRUCTNAME)
+        s += f"DUMMYSTRUCTNAME: {self.DUMMYSTRUCTNAME}"
         s += "%s:\n" %("S")
         for e in self.S:
             s += "\t%d" % (e)
@@ -329,7 +326,7 @@ class CONTEXT:
         return ctx
 
     def __str__(self):
-        s = "" 
+        s = ""
         s += "%s: 0x%x (%d)\n" % ("P1Home",self.P1Home,self.P1Home)
         s += "%s: 0x%x (%d)\n" % ("P2Home",self.P2Home,self.P2Home)
         s += "%s: 0x%x (%d)\n" % ("P3Home",self.P3Home,self.P3Home)
@@ -368,7 +365,7 @@ class CONTEXT:
         s += "%s: 0x%x (%d)\n" % ("R14",self.R14,self.R14)
         s += "%s: 0x%x (%d)\n" % ("R15",self.R15,self.R15)
         s += "%s: 0x%x (%d)\n" % ("Rip",self.Rip,self.Rip)
-        s += "%s:" % ("DUMMYUNIONNAME")
+        s += 'DUMMYUNIONNAME:'
         s += self.DUMMYUNIONNAME.__str__()
 
         return s
@@ -472,8 +469,8 @@ class WOW64_CONTEXT:
         ctx.Esp = int.from_bytes(buff.read(4), byteorder = 'little', signed = False)
         ctx.SegSs = int.from_bytes(buff.read(4), byteorder = 'little', signed = False)
         ctx.ExtendedRegisters = [
-            int.from_bytes(buff.read(1), byteorder = 'little', signed = False)
-            for i in range(512)
+            int.from_bytes(buff.read(1), byteorder='little', signed=False)
+            for _ in range(512)
         ]
         return ctx
 

@@ -94,10 +94,10 @@ class AMinidumpFile:
 
 	async def __parse_header(self):
 		self.header = await MinidumpHeader.aparse(self.file_handle)
-		for i in range(0, self.header.NumberOfStreams):
+		for i in range(self.header.NumberOfStreams):
 			await self.file_handle.seek(self.header.StreamDirectoryRva + i * 12, 0 )
 			minidump_dir = await MINIDUMP_DIRECTORY.aparse(self.file_handle)
-			
+
 			if minidump_dir:
 				self.directories.append(minidump_dir)
 			else:
@@ -220,8 +220,7 @@ class AMinidumpFile:
 			"""
 
 	def __str__(self):
-		t = '== Minidump File ==\n'
-		t += str(self.header)
+		t = '== Minidump File ==\n' + str(self.header)
 		t += str(self.sysinfo)
 		for dir in self.directories:
 			t += str(dir) + '\n'

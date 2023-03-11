@@ -11,7 +11,7 @@ from pathlib import Path
 def syscall(func):
     name: str = func.__name__
     if name.startswith("Nt"):
-        name = "Zw" + name[2:]
+        name = f"Zw{name[2:]}"
     syscall_functions[name] = func
     return func
 
@@ -919,19 +919,10 @@ def ZwCreateFile(dp: Dumpulator,
             dp.console_handle = handle
         elif not dp.handles.valid(handle):
             dp.handles.add(handle, None)
-        FileHandle.write_ptr(handle)
-        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
-        return STATUS_SUCCESS
     elif file_name == "\\Reference":
         handle = dp.handles.new(FileHandle(file_name))
-        FileHandle.write_ptr(handle)
-        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
-        return STATUS_SUCCESS
     elif file_name == "\\Connect":
         handle = dp.handles.new(FileHandle(file_name))
-        FileHandle.write_ptr(handle)
-        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
-        return STATUS_SUCCESS
     elif file_name == "\\Input":
         handle = dp.console_handle
         if handle == 0:
@@ -939,9 +930,6 @@ def ZwCreateFile(dp: Dumpulator,
             dp.stdin_handle = handle
         elif not dp.handles.valid(handle):
             dp.handles.add(handle, None)
-        FileHandle.write_ptr(handle)
-        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
-        return STATUS_SUCCESS
     elif file_name == "\\Output":
         handle = dp.console_handle
         if handle == 0:
@@ -949,17 +937,15 @@ def ZwCreateFile(dp: Dumpulator,
             dp.stdout_handle = handle
         elif not dp.handles.valid(handle):
             dp.handles.add(handle, None)
-        FileHandle.write_ptr(handle)
-        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
-        return STATUS_SUCCESS
     else:
         handle = dp.handles.open_file(file_name)
         if handle is None:
             return STATUS_NO_SUCH_FILE
         print(f"Created handle {hex(handle)}")
-        FileHandle.write_ptr(handle)
-        IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
-        return STATUS_SUCCESS
+
+    FileHandle.write_ptr(handle)
+    IO_STATUS_BLOCK.write(IoStatusBlock, STATUS_SUCCESS, FILE_OPENED)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwCreateIoCompletion(dp: Dumpulator,
@@ -1574,7 +1560,7 @@ def ZwDisableLastKnownGood(dp: Dumpulator
 def ZwDisplayString(dp: Dumpulator,
                     String: Annotated[P(UNICODE_STRING), SAL("_In_")]
                     ):
-    print("debug: " + String.read_unicode_str())
+    print(f"debug: {String.read_unicode_str()}")
     return STATUS_PRIVILEGE_NOT_HELD
 
 @syscall

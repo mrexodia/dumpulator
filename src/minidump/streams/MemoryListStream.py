@@ -68,9 +68,9 @@ class MINIDUMP_MEMORY_DESCRIPTOR:
 		return md
 		
 	def __str__(self):
-		t =  'Start: %s' % hex(self.StartOfMemoryRange)
-		t += 'Size: %s' % self.DataSize
-		t += 'Rva: %s' % self.Rva
+		t = f'Start: {hex(self.StartOfMemoryRange)}'
+		t += f'Size: {self.DataSize}'
+		t += f'Rva: {self.Rva}'
 		return t
 		
 class MinidumpMemoryList:

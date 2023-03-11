@@ -148,8 +148,8 @@ class LiveSystemReader(MinidumpSystemReader):
 				mi.Type = mi_raw.Type
 
 			meminfolist.entries.append(mi)
-			print(str(mi))
-			
+			print(mi)
+
 			i += mi_raw.RegionSize
 		self.meminfolist = meminfolist
 		return meminfolist
@@ -242,13 +242,13 @@ class MinidumpWriter:
 		sysinfo = self.sysreader.get_sysinfo()
 		self.streams[MINIDUMP_STREAM_TYPE.SystemInfoStream] = sysinfo
 
-		print(str(sysinfo))
+		print(sysinfo)
 		moduleinfo = self.sysreader.get_modules()
 		self.streams[MINIDUMP_STREAM_TYPE.ModuleListStream] = moduleinfo
-		
+
 		sections = self.sysreader.get_sections()
 		self.streams[MINIDUMP_STREAM_TYPE.MemoryInfoListStream] = sections
-		
+
 		self.finalize_header()
 
 		memory = self.sysreader.get_memory()
