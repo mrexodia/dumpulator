@@ -204,6 +204,29 @@ class MemoryManager:
             check_overlaps(index)
         self._regions.insert(index, region)
 
+    def _decommit_region(self, parent_region: MemoryRegion, decommit_region: MemoryRegion):
+        assert decommit_region in parent_region
+        release_start = None
+        release_count = 0
+        for page in decommit_region.pages():
+            if page in self._committed:
+                release_count += 1
+                if release_start is None:
+                    release_start = page
+            elif release_count > 0:
+                self._page_manager.decommit(release_start, release_count * PAGE_SIZE)
+                for i in range(release_count):
+                    del self._committed[release_start + i * PAGE_SIZE]
+                    parent_region.commit_count -= 1
+                release_start = None
+                release_count = 0
+
+        if release_count > 0:
+            self._page_manager.decommit(release_start, release_count * PAGE_SIZE)
+            for i in range(release_count):
+                del self._committed[release_start + i * PAGE_SIZE]
+                parent_region.commit_count -= 1
+
     def release(self, start: int) -> None:
         assert self.align_allocation(start) == start
 
@@ -213,17 +236,8 @@ class MemoryManager:
         if parent_region.start != start:
             raise KeyError(f"You can only release the whole parent region")
 
-        if all([page in self._committed for page in parent_region.pages()]):
-            self._page_manager.decommit(parent_region.start, parent_region.size)
-            for page in parent_region.pages():
-                del self._committed[page]
-                parent_region.commit_count -= 1
-        else:
-            for page in parent_region.pages():
-                if page in self._committed:
-                    self._page_manager.decommit(page, PAGE_SIZE)
-                    del self._committed[page]
-                    parent_region.commit_count -= 1
+        self._decommit_region(parent_region, parent_region)
+
         assert parent_region.commit_count == 0
         self._regions.remove(parent_region)
 
@@ -265,17 +279,7 @@ class MemoryManager:
         if parent_region is None:
             raise KeyError(f"Could not find parent for {region}")
 
-        if all([page in self._committed for page in region.pages()]):
-            self._page_manager.decommit(region.start, region.size)
-            for page in self._committed:
-                del self._committed[page]
-                parent_region.commit_count -= 1
-        else:
-            for page in region.pages():
-                if page in self._committed:
-                    self._page_manager.decommit(page, PAGE_SIZE)
-                    del self._committed[page]
-                    parent_region.commit_count -= 1
+        self._decommit_region(parent_region, region)
 
     def protect(self, start: int, size: int, protect: MemoryProtect) -> MemoryProtect:
         assert isinstance(protect, MemoryProtect)

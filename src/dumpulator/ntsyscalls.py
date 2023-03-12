@@ -1808,6 +1808,13 @@ def ZwFreeVirtualMemory(dp: Dumpulator,
             return STATUS_MEMORY_NOT_ALLOCATED
         dp.memory.release(base)
         return STATUS_SUCCESS
+    elif FreeType == MEM_DECOMMIT:
+        print(f"decommit {hex(base)}[{hex(size)}]")
+        region = dp.memory.find_region(base)
+        if region is None:
+            return STATUS_MEMORY_NOT_ALLOCATED
+        dp.memory.decommit(base, size)
+        return STATUS_SUCCESS
     else:
         raise NotImplementedError()
 
