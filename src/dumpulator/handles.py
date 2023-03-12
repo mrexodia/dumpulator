@@ -192,6 +192,11 @@ class RegistryKeyObject(AbstractObject):
     def __str__(self):
         return self.pretty("key")
 
+@dataclass
+class ThreadObject(AbstractObject):
+    entry: int
+    argument: int = 0
+
 class HandleManager:
     def __init__(self):
         self._handles = {}

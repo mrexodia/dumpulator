@@ -237,6 +237,15 @@ class UNICODE_STRING:
     def read_str(self):
         return self.Buffer.read(self.Length).decode("utf-16")
 
+    @staticmethod
+    def create_buffer(s: str, ptr: PVOID) -> bytes:
+        encoded = s.encode("utf-16-le") + b"\0\0"
+        if ptr.arch.x64:
+            data = struct.pack("<HHIQ", len(encoded) - 2, len(encoded), 0, int(ptr) + 16)
+        else:
+            data = struct.pack("<HHI", len(encoded) - 2, len(encoded), int(ptr) + 8)
+        return data + encoded
+
 class WNF_DELIVERY_DESCRIPTOR:
     pass
 

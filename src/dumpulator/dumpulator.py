@@ -263,6 +263,10 @@ class Dumpulator(Architecture):
         else:
             thread = self._find_thread(thread_id)
 
+        self.thread_id = thread.ThreadId
+        self.process_id = self._minidump.misc_info.ProcessId
+        self.parent_process_id = (self.process_id / 4 + 69) * 4
+
         super().__init__(type(thread.ContextObject) is not minidump.WOW64_CONTEXT)
         self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
 
