@@ -64,14 +64,14 @@ class FunctionType:
         self.name = name
         self.arguments: [FunctionArgument] = []
 
-    def format_python(self, body: Optional[str]):
+    def format_python(self, body: Optional[str] = None):
         r = "@syscall\n"
         r += f"def {self.name}(dp: Dumpulator"
         indent = (len(self.name) + 5) * " "
         a: FunctionArgument
         for i, a in enumerate(self.arguments):
             r += ",\n"
-            pytype = f"P({a.typename})" if a.is_ptr else a.typename
+            pytype = f"P[{a.typename}]" if a.is_ptr else a.typename
             if len(a.sal) > 0:
                 assert "\"" not in a.sal and "\\" not in a.sal
                 sal = f"SAL(\"{a.sal}\""

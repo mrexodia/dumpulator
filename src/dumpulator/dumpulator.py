@@ -265,7 +265,7 @@ class Dumpulator(Architecture):
 
         self.thread_id = thread.ThreadId
         self.process_id = self._minidump.misc_info.ProcessId
-        self.parent_process_id = (self.process_id / 4 + 69) * 4
+        self.parent_process_id = (self.process_id // 4 + 69) * 4
 
         super().__init__(type(thread.ContextObject) is not minidump.WOW64_CONTEXT)
         self.addr_mask = 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
@@ -1375,13 +1375,13 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     line += "\n"
     dp.trace.write(line)
 
-def _unicode_string_to_string(dp: Dumpulator, arg: P(UNICODE_STRING)):
+def _unicode_string_to_string(dp: Dumpulator, arg: P[UNICODE_STRING]):
     try:
         return arg[0].read_str()
     except IndexError:
         return None
 
-def _object_attributes_to_string(dp: Dumpulator, arg: P(OBJECT_ATTRIBUTES)):
+def _object_attributes_to_string(dp: Dumpulator, arg: P[OBJECT_ATTRIBUTES]):
     try:
         return arg[0].ObjectName[0].read_str()
     except IndexError:
@@ -1403,7 +1403,7 @@ def _arg_to_string(dp: Dumpulator, arg):
         if hstr is not None:
             str += f" /* {hstr} */"
         return str
-    elif isinstance(arg, PVOID):
+    elif P.is_ptr(arg):
         str = hex(arg.ptr)
         tstr = None
         if arg.type is OBJECT_ATTRIBUTES:
@@ -1418,7 +1418,7 @@ def _arg_to_string(dp: Dumpulator, arg):
     raise NotImplemented()
 
 def _arg_type_string(arg):
-    if isinstance(arg, PVOID) and arg.type is not None:
+    if P.is_ptr(arg) and arg.type is not None:
         return arg.type.__name__ + "*"
     return type(arg).__name__
 
@@ -1495,8 +1495,8 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     sal_pretty = str(sal) + " "
 
                 argvalue = syscall_arg(i)
-                if issubclass(argtype, PVOID):
-                    argvalue = argtype(argvalue, dp)
+                if P.is_ptr(argtype):
+                    argvalue = argtype(dp, argvalue)
                 elif issubclass(argtype, Enum):
                     try:
                         argvalue = argtype(dp.args[i] & 0xFFFFFFFF)

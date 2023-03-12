@@ -609,13 +609,6 @@ def PROCESS_BASIC_INFORMATION(arch: Architecture):
         ]
     return PROCESS_BASIC_INFORMATION()
 
-def P(t):
-    class P(PVOID):
-        def __init__(self, ptr, mem_read):
-            super().__init__(ptr, mem_read)
-            self.type = t
-    return P
-
 class KEY_VALUE_FULL_INFORMATION(ctypes.Structure):
     _fields_ = [
         ("TitleIndex", ctypes.c_uint32),

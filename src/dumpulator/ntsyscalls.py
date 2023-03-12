@@ -17,144 +17,144 @@ def syscall(func):
 
 @syscall
 def ZwAcceptConnectPort(dp: Dumpulator,
-                        PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                        PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
                         PortContext: Annotated[PVOID, SAL("_In_opt_")],
-                        ConnectionRequest: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                        ConnectionRequest: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                         AcceptConnection: Annotated[BOOLEAN, SAL("_In_")],
-                        ServerView: Annotated[P(PORT_VIEW), SAL("_Inout_opt_")],
-                        ClientView: Annotated[P(REMOTE_PORT_VIEW), SAL("_Out_opt_")]
+                        ServerView: Annotated[P[PORT_VIEW], SAL("_Inout_opt_")],
+                        ClientView: Annotated[P[REMOTE_PORT_VIEW], SAL("_Out_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwAccessCheck(dp: Dumpulator,
-                  SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")],
+                  SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")],
                   ClientToken: Annotated[HANDLE, SAL("_In_")],
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                  GenericMapping: Annotated[P(GENERIC_MAPPING), SAL("_In_")],
-                  PrivilegeSet: Annotated[P(PRIVILEGE_SET), SAL("_Out_writes_bytes_(*PrivilegeSetLength)")],
-                  PrivilegeSetLength: Annotated[P(ULONG), SAL("_Inout_")],
-                  GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_")],
-                  AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_")]
+                  GenericMapping: Annotated[P[GENERIC_MAPPING], SAL("_In_")],
+                  PrivilegeSet: Annotated[P[PRIVILEGE_SET], SAL("_Out_writes_bytes_(*PrivilegeSetLength)")],
+                  PrivilegeSetLength: Annotated[P[ULONG], SAL("_Inout_")],
+                  GrantedAccess: Annotated[P[ACCESS_MASK], SAL("_Out_")],
+                  AccessStatus: Annotated[P[NTSTATUS], SAL("_Out_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckAndAuditAlarm(dp: Dumpulator,
-                               SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                               SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                                HandleId: Annotated[PVOID, SAL("_In_opt_")],
-                               ObjectTypeName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                               ObjectName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                               SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")],
+                               ObjectTypeName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                               ObjectName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                               SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")],
                                DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                               GenericMapping: Annotated[P(GENERIC_MAPPING), SAL("_In_")],
+                               GenericMapping: Annotated[P[GENERIC_MAPPING], SAL("_In_")],
                                ObjectCreation: Annotated[BOOLEAN, SAL("_In_")],
-                               GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_")],
-                               AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_")],
-                               GenerateOnClose: Annotated[P(BOOLEAN), SAL("_Out_")]
+                               GrantedAccess: Annotated[P[ACCESS_MASK], SAL("_Out_")],
+                               AccessStatus: Annotated[P[NTSTATUS], SAL("_Out_")],
+                               GenerateOnClose: Annotated[P[BOOLEAN], SAL("_Out_")]
                                ):
     raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckByType(dp: Dumpulator,
-                        SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")],
+                        SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")],
                         PrincipalSelfSid: Annotated[PSID, SAL("_In_opt_")],
                         ClientToken: Annotated[HANDLE, SAL("_In_")],
                         DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                        ObjectTypeList: Annotated[P(OBJECT_TYPE_LIST), SAL("_In_reads_(ObjectTypeListLength)")],
+                        ObjectTypeList: Annotated[P[OBJECT_TYPE_LIST], SAL("_In_reads_(ObjectTypeListLength)")],
                         ObjectTypeListLength: Annotated[ULONG, SAL("_In_")],
-                        GenericMapping: Annotated[P(GENERIC_MAPPING), SAL("_In_")],
-                        PrivilegeSet: Annotated[P(PRIVILEGE_SET), SAL("_Out_writes_bytes_(*PrivilegeSetLength)")],
-                        PrivilegeSetLength: Annotated[P(ULONG), SAL("_Inout_")],
-                        GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_")],
-                        AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_")]
+                        GenericMapping: Annotated[P[GENERIC_MAPPING], SAL("_In_")],
+                        PrivilegeSet: Annotated[P[PRIVILEGE_SET], SAL("_Out_writes_bytes_(*PrivilegeSetLength)")],
+                        PrivilegeSetLength: Annotated[P[ULONG], SAL("_Inout_")],
+                        GrantedAccess: Annotated[P[ACCESS_MASK], SAL("_Out_")],
+                        AccessStatus: Annotated[P[NTSTATUS], SAL("_Out_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckByTypeAndAuditAlarm(dp: Dumpulator,
-                                     SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                                     SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                                      HandleId: Annotated[PVOID, SAL("_In_opt_")],
-                                     ObjectTypeName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                     ObjectName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                     SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")],
+                                     ObjectTypeName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                     ObjectName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                     SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")],
                                      PrincipalSelfSid: Annotated[PSID, SAL("_In_opt_")],
                                      DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                                      AuditType: Annotated[AUDIT_EVENT_TYPE, SAL("_In_")],
                                      Flags: Annotated[ULONG, SAL("_In_")],
-                                     ObjectTypeList: Annotated[P(OBJECT_TYPE_LIST), SAL("_In_reads_opt_(ObjectTypeListLength)")],
+                                     ObjectTypeList: Annotated[P[OBJECT_TYPE_LIST], SAL("_In_reads_opt_(ObjectTypeListLength)")],
                                      ObjectTypeListLength: Annotated[ULONG, SAL("_In_")],
-                                     GenericMapping: Annotated[P(GENERIC_MAPPING), SAL("_In_")],
+                                     GenericMapping: Annotated[P[GENERIC_MAPPING], SAL("_In_")],
                                      ObjectCreation: Annotated[BOOLEAN, SAL("_In_")],
-                                     GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_")],
-                                     AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_")],
-                                     GenerateOnClose: Annotated[P(BOOLEAN), SAL("_Out_")]
+                                     GrantedAccess: Annotated[P[ACCESS_MASK], SAL("_Out_")],
+                                     AccessStatus: Annotated[P[NTSTATUS], SAL("_Out_")],
+                                     GenerateOnClose: Annotated[P[BOOLEAN], SAL("_Out_")]
                                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckByTypeResultList(dp: Dumpulator,
-                                  SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")],
+                                  SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")],
                                   PrincipalSelfSid: Annotated[PSID, SAL("_In_opt_")],
                                   ClientToken: Annotated[HANDLE, SAL("_In_")],
                                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                                  ObjectTypeList: Annotated[P(OBJECT_TYPE_LIST), SAL("_In_reads_(ObjectTypeListLength)")],
+                                  ObjectTypeList: Annotated[P[OBJECT_TYPE_LIST], SAL("_In_reads_(ObjectTypeListLength)")],
                                   ObjectTypeListLength: Annotated[ULONG, SAL("_In_")],
-                                  GenericMapping: Annotated[P(GENERIC_MAPPING), SAL("_In_")],
-                                  PrivilegeSet: Annotated[P(PRIVILEGE_SET), SAL("_Out_writes_bytes_(*PrivilegeSetLength)")],
-                                  PrivilegeSetLength: Annotated[P(ULONG), SAL("_Inout_")],
-                                  GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_writes_(ObjectTypeListLength)")],
-                                  AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_writes_(ObjectTypeListLength)")]
+                                  GenericMapping: Annotated[P[GENERIC_MAPPING], SAL("_In_")],
+                                  PrivilegeSet: Annotated[P[PRIVILEGE_SET], SAL("_Out_writes_bytes_(*PrivilegeSetLength)")],
+                                  PrivilegeSetLength: Annotated[P[ULONG], SAL("_Inout_")],
+                                  GrantedAccess: Annotated[P[ACCESS_MASK], SAL("_Out_writes_(ObjectTypeListLength)")],
+                                  AccessStatus: Annotated[P[NTSTATUS], SAL("_Out_writes_(ObjectTypeListLength)")]
                                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckByTypeResultListAndAuditAlarm(dp: Dumpulator,
-                                               SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                                               SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                                                HandleId: Annotated[PVOID, SAL("_In_opt_")],
-                                               ObjectTypeName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                               ObjectName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                               SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")],
+                                               ObjectTypeName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                               ObjectName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                               SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")],
                                                PrincipalSelfSid: Annotated[PSID, SAL("_In_opt_")],
                                                DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                                                AuditType: Annotated[AUDIT_EVENT_TYPE, SAL("_In_")],
                                                Flags: Annotated[ULONG, SAL("_In_")],
-                                               ObjectTypeList: Annotated[P(OBJECT_TYPE_LIST), SAL("_In_reads_opt_(ObjectTypeListLength)")],
+                                               ObjectTypeList: Annotated[P[OBJECT_TYPE_LIST], SAL("_In_reads_opt_(ObjectTypeListLength)")],
                                                ObjectTypeListLength: Annotated[ULONG, SAL("_In_")],
-                                               GenericMapping: Annotated[P(GENERIC_MAPPING), SAL("_In_")],
+                                               GenericMapping: Annotated[P[GENERIC_MAPPING], SAL("_In_")],
                                                ObjectCreation: Annotated[BOOLEAN, SAL("_In_")],
-                                               GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_writes_(ObjectTypeListLength)")],
-                                               AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_writes_(ObjectTypeListLength)")],
-                                               GenerateOnClose: Annotated[P(BOOLEAN), SAL("_Out_")]
+                                               GrantedAccess: Annotated[P[ACCESS_MASK], SAL("_Out_writes_(ObjectTypeListLength)")],
+                                               AccessStatus: Annotated[P[NTSTATUS], SAL("_Out_writes_(ObjectTypeListLength)")],
+                                               GenerateOnClose: Annotated[P[BOOLEAN], SAL("_Out_")]
                                                ):
     raise NotImplementedError()
 
 @syscall
 def ZwAccessCheckByTypeResultListAndAuditAlarmByHandle(dp: Dumpulator,
-                                                       SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                                                       SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                                                        HandleId: Annotated[PVOID, SAL("_In_opt_")],
                                                        ClientToken: Annotated[HANDLE, SAL("_In_")],
-                                                       ObjectTypeName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                                       ObjectName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                                       SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")],
+                                                       ObjectTypeName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                                       ObjectName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                                       SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")],
                                                        PrincipalSelfSid: Annotated[PSID, SAL("_In_opt_")],
                                                        DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                                                        AuditType: Annotated[AUDIT_EVENT_TYPE, SAL("_In_")],
                                                        Flags: Annotated[ULONG, SAL("_In_")],
-                                                       ObjectTypeList: Annotated[P(OBJECT_TYPE_LIST), SAL("_In_reads_opt_(ObjectTypeListLength)")],
+                                                       ObjectTypeList: Annotated[P[OBJECT_TYPE_LIST], SAL("_In_reads_opt_(ObjectTypeListLength)")],
                                                        ObjectTypeListLength: Annotated[ULONG, SAL("_In_")],
-                                                       GenericMapping: Annotated[P(GENERIC_MAPPING), SAL("_In_")],
+                                                       GenericMapping: Annotated[P[GENERIC_MAPPING], SAL("_In_")],
                                                        ObjectCreation: Annotated[BOOLEAN, SAL("_In_")],
-                                                       GrantedAccess: Annotated[P(ACCESS_MASK), SAL("_Out_writes_(ObjectTypeListLength)")],
-                                                       AccessStatus: Annotated[P(NTSTATUS), SAL("_Out_writes_(ObjectTypeListLength)")],
-                                                       GenerateOnClose: Annotated[P(BOOLEAN), SAL("_Out_")]
+                                                       GrantedAccess: Annotated[P[ACCESS_MASK], SAL("_Out_writes_(ObjectTypeListLength)")],
+                                                       AccessStatus: Annotated[P[NTSTATUS], SAL("_Out_writes_(ObjectTypeListLength)")],
+                                                       GenerateOnClose: Annotated[P[BOOLEAN], SAL("_Out_")]
                                                        ):
     raise NotImplementedError()
 
 @syscall
 def ZwAcquireCMFViewOwnership(dp: Dumpulator,
-                              TimeStamp: Annotated[P(ULONGLONG), SAL("_Out_")],
-                              tokenTaken: Annotated[P(BOOLEAN), SAL("_Out_")],
+                              TimeStamp: Annotated[P[ULONGLONG], SAL("_Out_")],
+                              tokenTaken: Annotated[P[BOOLEAN], SAL("_Out_")],
                               replaceExisting: Annotated[BOOLEAN, SAL("_In_")]
                               ):
     raise NotImplementedError()
@@ -163,7 +163,7 @@ def ZwAcquireCMFViewOwnership(dp: Dumpulator,
 def ZwAddAtom(dp: Dumpulator,
               AtomName: Annotated[PWSTR, SAL("_In_reads_bytes_opt_(Length)")],
               Length: Annotated[ULONG, SAL("_In_")],
-              Atom: Annotated[P(RTL_ATOM), SAL("_Out_opt_")]
+              Atom: Annotated[P[RTL_ATOM], SAL("_Out_opt_")]
               ):
     raise NotImplementedError()
 
@@ -171,22 +171,22 @@ def ZwAddAtom(dp: Dumpulator,
 def ZwAddAtomEx(dp: Dumpulator,
                 AtomName: Annotated[PWSTR, SAL("_In_reads_bytes_opt_(Length)")],
                 Length: Annotated[ULONG, SAL("_In_")],
-                Atom: Annotated[P(RTL_ATOM), SAL("_Out_opt_")],
+                Atom: Annotated[P[RTL_ATOM], SAL("_Out_opt_")],
                 Flags: Annotated[ULONG, SAL("_In_")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwAddBootEntry(dp: Dumpulator,
-                   BootEntry: Annotated[P(BOOT_ENTRY), SAL("_In_")],
-                   Id: Annotated[P(ULONG), SAL("_Out_opt_")]
+                   BootEntry: Annotated[P[BOOT_ENTRY], SAL("_In_")],
+                   Id: Annotated[P[ULONG], SAL("_Out_opt_")]
                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwAddDriverEntry(dp: Dumpulator,
-                     DriverEntry: Annotated[P(EFI_DRIVER_ENTRY), SAL("_In_")],
-                     Id: Annotated[P(ULONG), SAL("_Out_opt_")]
+                     DriverEntry: Annotated[P[EFI_DRIVER_ENTRY], SAL("_In_")],
+                     Id: Annotated[P[ULONG], SAL("_Out_opt_")]
                      ):
     raise NotImplementedError()
 
@@ -194,10 +194,10 @@ def ZwAddDriverEntry(dp: Dumpulator,
 def ZwAdjustGroupsToken(dp: Dumpulator,
                         TokenHandle: Annotated[HANDLE, SAL("_In_")],
                         ResetToDefault: Annotated[BOOLEAN, SAL("_In_")],
-                        NewState: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
+                        NewState: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
                         BufferLength: Annotated[ULONG, SAL("_In_opt_")],
-                        PreviousState: Annotated[P(TOKEN_GROUPS), SAL("_Out_writes_bytes_to_opt_(BufferLength, *ReturnLength)")],
-                        ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                        PreviousState: Annotated[P[TOKEN_GROUPS], SAL("_Out_writes_bytes_to_opt_(BufferLength, *ReturnLength)")],
+                        ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                         ):
     raise NotImplementedError()
 
@@ -205,10 +205,10 @@ def ZwAdjustGroupsToken(dp: Dumpulator,
 def ZwAdjustPrivilegesToken(dp: Dumpulator,
                             TokenHandle: Annotated[HANDLE, SAL("_In_")],
                             DisableAllPrivileges: Annotated[BOOLEAN, SAL("_In_")],
-                            NewState: Annotated[P(TOKEN_PRIVILEGES), SAL("_In_opt_")],
+                            NewState: Annotated[P[TOKEN_PRIVILEGES], SAL("_In_opt_")],
                             BufferLength: Annotated[ULONG, SAL("_In_")],
-                            PreviousState: Annotated[P(TOKEN_PRIVILEGES), SAL("_Out_writes_bytes_to_opt_(BufferLength, *ReturnLength)")],
-                            ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                            PreviousState: Annotated[P[TOKEN_PRIVILEGES], SAL("_Out_writes_bytes_to_opt_(BufferLength, *ReturnLength)")],
+                            ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                             ):
     raise NotImplementedError()
 
@@ -218,25 +218,25 @@ def ZwAdjustTokenClaimsAndDeviceGroups(dp: Dumpulator,
                                        UserResetToDefault: Annotated[BOOLEAN, SAL("_In_")],
                                        DeviceResetToDefault: Annotated[BOOLEAN, SAL("_In_")],
                                        DeviceGroupsResetToDefault: Annotated[BOOLEAN, SAL("_In_")],
-                                       NewUserState: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_In_opt_")],
-                                       NewDeviceState: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_In_opt_")],
-                                       NewDeviceGroupsState: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
+                                       NewUserState: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_In_opt_")],
+                                       NewDeviceState: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_In_opt_")],
+                                       NewDeviceGroupsState: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
                                        UserBufferLength: Annotated[ULONG, SAL("_In_")],
-                                       PreviousUserState: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_Out_writes_bytes_to_opt_(UserBufferLength, *UserReturnLength)")],
+                                       PreviousUserState: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_Out_writes_bytes_to_opt_(UserBufferLength, *UserReturnLength)")],
                                        DeviceBufferLength: Annotated[ULONG, SAL("_In_")],
-                                       PreviousDeviceState: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_Out_writes_bytes_to_opt_(DeviceBufferLength, *DeviceReturnLength)")],
+                                       PreviousDeviceState: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_Out_writes_bytes_to_opt_(DeviceBufferLength, *DeviceReturnLength)")],
                                        DeviceGroupsBufferLength: Annotated[ULONG, SAL("_In_")],
-                                       PreviousDeviceGroups: Annotated[P(TOKEN_GROUPS), SAL("_Out_writes_bytes_to_opt_(DeviceGroupsBufferLength, *DeviceGroupsReturnBufferLength)")],
-                                       UserReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")],
-                                       DeviceReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")],
-                                       DeviceGroupsReturnBufferLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                       PreviousDeviceGroups: Annotated[P[TOKEN_GROUPS], SAL("_Out_writes_bytes_to_opt_(DeviceGroupsBufferLength, *DeviceGroupsReturnBufferLength)")],
+                                       UserReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")],
+                                       DeviceReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")],
+                                       DeviceGroupsReturnBufferLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                        ):
     raise NotImplementedError()
 
 @syscall
 def ZwAlertResumeThread(dp: Dumpulator,
                         ThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                        PreviousSuspendCount: Annotated[P(ULONG), SAL("_Out_opt_")]
+                        PreviousSuspendCount: Annotated[P[ULONG], SAL("_Out_opt_")]
                         ):
     raise NotImplementedError()
 
@@ -254,14 +254,14 @@ def ZwAlertThreadByThreadId(dp: Dumpulator,
 
 @syscall
 def ZwAllocateLocallyUniqueId(dp: Dumpulator,
-                              Luid: Annotated[P(LUID), SAL("_Out_")]
+                              Luid: Annotated[P[LUID], SAL("_Out_")]
                               ):
     raise NotImplementedError()
 
 @syscall
 def ZwAllocateReserveObject(dp: Dumpulator,
-                            MemoryReserveHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                            ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                            MemoryReserveHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                            ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                             Type: Annotated[MEMORY_RESERVE_TYPE, SAL("_In_")]
                             ):
     raise NotImplementedError()
@@ -269,36 +269,36 @@ def ZwAllocateReserveObject(dp: Dumpulator,
 @syscall
 def ZwAllocateUserPhysicalPages(dp: Dumpulator,
                                 ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                                NumberOfPages: Annotated[P(ULONG_PTR), SAL("_Inout_")],
-                                UserPfnArray: Annotated[P(ULONG_PTR), SAL("_Out_writes_(*NumberOfPages)")]
+                                NumberOfPages: Annotated[P[ULONG_PTR], SAL("_Inout_")],
+                                UserPfnArray: Annotated[P[ULONG_PTR], SAL("_Out_writes_(*NumberOfPages)")]
                                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwAllocateUserPhysicalPagesEx(dp: Dumpulator,
                                   ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                                  NumberOfPages: Annotated[P(ULONG_PTR), SAL("_Inout_")],
-                                  UserPfnArray: Annotated[P(ULONG_PTR), SAL("_Out_writes_(*NumberOfPages)")],
-                                  ExtendedParameters: Annotated[P(MEM_EXTENDED_PARAMETER), SAL("_Inout_updates_opt_(ParameterCount)")],
+                                  NumberOfPages: Annotated[P[ULONG_PTR], SAL("_Inout_")],
+                                  UserPfnArray: Annotated[P[ULONG_PTR], SAL("_Out_writes_(*NumberOfPages)")],
+                                  ExtendedParameters: Annotated[P[MEM_EXTENDED_PARAMETER], SAL("_Inout_updates_opt_(ParameterCount)")],
                                   ExtendedParameterCount: Annotated[ULONG, SAL("_In_")]
                                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwAllocateUuids(dp: Dumpulator,
-                    Time: Annotated[P(ULARGE_INTEGER), SAL("_Out_")],
-                    Range: Annotated[P(ULONG), SAL("_Out_")],
-                    Sequence: Annotated[P(ULONG), SAL("_Out_")],
-                    Seed: Annotated[P(CHAR), SAL("_Out_")]
+                    Time: Annotated[P[ULARGE_INTEGER], SAL("_Out_")],
+                    Range: Annotated[P[ULONG], SAL("_Out_")],
+                    Sequence: Annotated[P[ULONG], SAL("_Out_")],
+                    Seed: Annotated[P[CHAR], SAL("_Out_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwAllocateVirtualMemory(dp: Dumpulator,
                             ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                            BaseAddress: Annotated[P(PVOID), SAL("_Inout_ _At_(*BaseAddress, _Readable_bytes_(*RegionSize) _Writable_bytes_(*RegionSize) _Post_readable_byte_size_(*RegionSize))")],
+                            BaseAddress: Annotated[P[PVOID], SAL("_Inout_ _At_(*BaseAddress, _Readable_bytes_(*RegionSize) _Writable_bytes_(*RegionSize) _Post_readable_byte_size_(*RegionSize))")],
                             ZeroBits: Annotated[ULONG_PTR, SAL("_In_")],
-                            RegionSize: Annotated[P(SIZE_T), SAL("_Inout_")],
+                            RegionSize: Annotated[P[SIZE_T], SAL("_Inout_")],
                             AllocationType: Annotated[ULONG, SAL("_In_")],
                             Protect: Annotated[ULONG, SAL("_In_")]
                             ):
@@ -338,14 +338,14 @@ def ZwAllocateVirtualMemory(dp: Dumpulator,
 
 @syscall
 def ZwAlpcAcceptConnectPort(dp: Dumpulator,
-                            PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                            PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
                             ConnectionPortHandle: Annotated[HANDLE, SAL("_In_")],
                             Flags: Annotated[ULONG, SAL("_In_")],
-                            ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                            PortAttributes: Annotated[P(ALPC_PORT_ATTRIBUTES), SAL("_In_opt_")],
+                            ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                            PortAttributes: Annotated[P[ALPC_PORT_ATTRIBUTES], SAL("_In_opt_")],
                             PortContext: Annotated[PVOID, SAL("_In_opt_")],
-                            ConnectionRequest: Annotated[P(PORT_MESSAGE), SAL("_In_reads_bytes_(ConnectionRequest->u1.s1.TotalLength)")],
-                            ConnectionMessageAttributes: Annotated[P(ALPC_MESSAGE_ATTRIBUTES), SAL("_Inout_opt_")],
+                            ConnectionRequest: Annotated[P[PORT_MESSAGE], SAL("_In_reads_bytes_(ConnectionRequest->u1.s1.TotalLength)")],
+                            ConnectionMessageAttributes: Annotated[P[ALPC_MESSAGE_ATTRIBUTES], SAL("_Inout_opt_")],
                             AcceptConnection: Annotated[BOOLEAN, SAL("_In_")]
                             ):
     raise NotImplementedError()
@@ -354,47 +354,47 @@ def ZwAlpcAcceptConnectPort(dp: Dumpulator,
 def ZwAlpcCancelMessage(dp: Dumpulator,
                         PortHandle: Annotated[HANDLE, SAL("_In_")],
                         Flags: Annotated[ULONG, SAL("_In_")],
-                        MessageContext: Annotated[P(ALPC_CONTEXT_ATTR), SAL("_In_")]
+                        MessageContext: Annotated[P[ALPC_CONTEXT_ATTR], SAL("_In_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwAlpcConnectPort(dp: Dumpulator,
-                      PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                      PortName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                      PortAttributes: Annotated[P(ALPC_PORT_ATTRIBUTES), SAL("_In_opt_")],
+                      PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                      PortName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                      PortAttributes: Annotated[P[ALPC_PORT_ATTRIBUTES], SAL("_In_opt_")],
                       Flags: Annotated[ULONG, SAL("_In_")],
                       RequiredServerSid: Annotated[PSID, SAL("_In_opt_")],
-                      ConnectionMessage: Annotated[P(PORT_MESSAGE), SAL("_Inout_updates_bytes_to_opt_(*BufferLength, *BufferLength)")],
-                      BufferLength: Annotated[P(ULONG), SAL("_Inout_opt_")],
-                      OutMessageAttributes: Annotated[P(ALPC_MESSAGE_ATTRIBUTES), SAL("_Inout_opt_")],
-                      InMessageAttributes: Annotated[P(ALPC_MESSAGE_ATTRIBUTES), SAL("_Inout_opt_")],
-                      Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                      ConnectionMessage: Annotated[P[PORT_MESSAGE], SAL("_Inout_updates_bytes_to_opt_(*BufferLength, *BufferLength)")],
+                      BufferLength: Annotated[P[ULONG], SAL("_Inout_opt_")],
+                      OutMessageAttributes: Annotated[P[ALPC_MESSAGE_ATTRIBUTES], SAL("_Inout_opt_")],
+                      InMessageAttributes: Annotated[P[ALPC_MESSAGE_ATTRIBUTES], SAL("_Inout_opt_")],
+                      Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwAlpcConnectPortEx(dp: Dumpulator,
-                        PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                        ConnectionPortObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                        ClientPortObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                        PortAttributes: Annotated[P(ALPC_PORT_ATTRIBUTES), SAL("_In_opt_")],
+                        PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                        ConnectionPortObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                        ClientPortObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                        PortAttributes: Annotated[P[ALPC_PORT_ATTRIBUTES], SAL("_In_opt_")],
                         Flags: Annotated[ULONG, SAL("_In_")],
-                        ServerSecurityRequirements: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_opt_")],
-                        ConnectionMessage: Annotated[P(PORT_MESSAGE), SAL("_Inout_updates_bytes_to_opt_(*BufferLength, *BufferLength)")],
-                        BufferLength: Annotated[P(SIZE_T), SAL("_Inout_opt_")],
-                        OutMessageAttributes: Annotated[P(ALPC_MESSAGE_ATTRIBUTES), SAL("_Inout_opt_")],
-                        InMessageAttributes: Annotated[P(ALPC_MESSAGE_ATTRIBUTES), SAL("_Inout_opt_")],
-                        Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                        ServerSecurityRequirements: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_opt_")],
+                        ConnectionMessage: Annotated[P[PORT_MESSAGE], SAL("_Inout_updates_bytes_to_opt_(*BufferLength, *BufferLength)")],
+                        BufferLength: Annotated[P[SIZE_T], SAL("_Inout_opt_")],
+                        OutMessageAttributes: Annotated[P[ALPC_MESSAGE_ATTRIBUTES], SAL("_Inout_opt_")],
+                        InMessageAttributes: Annotated[P[ALPC_MESSAGE_ATTRIBUTES], SAL("_Inout_opt_")],
+                        Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwAlpcCreatePort(dp: Dumpulator,
-                     PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                     ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                     PortAttributes: Annotated[P(ALPC_PORT_ATTRIBUTES), SAL("_In_opt_")]
+                     PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                     ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                     PortAttributes: Annotated[P[ALPC_PORT_ATTRIBUTES], SAL("_In_opt_")]
                      ):
     raise NotImplementedError()
 
@@ -404,8 +404,8 @@ def ZwAlpcCreatePortSection(dp: Dumpulator,
                             Flags: Annotated[ULONG, SAL("_In_")],
                             SectionHandle: Annotated[HANDLE, SAL("_In_opt_")],
                             SectionSize: Annotated[SIZE_T, SAL("_In_")],
-                            AlpcSectionHandle: Annotated[P(ALPC_HANDLE), SAL("_Out_")],
-                            ActualSectionSize: Annotated[P(SIZE_T), SAL("_Out_")]
+                            AlpcSectionHandle: Annotated[P[ALPC_HANDLE], SAL("_Out_")],
+                            ActualSectionSize: Annotated[P[SIZE_T], SAL("_Out_")]
                             ):
     raise NotImplementedError()
 
@@ -414,7 +414,7 @@ def ZwAlpcCreateResourceReserve(dp: Dumpulator,
                                 PortHandle: Annotated[HANDLE, SAL("_In_")],
                                 Flags: Annotated[ULONG, SAL("_Reserved_")],
                                 MessageSize: Annotated[SIZE_T, SAL("_In_")],
-                                ResourceId: Annotated[P(ALPC_HANDLE), SAL("_Out_")]
+                                ResourceId: Annotated[P[ALPC_HANDLE], SAL("_Out_")]
                                 ):
     raise NotImplementedError()
 
@@ -422,7 +422,7 @@ def ZwAlpcCreateResourceReserve(dp: Dumpulator,
 def ZwAlpcCreateSectionView(dp: Dumpulator,
                             PortHandle: Annotated[HANDLE, SAL("_In_")],
                             Flags: Annotated[ULONG, SAL("_Reserved_")],
-                            ViewAttributes: Annotated[P(ALPC_DATA_VIEW_ATTR), SAL("_Inout_")]
+                            ViewAttributes: Annotated[P[ALPC_DATA_VIEW_ATTR], SAL("_Inout_")]
                             ):
     raise NotImplementedError()
 
@@ -430,7 +430,7 @@ def ZwAlpcCreateSectionView(dp: Dumpulator,
 def ZwAlpcCreateSecurityContext(dp: Dumpulator,
                                 PortHandle: Annotated[HANDLE, SAL("_In_")],
                                 Flags: Annotated[ULONG, SAL("_Reserved_")],
-                                SecurityAttribute: Annotated[P(ALPC_SECURITY_ATTR), SAL("_Inout_")]
+                                SecurityAttribute: Annotated[P[ALPC_SECURITY_ATTR], SAL("_Inout_")]
                                 ):
     raise NotImplementedError()
 
@@ -476,7 +476,7 @@ def ZwAlpcDisconnectPort(dp: Dumpulator,
 @syscall
 def ZwAlpcImpersonateClientContainerOfPort(dp: Dumpulator,
                                            PortHandle: Annotated[HANDLE, SAL("_In_")],
-                                           Message: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                                           Message: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                                            Flags: Annotated[ULONG, SAL("_In_")]
                                            ):
     raise NotImplementedError()
@@ -484,30 +484,30 @@ def ZwAlpcImpersonateClientContainerOfPort(dp: Dumpulator,
 @syscall
 def ZwAlpcImpersonateClientOfPort(dp: Dumpulator,
                                   PortHandle: Annotated[HANDLE, SAL("_In_")],
-                                  Message: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                                  Message: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                                   Flags: Annotated[PVOID, SAL("_In_")]
                                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwAlpcOpenSenderProcess(dp: Dumpulator,
-                            ProcessHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                            ProcessHandle: Annotated[P[HANDLE], SAL("_Out_")],
                             PortHandle: Annotated[HANDLE, SAL("_In_")],
-                            PortMessage: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                            PortMessage: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                             Flags: Annotated[ULONG, SAL("_In_")],
                             DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                            ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                            ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                             ):
     raise NotImplementedError()
 
 @syscall
 def ZwAlpcOpenSenderThread(dp: Dumpulator,
-                           ThreadHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                           ThreadHandle: Annotated[P[HANDLE], SAL("_Out_")],
                            PortHandle: Annotated[HANDLE, SAL("_In_")],
-                           PortMessage: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                           PortMessage: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                            Flags: Annotated[ULONG, SAL("_In_")],
                            DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                           ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                           ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                            ):
     raise NotImplementedError()
 
@@ -517,18 +517,18 @@ def ZwAlpcQueryInformation(dp: Dumpulator,
                            PortInformationClass: Annotated[ALPC_PORT_INFORMATION_CLASS, SAL("_In_")],
                            PortInformation: Annotated[PVOID, SAL("_Inout_updates_bytes_to_(Length, *ReturnLength)")],
                            Length: Annotated[ULONG, SAL("_In_")],
-                           ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                           ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwAlpcQueryInformationMessage(dp: Dumpulator,
                                   PortHandle: Annotated[HANDLE, SAL("_In_")],
-                                  PortMessage: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                                  PortMessage: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                                   MessageInformationClass: Annotated[ALPC_MESSAGE_INFORMATION_CLASS, SAL("_In_")],
                                   MessageInformation: Annotated[PVOID, SAL("_Out_writes_bytes_to_opt_(Length, *ReturnLength)")],
                                   Length: Annotated[ULONG, SAL("_In_")],
-                                  ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                  ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                   ):
     raise NotImplementedError()
 
@@ -544,12 +544,12 @@ def ZwAlpcRevokeSecurityContext(dp: Dumpulator,
 def ZwAlpcSendWaitReceivePort(dp: Dumpulator,
                               PortHandle: Annotated[HANDLE, SAL("_In_")],
                               Flags: Annotated[ULONG, SAL("_In_")],
-                              SendMessageA: Annotated[P(PORT_MESSAGE), SAL("_In_reads_bytes_opt_(SendMessage->u1.s1.TotalLength)")],
-                              SendMessageAttributes: Annotated[P(ALPC_MESSAGE_ATTRIBUTES), SAL("_Inout_opt_")],
-                              ReceiveMessage: Annotated[P(PORT_MESSAGE), SAL("_Out_writes_bytes_to_opt_(*BufferLength, *BufferLength)")],
-                              BufferLength: Annotated[P(SIZE_T), SAL("_Inout_opt_")],
-                              ReceiveMessageAttributes: Annotated[P(ALPC_MESSAGE_ATTRIBUTES), SAL("_Inout_opt_")],
-                              Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                              SendMessageA: Annotated[P[PORT_MESSAGE], SAL("_In_reads_bytes_opt_(SendMessage->u1.s1.TotalLength)")],
+                              SendMessageAttributes: Annotated[P[ALPC_MESSAGE_ATTRIBUTES], SAL("_Inout_opt_")],
+                              ReceiveMessage: Annotated[P[PORT_MESSAGE], SAL("_Out_writes_bytes_to_opt_(*BufferLength, *BufferLength)")],
+                              BufferLength: Annotated[P[SIZE_T], SAL("_Inout_opt_")],
+                              ReceiveMessageAttributes: Annotated[P[ALPC_MESSAGE_ATTRIBUTES], SAL("_Inout_opt_")],
+                              Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                               ):
     raise NotImplementedError()
 
@@ -585,7 +585,7 @@ def ZwAssociateWaitCompletionPacket(dp: Dumpulator,
                                     ApcContext: Annotated[PVOID, SAL("_In_opt_")],
                                     IoStatus: Annotated[NTSTATUS, SAL("_In_")],
                                     IoStatusInformation: Annotated[ULONG_PTR, SAL("_In_")],
-                                    AlreadySignaled: Annotated[P(BOOLEAN), SAL("_Out_opt_")]
+                                    AlreadySignaled: Annotated[P[BOOLEAN], SAL("_Out_opt_")]
                                     ):
     raise NotImplementedError()
 
@@ -599,47 +599,47 @@ def ZwCallbackReturn(dp: Dumpulator,
 
 @syscall
 def ZwCallEnclave(dp: Dumpulator,
-                  Routine: Annotated[P(ENCLAVE_ROUTINE), SAL("_In_")],
+                  Routine: Annotated[P[ENCLAVE_ROUTINE], SAL("_In_")],
                   Parameter: Annotated[PVOID, SAL("_In_")],
                   WaitForThread: Annotated[BOOLEAN, SAL("_In_")],
-                  ReturnValue: Annotated[P(PVOID), SAL("_Out_opt_")]
+                  ReturnValue: Annotated[P[PVOID], SAL("_Out_opt_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwCancelIoFile(dp: Dumpulator,
                    FileHandle: Annotated[HANDLE, SAL("_In_")],
-                   IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")]
+                   IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")]
                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwCancelIoFileEx(dp: Dumpulator,
                      FileHandle: Annotated[HANDLE, SAL("_In_")],
-                     IoRequestToCancel: Annotated[P(IO_STATUS_BLOCK), SAL("_In_opt_")],
-                     IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")]
+                     IoRequestToCancel: Annotated[P[IO_STATUS_BLOCK], SAL("_In_opt_")],
+                     IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")]
                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwCancelSynchronousIoFile(dp: Dumpulator,
                               ThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                              IoRequestToCancel: Annotated[P(IO_STATUS_BLOCK), SAL("_In_opt_")],
-                              IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")]
+                              IoRequestToCancel: Annotated[P[IO_STATUS_BLOCK], SAL("_In_opt_")],
+                              IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")]
                               ):
     raise NotImplementedError()
 
 @syscall
 def ZwCancelTimer(dp: Dumpulator,
                   TimerHandle: Annotated[HANDLE, SAL("_In_")],
-                  CurrentState: Annotated[P(BOOLEAN), SAL("_Out_opt_")]
+                  CurrentState: Annotated[P[BOOLEAN], SAL("_Out_opt_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwCancelTimer2(dp: Dumpulator,
                    TimerHandle: Annotated[HANDLE, SAL("_In_")],
-                   Parameters: Annotated[P(T2_CANCEL_PARAMETERS), SAL("_In_")]
+                   Parameters: Annotated[P[T2_CANCEL_PARAMETERS], SAL("_In_")]
                    ):
     raise NotImplementedError()
 
@@ -689,7 +689,7 @@ def ZwClose(dp: Dumpulator,
 
 @syscall
 def ZwCloseObjectAuditAlarm(dp: Dumpulator,
-                            SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                            SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                             HandleId: Annotated[PVOID, SAL("_In_opt_")],
                             GenerateOnClose: Annotated[BOOLEAN, SAL("_In_")]
                             ):
@@ -698,14 +698,14 @@ def ZwCloseObjectAuditAlarm(dp: Dumpulator,
 @syscall
 def ZwCommitComplete(dp: Dumpulator,
                      EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                     TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                     TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwCommitEnlistment(dp: Dumpulator,
                        EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                       TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                       TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                        ):
     raise NotImplementedError()
 
@@ -719,7 +719,7 @@ def ZwCommitTransaction(dp: Dumpulator,
 @syscall
 def ZwCompactKeys(dp: Dumpulator,
                   Count: Annotated[ULONG, SAL("_In_")],
-                  KeyArray: Annotated[P(HANDLE), SAL("_In_reads_(Count)")]
+                  KeyArray: Annotated[P[HANDLE], SAL("_In_reads_(Count)")]
                   ):
     raise NotImplementedError()
 
@@ -741,7 +741,7 @@ def ZwCompareSigningLevels(dp: Dumpulator,
 def ZwCompareTokens(dp: Dumpulator,
                     FirstTokenHandle: Annotated[HANDLE, SAL("_In_")],
                     SecondTokenHandle: Annotated[HANDLE, SAL("_In_")],
-                    Equal: Annotated[P(BOOLEAN), SAL("_Out_")]
+                    Equal: Annotated[P[BOOLEAN], SAL("_Out_")]
                     ):
     raise NotImplementedError()
 
@@ -759,20 +759,20 @@ def ZwCompressKey(dp: Dumpulator,
 
 @syscall
 def ZwConnectPort(dp: Dumpulator,
-                  PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                  PortName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                  SecurityQos: Annotated[P(SECURITY_QUALITY_OF_SERVICE), SAL("_In_")],
-                  ClientView: Annotated[P(PORT_VIEW), SAL("_Inout_opt_")],
-                  ServerView: Annotated[P(REMOTE_PORT_VIEW), SAL("_Inout_opt_")],
-                  MaxMessageLength: Annotated[P(ULONG), SAL("_Out_opt_")],
+                  PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                  PortName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                  SecurityQos: Annotated[P[SECURITY_QUALITY_OF_SERVICE], SAL("_In_")],
+                  ClientView: Annotated[P[PORT_VIEW], SAL("_Inout_opt_")],
+                  ServerView: Annotated[P[REMOTE_PORT_VIEW], SAL("_Inout_opt_")],
+                  MaxMessageLength: Annotated[P[ULONG], SAL("_Out_opt_")],
                   ConnectionInformation: Annotated[PVOID, SAL("_Inout_updates_bytes_to_opt_(*ConnectionInformationLength, *ConnectionInformationLength)")],
-                  ConnectionInformationLength: Annotated[P(ULONG), SAL("_Inout_opt_")]
+                  ConnectionInformationLength: Annotated[P[ULONG], SAL("_Inout_opt_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwContinue(dp: Dumpulator,
-               ContextRecord: Annotated[P(CONTEXT), SAL("_In_")],
+               ContextRecord: Annotated[P[CONTEXT], SAL("_In_")],
                TestAlert: Annotated[BOOLEAN, SAL("_In_")]
                ):
     # Trigger a context switch
@@ -796,33 +796,33 @@ def ZwContinue(dp: Dumpulator,
 
 @syscall
 def ZwContinueEx(dp: Dumpulator,
-                 ContextRecord: Annotated[P(CONTEXT), SAL("_In_")],
+                 ContextRecord: Annotated[P[CONTEXT], SAL("_In_")],
                  ContinueArgument: Annotated[PVOID, SAL("_In_", "PKCONTINUE_ARGUMENT and BOOLEAN are valid")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateDebugObject(dp: Dumpulator,
-                        DebugObjectHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                        DebugObjectHandle: Annotated[P[HANDLE], SAL("_Out_")],
                         DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                        ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                        ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                         Flags: Annotated[ULONG, SAL("_In_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateDirectoryObject(dp: Dumpulator,
-                            DirectoryHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                            DirectoryHandle: Annotated[P[HANDLE], SAL("_Out_")],
                             DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                            ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                            ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                             ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateDirectoryObjectEx(dp: Dumpulator,
-                              DirectoryHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                              DirectoryHandle: Annotated[P[HANDLE], SAL("_Out_")],
                               DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                              ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                              ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                               ShadowDirectoryHandle: Annotated[HANDLE, SAL("_In_")],
                               Flags: Annotated[ULONG, SAL("_In_")]
                               ):
@@ -831,24 +831,24 @@ def ZwCreateDirectoryObjectEx(dp: Dumpulator,
 @syscall
 def ZwCreateEnclave(dp: Dumpulator,
                     ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                    BaseAddress: Annotated[P(PVOID), SAL("_Inout_")],
+                    BaseAddress: Annotated[P[PVOID], SAL("_Inout_")],
                     ZeroBits: Annotated[ULONG_PTR, SAL("_In_")],
                     Size: Annotated[SIZE_T, SAL("_In_")],
                     InitialCommitment: Annotated[SIZE_T, SAL("_In_")],
                     EnclaveType: Annotated[ULONG, SAL("_In_")],
                     EnclaveInformation: Annotated[PVOID, SAL("_In_reads_bytes_(EnclaveInformationLength)")],
                     EnclaveInformationLength: Annotated[ULONG, SAL("_In_")],
-                    EnclaveError: Annotated[P(ULONG), SAL("_Out_opt_")]
+                    EnclaveError: Annotated[P[ULONG], SAL("_Out_opt_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateEnlistment(dp: Dumpulator,
-                       EnlistmentHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                       EnlistmentHandle: Annotated[P[HANDLE], SAL("_Out_")],
                        DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                        ResourceManagerHandle: Annotated[HANDLE, SAL("_In_")],
                        TransactionHandle: Annotated[HANDLE, SAL("_In_")],
-                       ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                       ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                        CreateOptions: Annotated[ULONG, SAL("_In_opt_")],
                        NotificationMask: Annotated[NOTIFICATION_MASK, SAL("_In_")],
                        EnlistmentKey: Annotated[PVOID, SAL("_In_opt_")]
@@ -857,9 +857,9 @@ def ZwCreateEnlistment(dp: Dumpulator,
 
 @syscall
 def ZwCreateEvent(dp: Dumpulator,
-                  EventHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                  EventHandle: Annotated[P[HANDLE], SAL("_Out_")],
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                  ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                  ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                   EventType: Annotated[EVENT_TYPE, SAL("_In_")],
                   InitialState: Annotated[BOOLEAN, SAL("_In_")]
                   ):
@@ -878,19 +878,19 @@ def ZwCreateEvent(dp: Dumpulator,
 
 @syscall
 def ZwCreateEventPair(dp: Dumpulator,
-                      EventPairHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      EventPairHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")]
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateFile(dp: Dumpulator,
-                 FileHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                 FileHandle: Annotated[P[HANDLE], SAL("_Out_")],
                  DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                 ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                 IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
-                 AllocationSize: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
+                 ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                 IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
+                 AllocationSize: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
                  FileAttributes: Annotated[ULONG, SAL("_In_")],
                  ShareAccess: Annotated[ULONG, SAL("_In_")],
                  CreateDisposition: Annotated[ULONG, SAL("_In_")],
@@ -963,112 +963,112 @@ def ZwCreateFile(dp: Dumpulator,
 
 @syscall
 def ZwCreateIoCompletion(dp: Dumpulator,
-                         IoCompletionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                         IoCompletionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                          DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                         ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                         ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                          Count: Annotated[ULONG, SAL("_In_opt_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateIRTimer(dp: Dumpulator,
-                    TimerHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    TimerHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateJobObject(dp: Dumpulator,
-                      JobHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      JobHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")]
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateJobSet(dp: Dumpulator,
                    NumJob: Annotated[ULONG, SAL("_In_")],
-                   UserJobSet: Annotated[P(JOB_SET_ARRAY), SAL("_In_reads_(NumJob)")],
+                   UserJobSet: Annotated[P[JOB_SET_ARRAY], SAL("_In_reads_(NumJob)")],
                    Flags: Annotated[ULONG, SAL("_In_")]
                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateKey(dp: Dumpulator,
-                KeyHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                KeyHandle: Annotated[P[HANDLE], SAL("_Out_")],
                 DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                 TitleIndex: Annotated[ULONG, SAL("_Reserved_")],
-                Class: Annotated[P(UNICODE_STRING), SAL("_In_opt_")],
+                Class: Annotated[P[UNICODE_STRING], SAL("_In_opt_")],
                 CreateOptions: Annotated[ULONG, SAL("_In_")],
-                Disposition: Annotated[P(ULONG), SAL("_Out_opt_")]
+                Disposition: Annotated[P[ULONG], SAL("_Out_opt_")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateKeyedEvent(dp: Dumpulator,
-                       KeyedEventHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                       KeyedEventHandle: Annotated[P[HANDLE], SAL("_Out_")],
                        DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                       ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                       ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                        Flags: Annotated[ULONG, SAL("_In_")]
                        ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateKeyTransacted(dp: Dumpulator,
-                          KeyHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                          KeyHandle: Annotated[P[HANDLE], SAL("_Out_")],
                           DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                          ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                          ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                           TitleIndex: Annotated[ULONG, SAL("_Reserved_")],
-                          Class: Annotated[P(UNICODE_STRING), SAL("_In_opt_")],
+                          Class: Annotated[P[UNICODE_STRING], SAL("_In_opt_")],
                           CreateOptions: Annotated[ULONG, SAL("_In_")],
                           TransactionHandle: Annotated[HANDLE, SAL("_In_")],
-                          Disposition: Annotated[P(ULONG), SAL("_Out_opt_")]
+                          Disposition: Annotated[P[ULONG], SAL("_Out_opt_")]
                           ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateLowBoxToken(dp: Dumpulator,
-                        TokenHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                        TokenHandle: Annotated[P[HANDLE], SAL("_Out_")],
                         ExistingTokenHandle: Annotated[HANDLE, SAL("_In_")],
                         DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                        ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                        ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                         PackageSid: Annotated[PSID, SAL("_In_")],
                         CapabilityCount: Annotated[ULONG, SAL("_In_")],
-                        Capabilities: Annotated[P(SID_AND_ATTRIBUTES), SAL("_In_reads_opt_(CapabilityCount)")],
+                        Capabilities: Annotated[P[SID_AND_ATTRIBUTES], SAL("_In_reads_opt_(CapabilityCount)")],
                         HandleCount: Annotated[ULONG, SAL("_In_")],
-                        Handles: Annotated[P(HANDLE), SAL("_In_reads_opt_(HandleCount)")]
+                        Handles: Annotated[P[HANDLE], SAL("_In_reads_opt_(HandleCount)")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateMailslotFile(dp: Dumpulator,
-                         FileHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                         FileHandle: Annotated[P[HANDLE], SAL("_Out_")],
                          DesiredAccess: Annotated[ULONG, SAL("_In_")],
-                         ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                         IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                         ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                         IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                          CreateOptions: Annotated[ULONG, SAL("_In_")],
                          MailslotQuota: Annotated[ULONG, SAL("_In_")],
                          MaximumMessageSize: Annotated[ULONG, SAL("_In_")],
-                         ReadTimeout: Annotated[P(LARGE_INTEGER), SAL("_In_")]
+                         ReadTimeout: Annotated[P[LARGE_INTEGER], SAL("_In_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateMutant(dp: Dumpulator,
-                   MutantHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                   MutantHandle: Annotated[P[HANDLE], SAL("_Out_")],
                    DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                   ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                   ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                    InitialOwner: Annotated[BOOLEAN, SAL("_In_")]
                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateNamedPipeFile(dp: Dumpulator,
-                          FileHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                          FileHandle: Annotated[P[HANDLE], SAL("_Out_")],
                           DesiredAccess: Annotated[ULONG, SAL("_In_")],
-                          ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                          IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                          ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                          IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                           ShareAccess: Annotated[ULONG, SAL("_In_")],
                           CreateDisposition: Annotated[ULONG, SAL("_In_")],
                           CreateOptions: Annotated[ULONG, SAL("_In_")],
@@ -1078,15 +1078,15 @@ def ZwCreateNamedPipeFile(dp: Dumpulator,
                           MaximumInstances: Annotated[ULONG, SAL("_In_")],
                           InboundQuota: Annotated[ULONG, SAL("_In_")],
                           OutboundQuota: Annotated[ULONG, SAL("_In_")],
-                          DefaultTimeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                          DefaultTimeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                           ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreatePagingFile(dp: Dumpulator,
-                       PageFileName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                       MinimumSize: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-                       MaximumSize: Annotated[P(LARGE_INTEGER), SAL("_In_")],
+                       PageFileName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                       MinimumSize: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+                       MaximumSize: Annotated[P[LARGE_INTEGER], SAL("_In_")],
                        Priority: Annotated[ULONG, SAL("_In_")]
                        ):
     raise NotImplementedError()
@@ -1094,17 +1094,17 @@ def ZwCreatePagingFile(dp: Dumpulator,
 @syscall
 def ZwCreatePartition(dp: Dumpulator,
                       ParentPartitionHandle: Annotated[HANDLE, SAL("_In_")],
-                      PartitionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      PartitionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                       PreferredNode: Annotated[ULONG, SAL("_In_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreatePort(dp: Dumpulator,
-                 PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                 ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                 PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                 ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                  MaxConnectionInfoLength: Annotated[ULONG, SAL("_In_")],
                  MaxMessageLength: Annotated[ULONG, SAL("_In_")],
                  MaxPoolUsage: Annotated[ULONG, SAL("_In_opt_")]
@@ -1113,18 +1113,18 @@ def ZwCreatePort(dp: Dumpulator,
 
 @syscall
 def ZwCreatePrivateNamespace(dp: Dumpulator,
-                             NamespaceHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                             NamespaceHandle: Annotated[P[HANDLE], SAL("_Out_")],
                              DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                             ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                             BoundaryDescriptor: Annotated[P(OBJECT_BOUNDARY_DESCRIPTOR), SAL("_In_")]
+                             ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                             BoundaryDescriptor: Annotated[P[OBJECT_BOUNDARY_DESCRIPTOR], SAL("_In_")]
                              ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateProcess(dp: Dumpulator,
-                    ProcessHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    ProcessHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                    ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                    ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                     ParentProcess: Annotated[HANDLE, SAL("_In_")],
                     InheritObjectTable: Annotated[BOOLEAN, SAL("_In_")],
                     SectionHandle: Annotated[HANDLE, SAL("_In_opt_")],
@@ -1135,9 +1135,9 @@ def ZwCreateProcess(dp: Dumpulator,
 
 @syscall
 def ZwCreateProcessEx(dp: Dumpulator,
-                      ProcessHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      ProcessHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                       ParentProcess: Annotated[HANDLE, SAL("_In_")],
                       Flags: Annotated[ULONG, SAL("_In_", "PROCESS_CREATE_FLAGS_*")],
                       SectionHandle: Annotated[HANDLE, SAL("_In_opt_")],
@@ -1149,9 +1149,9 @@ def ZwCreateProcessEx(dp: Dumpulator,
 
 @syscall
 def ZwCreateProcessStateChange(dp: Dumpulator,
-                               ProcessStateChangeHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                               ProcessStateChangeHandle: Annotated[P[HANDLE], SAL("_Out_")],
                                DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                               ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                               ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                                ProcessHandle: Annotated[HANDLE, SAL("_In_")],
                                Reserved: Annotated[ULONG64, SAL("_In_opt_")]
                                ):
@@ -1159,12 +1159,12 @@ def ZwCreateProcessStateChange(dp: Dumpulator,
 
 @syscall
 def ZwCreateProfile(dp: Dumpulator,
-                    ProfileHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    ProfileHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     Process: Annotated[HANDLE, SAL("_In_opt_")],
                     ProfileBase: Annotated[PVOID, SAL("_In_")],
                     ProfileSize: Annotated[SIZE_T, SAL("_In_")],
                     BucketSize: Annotated[ULONG, SAL("_In_")],
-                    Buffer: Annotated[P(ULONG), SAL("_In_reads_bytes_(BufferSize)")],
+                    Buffer: Annotated[P[ULONG], SAL("_In_reads_bytes_(BufferSize)")],
                     BufferSize: Annotated[ULONG, SAL("_In_")],
                     ProfileSource: Annotated[KPROFILE_SOURCE, SAL("_In_")],
                     Affinity: Annotated[KAFFINITY, SAL("_In_")]
@@ -1173,37 +1173,37 @@ def ZwCreateProfile(dp: Dumpulator,
 
 @syscall
 def ZwCreateProfileEx(dp: Dumpulator,
-                      ProfileHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      ProfileHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       Process: Annotated[HANDLE, SAL("_In_opt_")],
                       ProfileBase: Annotated[PVOID, SAL("_In_")],
                       ProfileSize: Annotated[SIZE_T, SAL("_In_")],
                       BucketSize: Annotated[ULONG, SAL("_In_")],
-                      Buffer: Annotated[P(ULONG), SAL("_In_reads_bytes_(BufferSize)")],
+                      Buffer: Annotated[P[ULONG], SAL("_In_reads_bytes_(BufferSize)")],
                       BufferSize: Annotated[ULONG, SAL("_In_")],
                       ProfileSource: Annotated[KPROFILE_SOURCE, SAL("_In_")],
                       GroupCount: Annotated[USHORT, SAL("_In_")],
-                      GroupAffinity: Annotated[P(GROUP_AFFINITY), SAL("_In_reads_(GroupCount)")]
+                      GroupAffinity: Annotated[P[GROUP_AFFINITY], SAL("_In_reads_(GroupCount)")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateResourceManager(dp: Dumpulator,
-                            ResourceManagerHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                            ResourceManagerHandle: Annotated[P[HANDLE], SAL("_Out_")],
                             DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                             TmHandle: Annotated[HANDLE, SAL("_In_")],
-                            RmGuid: Annotated[P(GUID), SAL("_In_")],
-                            ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                            RmGuid: Annotated[P[GUID], SAL("_In_")],
+                            ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                             CreateOptions: Annotated[ULONG, SAL("_In_opt_")],
-                            Description: Annotated[P(UNICODE_STRING), SAL("_In_opt_")]
+                            Description: Annotated[P[UNICODE_STRING], SAL("_In_opt_")]
                             ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateSection(dp: Dumpulator,
-                    SectionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    SectionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                    ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                    MaximumSize: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
+                    ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                    MaximumSize: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
                     SectionPageProtection: Annotated[ULONG, SAL("_In_")],
                     AllocationAttributes: Annotated[ULONG, SAL("_In_")],
                     FileHandle: Annotated[HANDLE, SAL("_In_opt_")]
@@ -1222,23 +1222,23 @@ def ZwCreateSection(dp: Dumpulator,
 
 @syscall
 def ZwCreateSectionEx(dp: Dumpulator,
-                      SectionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      SectionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                      MaximumSize: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                      MaximumSize: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
                       SectionPageProtection: Annotated[ULONG, SAL("_In_")],
                       AllocationAttributes: Annotated[ULONG, SAL("_In_")],
                       FileHandle: Annotated[HANDLE, SAL("_In_opt_")],
-                      ExtendedParameters: Annotated[P(MEM_EXTENDED_PARAMETER), SAL("_Inout_updates_opt_(ExtendedParameterCount)")],
+                      ExtendedParameters: Annotated[P[MEM_EXTENDED_PARAMETER], SAL("_Inout_updates_opt_(ExtendedParameterCount)")],
                       ExtendedParameterCount: Annotated[ULONG, SAL("_In_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateSemaphore(dp: Dumpulator,
-                      SemaphoreHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      SemaphoreHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                       InitialCount: Annotated[LONG, SAL("_In_")],
                       MaximumCount: Annotated[LONG, SAL("_In_")]
                       ):
@@ -1246,31 +1246,31 @@ def ZwCreateSemaphore(dp: Dumpulator,
 
 @syscall
 def ZwCreateSymbolicLinkObject(dp: Dumpulator,
-                               LinkHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                               LinkHandle: Annotated[P[HANDLE], SAL("_Out_")],
                                DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                               ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                               LinkTarget: Annotated[P(UNICODE_STRING), SAL("_In_")]
+                               ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                               LinkTarget: Annotated[P[UNICODE_STRING], SAL("_In_")]
                                ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateThread(dp: Dumpulator,
-                   ThreadHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                   ThreadHandle: Annotated[P[HANDLE], SAL("_Out_")],
                    DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                   ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                   ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                    ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                   ClientId: Annotated[P(CLIENT_ID), SAL("_Out_")],
-                   ThreadContext: Annotated[P(CONTEXT), SAL("_In_")],
-                   InitialTeb: Annotated[P(INITIAL_TEB), SAL("_In_")],
+                   ClientId: Annotated[P[CLIENT_ID], SAL("_Out_")],
+                   ThreadContext: Annotated[P[CONTEXT], SAL("_In_")],
+                   InitialTeb: Annotated[P[INITIAL_TEB], SAL("_In_")],
                    CreateSuspended: Annotated[BOOLEAN, SAL("_In_")]
                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateThreadEx(dp: Dumpulator,
-                     ThreadHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                     ThreadHandle: Annotated[P[HANDLE], SAL("_Out_")],
                      DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                     ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                     ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                      ProcessHandle: Annotated[HANDLE, SAL("_In_")],
                      StartRoutine: Annotated[PVOID, SAL("_In_", "PUSER_THREAD_START_ROUTINE")],
                      Argument: Annotated[PVOID, SAL("_In_opt_")],
@@ -1278,7 +1278,7 @@ def ZwCreateThreadEx(dp: Dumpulator,
                      ZeroBits: Annotated[SIZE_T, SAL("_In_")],
                      StackSize: Annotated[SIZE_T, SAL("_In_")],
                      MaximumStackSize: Annotated[SIZE_T, SAL("_In_")],
-                     AttributeList: Annotated[P(PS_ATTRIBUTE_LIST), SAL("_In_opt_")]
+                     AttributeList: Annotated[P[PS_ATTRIBUTE_LIST], SAL("_In_opt_")]
                      ):
     assert DesiredAccess == 0x1fffff
     assert ObjectAttributes == 0
@@ -1296,9 +1296,9 @@ def ZwCreateThreadEx(dp: Dumpulator,
 
 @syscall
 def ZwCreateThreadStateChange(dp: Dumpulator,
-                              ThreadStateChangeHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                              ThreadStateChangeHandle: Annotated[P[HANDLE], SAL("_Out_")],
                               DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                              ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                              ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                               ThreadHandle: Annotated[HANDLE, SAL("_In_")],
                               Reserved: Annotated[ULONG64, SAL("_In_opt_")]
                               ):
@@ -1306,18 +1306,18 @@ def ZwCreateThreadStateChange(dp: Dumpulator,
 
 @syscall
 def ZwCreateTimer(dp: Dumpulator,
-                  TimerHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                  TimerHandle: Annotated[P[HANDLE], SAL("_Out_")],
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                  ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                  ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                   TimerType: Annotated[TIMER_TYPE, SAL("_In_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateTimer2(dp: Dumpulator,
-                   TimerHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                   TimerHandle: Annotated[P[HANDLE], SAL("_Out_")],
                    Reserved1: Annotated[PVOID, SAL("_In_opt_")],
-                   ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                   ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                    Attributes: Annotated[ULONG, SAL("_In_")],
                    DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")]
                    ):
@@ -1325,65 +1325,65 @@ def ZwCreateTimer2(dp: Dumpulator,
 
 @syscall
 def ZwCreateToken(dp: Dumpulator,
-                  TokenHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                  TokenHandle: Annotated[P[HANDLE], SAL("_Out_")],
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                  ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                  ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                   Type: Annotated[TOKEN_TYPE, SAL("_In_")],
-                  AuthenticationId: Annotated[P(LUID), SAL("_In_")],
-                  ExpirationTime: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-                  User: Annotated[P(TOKEN_USER), SAL("_In_")],
-                  Groups: Annotated[P(TOKEN_GROUPS), SAL("_In_")],
-                  Privileges: Annotated[P(TOKEN_PRIVILEGES), SAL("_In_")],
-                  Owner: Annotated[P(TOKEN_OWNER), SAL("_In_opt_")],
-                  PrimaryGroup: Annotated[P(TOKEN_PRIMARY_GROUP), SAL("_In_")],
-                  DefaultDacl: Annotated[P(TOKEN_DEFAULT_DACL), SAL("_In_opt_")],
-                  Source: Annotated[P(TOKEN_SOURCE), SAL("_In_")]
+                  AuthenticationId: Annotated[P[LUID], SAL("_In_")],
+                  ExpirationTime: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+                  User: Annotated[P[TOKEN_USER], SAL("_In_")],
+                  Groups: Annotated[P[TOKEN_GROUPS], SAL("_In_")],
+                  Privileges: Annotated[P[TOKEN_PRIVILEGES], SAL("_In_")],
+                  Owner: Annotated[P[TOKEN_OWNER], SAL("_In_opt_")],
+                  PrimaryGroup: Annotated[P[TOKEN_PRIMARY_GROUP], SAL("_In_")],
+                  DefaultDacl: Annotated[P[TOKEN_DEFAULT_DACL], SAL("_In_opt_")],
+                  Source: Annotated[P[TOKEN_SOURCE], SAL("_In_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateTokenEx(dp: Dumpulator,
-                    TokenHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    TokenHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                    ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                    ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                     Type: Annotated[TOKEN_TYPE, SAL("_In_")],
-                    AuthenticationId: Annotated[P(LUID), SAL("_In_")],
-                    ExpirationTime: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-                    User: Annotated[P(TOKEN_USER), SAL("_In_")],
-                    Groups: Annotated[P(TOKEN_GROUPS), SAL("_In_")],
-                    Privileges: Annotated[P(TOKEN_PRIVILEGES), SAL("_In_")],
-                    UserAttributes: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_In_opt_")],
-                    DeviceAttributes: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_In_opt_")],
-                    DeviceGroups: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
-                    MandatoryPolicy: Annotated[P(TOKEN_MANDATORY_POLICY), SAL("_In_opt_")],
-                    Owner: Annotated[P(TOKEN_OWNER), SAL("_In_opt_")],
-                    PrimaryGroup: Annotated[P(TOKEN_PRIMARY_GROUP), SAL("_In_")],
-                    DefaultDacl: Annotated[P(TOKEN_DEFAULT_DACL), SAL("_In_opt_")],
-                    Source: Annotated[P(TOKEN_SOURCE), SAL("_In_")]
+                    AuthenticationId: Annotated[P[LUID], SAL("_In_")],
+                    ExpirationTime: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+                    User: Annotated[P[TOKEN_USER], SAL("_In_")],
+                    Groups: Annotated[P[TOKEN_GROUPS], SAL("_In_")],
+                    Privileges: Annotated[P[TOKEN_PRIVILEGES], SAL("_In_")],
+                    UserAttributes: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_In_opt_")],
+                    DeviceAttributes: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_In_opt_")],
+                    DeviceGroups: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
+                    MandatoryPolicy: Annotated[P[TOKEN_MANDATORY_POLICY], SAL("_In_opt_")],
+                    Owner: Annotated[P[TOKEN_OWNER], SAL("_In_opt_")],
+                    PrimaryGroup: Annotated[P[TOKEN_PRIMARY_GROUP], SAL("_In_")],
+                    DefaultDacl: Annotated[P[TOKEN_DEFAULT_DACL], SAL("_In_opt_")],
+                    Source: Annotated[P[TOKEN_SOURCE], SAL("_In_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateTransaction(dp: Dumpulator,
-                        TransactionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                        TransactionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                         DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                        ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                        Uow: Annotated[P(GUID), SAL("_In_opt_")],
+                        ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                        Uow: Annotated[P[GUID], SAL("_In_opt_")],
                         TmHandle: Annotated[HANDLE, SAL("_In_opt_")],
                         CreateOptions: Annotated[ULONG, SAL("_In_opt_")],
                         IsolationLevel: Annotated[ULONG, SAL("_In_opt_")],
                         IsolationFlags: Annotated[ULONG, SAL("_In_opt_")],
-                        Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                        Description: Annotated[P(UNICODE_STRING), SAL("_In_opt_")]
+                        Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                        Description: Annotated[P[UNICODE_STRING], SAL("_In_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateTransactionManager(dp: Dumpulator,
-                               TmHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                               TmHandle: Annotated[P[HANDLE], SAL("_Out_")],
                                DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                               ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                               LogFileName: Annotated[P(UNICODE_STRING), SAL("_In_opt_")],
+                               ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                               LogFileName: Annotated[P[UNICODE_STRING], SAL("_In_opt_")],
                                CreateOptions: Annotated[ULONG, SAL("_In_opt_")],
                                CommitStrength: Annotated[ULONG, SAL("_In_opt_")]
                                ):
@@ -1391,24 +1391,24 @@ def ZwCreateTransactionManager(dp: Dumpulator,
 
 @syscall
 def ZwCreateUserProcess(dp: Dumpulator,
-                        ProcessHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                        ThreadHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                        ProcessHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                        ThreadHandle: Annotated[P[HANDLE], SAL("_Out_")],
                         ProcessDesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                         ThreadDesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                        ProcessObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                        ThreadObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                        ProcessObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                        ThreadObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                         ProcessFlags: Annotated[ULONG, SAL("_In_", "PROCESS_CREATE_FLAGS_*")],
                         ThreadFlags: Annotated[ULONG, SAL("_In_", "THREAD_CREATE_FLAGS_*")],
                         ProcessParameters: Annotated[PVOID, SAL("_In_opt_", "PRTL_USER_PROCESS_PARAMETERS")],
-                        CreateInfo: Annotated[P(PS_CREATE_INFO), SAL("_Inout_")],
-                        AttributeList: Annotated[P(PS_ATTRIBUTE_LIST), SAL("_In_opt_")]
+                        CreateInfo: Annotated[P[PS_CREATE_INFO], SAL("_Inout_")],
+                        AttributeList: Annotated[P[PS_ATTRIBUTE_LIST], SAL("_In_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateWaitablePort(dp: Dumpulator,
-                         PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                         ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                         PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                         ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                          MaxConnectionInfoLength: Annotated[ULONG, SAL("_In_")],
                          MaxMessageLength: Annotated[ULONG, SAL("_In_")],
                          MaxPoolUsage: Annotated[ULONG, SAL("_In_opt_")]
@@ -1417,29 +1417,29 @@ def ZwCreateWaitablePort(dp: Dumpulator,
 
 @syscall
 def ZwCreateWaitCompletionPacket(dp: Dumpulator,
-                                 WaitCompletionPacketHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                                 WaitCompletionPacketHandle: Annotated[P[HANDLE], SAL("_Out_")],
                                  DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                                 ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")]
+                                 ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")]
                                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateWnfStateName(dp: Dumpulator,
-                         StateName: Annotated[P(WNF_STATE_NAME), SAL("_Out_")],
+                         StateName: Annotated[P[WNF_STATE_NAME], SAL("_Out_")],
                          NameLifetime: Annotated[WNF_STATE_NAME_LIFETIME, SAL("_In_")],
                          DataScope: Annotated[WNF_DATA_SCOPE, SAL("_In_")],
                          PersistData: Annotated[BOOLEAN, SAL("_In_")],
-                         TypeId: Annotated[P(CWNF_TYPE_ID), SAL("_In_opt_")],
+                         TypeId: Annotated[P[CWNF_TYPE_ID], SAL("_In_opt_")],
                          MaximumStateSize: Annotated[ULONG, SAL("_In_")],
-                         SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")]
+                         SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwCreateWorkerFactory(dp: Dumpulator,
-                          WorkerFactoryHandleReturn: Annotated[P(HANDLE), SAL("_Out_")],
+                          WorkerFactoryHandleReturn: Annotated[P[HANDLE], SAL("_Out_")],
                           DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                          ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                          ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                           CompletionPortHandle: Annotated[HANDLE, SAL("_In_")],
                           WorkerProcessHandle: Annotated[HANDLE, SAL("_In_")],
                           StartRoutine: Annotated[PVOID, SAL("_In_")],
@@ -1460,7 +1460,7 @@ def ZwDebugActiveProcess(dp: Dumpulator,
 @syscall
 def ZwDebugContinue(dp: Dumpulator,
                     DebugObjectHandle: Annotated[HANDLE, SAL("_In_")],
-                    ClientId: Annotated[P(CLIENT_ID), SAL("_In_")],
+                    ClientId: Annotated[P[CLIENT_ID], SAL("_In_")],
                     ContinueStatus: Annotated[NTSTATUS, SAL("_In_")]
                     ):
     raise NotImplementedError()
@@ -1468,7 +1468,7 @@ def ZwDebugContinue(dp: Dumpulator,
 @syscall
 def ZwDelayExecution(dp: Dumpulator,
                      Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                     DelayInterval: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                     DelayInterval: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                      ):
     return STATUS_SUCCESS
 
@@ -1492,7 +1492,7 @@ def ZwDeleteDriverEntry(dp: Dumpulator,
 
 @syscall
 def ZwDeleteFile(dp: Dumpulator,
-                 ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                 ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                  ):
     raise NotImplementedError()
 
@@ -1504,7 +1504,7 @@ def ZwDeleteKey(dp: Dumpulator,
 
 @syscall
 def ZwDeleteObjectAuditAlarm(dp: Dumpulator,
-                             SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                             SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                              HandleId: Annotated[PVOID, SAL("_In_opt_")],
                              GenerateOnClose: Annotated[BOOLEAN, SAL("_In_")]
                              ):
@@ -1519,20 +1519,20 @@ def ZwDeletePrivateNamespace(dp: Dumpulator,
 @syscall
 def ZwDeleteValueKey(dp: Dumpulator,
                      KeyHandle: Annotated[HANDLE, SAL("_In_")],
-                     ValueName: Annotated[P(UNICODE_STRING), SAL("_In_")]
+                     ValueName: Annotated[P[UNICODE_STRING], SAL("_In_")]
                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwDeleteWnfStateData(dp: Dumpulator,
-                         StateName: Annotated[P(CWNF_STATE_NAME), SAL("_In_")],
+                         StateName: Annotated[P[CWNF_STATE_NAME], SAL("_In_")],
                          ExplicitScope: Annotated[PVOID, SAL("_In_opt_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwDeleteWnfStateName(dp: Dumpulator,
-                         StateName: Annotated[P(CWNF_STATE_NAME), SAL("_In_")]
+                         StateName: Annotated[P[CWNF_STATE_NAME], SAL("_In_")]
                          ):
     raise NotImplementedError()
 
@@ -1540,9 +1540,9 @@ def ZwDeleteWnfStateName(dp: Dumpulator,
 def ZwDeviceIoControlFile(dp: Dumpulator,
                           FileHandle: Annotated[HANDLE, SAL("_In_")],
                           Event: Annotated[HANDLE, SAL("_In_opt_")],
-                          ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                          ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                           ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                          IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                          IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                           IoControlCode: Annotated[ULONG, SAL("_In_")],
                           InputBuffer: Annotated[PVOID, SAL("_In_reads_bytes_opt_(InputBufferLength)")],
                           InputBufferLength: Annotated[ULONG, SAL("_In_")],
@@ -1584,14 +1584,14 @@ def ZwDisableLastKnownGood(dp: Dumpulator
 
 @syscall
 def ZwDisplayString(dp: Dumpulator,
-                    String: Annotated[P(UNICODE_STRING), SAL("_In_")]
+                    String: Annotated[P[UNICODE_STRING], SAL("_In_")]
                     ):
     print("debug: " + String.read_unicode_str())
     return STATUS_PRIVILEGE_NOT_HELD
 
 @syscall
 def ZwDrawText(dp: Dumpulator,
-               Text: Annotated[P(UNICODE_STRING), SAL("_In_")]
+               Text: Annotated[P[UNICODE_STRING], SAL("_In_")]
                ):
     raise NotImplementedError()
 
@@ -1600,7 +1600,7 @@ def ZwDuplicateObject(dp: Dumpulator,
                       SourceProcessHandle: Annotated[HANDLE, SAL("_In_")],
                       SourceHandle: Annotated[HANDLE, SAL("_In_")],
                       TargetProcessHandle: Annotated[HANDLE, SAL("_In_opt_")],
-                      TargetHandle: Annotated[P(HANDLE), SAL("_Out_opt_")],
+                      TargetHandle: Annotated[P[HANDLE], SAL("_Out_opt_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                       HandleAttributes: Annotated[ULONG, SAL("_In_")],
                       Options: Annotated[ULONG, SAL("_In_")]
@@ -1617,10 +1617,10 @@ def ZwDuplicateObject(dp: Dumpulator,
 def ZwDuplicateToken(dp: Dumpulator,
                      ExistingTokenHandle: Annotated[HANDLE, SAL("_In_")],
                      DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                     ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
+                     ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
                      EffectiveOnly: Annotated[BOOLEAN, SAL("_In_")],
                      Type: Annotated[TOKEN_TYPE, SAL("_In_")],
-                     NewTokenHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                     NewTokenHandle: Annotated[P[HANDLE], SAL("_Out_")]
                      ):
     raise NotImplementedError()
 
@@ -1632,14 +1632,14 @@ def ZwEnableLastKnownGood(dp: Dumpulator
 @syscall
 def ZwEnumerateBootEntries(dp: Dumpulator,
                            Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(*BufferLength)")],
-                           BufferLength: Annotated[P(ULONG), SAL("_Inout_")]
+                           BufferLength: Annotated[P[ULONG], SAL("_Inout_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwEnumerateDriverEntries(dp: Dumpulator,
                              Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(*BufferLength)")],
-                             BufferLength: Annotated[P(ULONG), SAL("_Inout_")]
+                             BufferLength: Annotated[P[ULONG], SAL("_Inout_")]
                              ):
     raise NotImplementedError()
 
@@ -1650,7 +1650,7 @@ def ZwEnumerateKey(dp: Dumpulator,
                    KeyInformationClass: Annotated[KEY_INFORMATION_CLASS, SAL("_In_")],
                    KeyInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(Length)")],
                    Length: Annotated[ULONG, SAL("_In_")],
-                   ResultLength: Annotated[P(ULONG), SAL("_Out_")]
+                   ResultLength: Annotated[P[ULONG], SAL("_Out_")]
                    ):
     raise NotImplementedError()
 
@@ -1658,7 +1658,7 @@ def ZwEnumerateKey(dp: Dumpulator,
 def ZwEnumerateSystemEnvironmentValuesEx(dp: Dumpulator,
                                          InformationClass: Annotated[ULONG, SAL("_In_", "SYSTEM_ENVIRONMENT_INFORMATION_CLASS")],
                                          Buffer: Annotated[PVOID, SAL("_Out_")],
-                                         BufferLength: Annotated[P(ULONG), SAL("_Inout_")]
+                                         BufferLength: Annotated[P[ULONG], SAL("_Inout_")]
                                          ):
     raise NotImplementedError()
 
@@ -1666,9 +1666,9 @@ def ZwEnumerateSystemEnvironmentValuesEx(dp: Dumpulator,
 def ZwEnumerateTransactionObject(dp: Dumpulator,
                                  RootObjectHandle: Annotated[HANDLE, SAL("_In_opt_")],
                                  QueryType: Annotated[KTMOBJECT_TYPE, SAL("_In_")],
-                                 ObjectCursor: Annotated[P(KTMOBJECT_CURSOR), SAL("_Inout_updates_bytes_(ObjectCursorLength)")],
+                                 ObjectCursor: Annotated[P[KTMOBJECT_CURSOR], SAL("_Inout_updates_bytes_(ObjectCursorLength)")],
                                  ObjectCursorLength: Annotated[ULONG, SAL("_In_")],
-                                 ReturnLength: Annotated[P(ULONG), SAL("_Out_")]
+                                 ReturnLength: Annotated[P[ULONG], SAL("_Out_")]
                                  ):
     raise NotImplementedError()
 
@@ -1679,14 +1679,14 @@ def ZwEnumerateValueKey(dp: Dumpulator,
                         KeyValueInformationClass: Annotated[KEY_VALUE_INFORMATION_CLASS, SAL("_In_")],
                         KeyValueInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(Length)")],
                         Length: Annotated[ULONG, SAL("_In_")],
-                        ResultLength: Annotated[P(ULONG), SAL("_Out_")]
+                        ResultLength: Annotated[P[ULONG], SAL("_Out_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwExtendSection(dp: Dumpulator,
                     SectionHandle: Annotated[HANDLE, SAL("_In_")],
-                    NewSectionSize: Annotated[P(LARGE_INTEGER), SAL("_Inout_")]
+                    NewSectionSize: Annotated[P[LARGE_INTEGER], SAL("_Inout_")]
                     ):
     raise NotImplementedError()
 
@@ -1704,10 +1704,10 @@ def ZwFilterBootOption(dp: Dumpulator,
 def ZwFilterToken(dp: Dumpulator,
                   ExistingTokenHandle: Annotated[HANDLE, SAL("_In_")],
                   Flags: Annotated[ULONG, SAL("_In_")],
-                  SidsToDisable: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
-                  PrivilegesToDelete: Annotated[P(TOKEN_PRIVILEGES), SAL("_In_opt_")],
-                  RestrictedSids: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
-                  NewTokenHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                  SidsToDisable: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
+                  PrivilegesToDelete: Annotated[P[TOKEN_PRIVILEGES], SAL("_In_opt_")],
+                  RestrictedSids: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
+                  NewTokenHandle: Annotated[P[HANDLE], SAL("_Out_")]
                   ):
     raise NotImplementedError()
 
@@ -1715,18 +1715,18 @@ def ZwFilterToken(dp: Dumpulator,
 def ZwFilterTokenEx(dp: Dumpulator,
                     ExistingTokenHandle: Annotated[HANDLE, SAL("_In_")],
                     Flags: Annotated[ULONG, SAL("_In_")],
-                    SidsToDisable: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
-                    PrivilegesToDelete: Annotated[P(TOKEN_PRIVILEGES), SAL("_In_opt_")],
-                    RestrictedSids: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
+                    SidsToDisable: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
+                    PrivilegesToDelete: Annotated[P[TOKEN_PRIVILEGES], SAL("_In_opt_")],
+                    RestrictedSids: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
                     DisableUserClaimsCount: Annotated[ULONG, SAL("_In_")],
-                    UserClaimsToDisable: Annotated[P(UNICODE_STRING), SAL("_In_opt_")],
+                    UserClaimsToDisable: Annotated[P[UNICODE_STRING], SAL("_In_opt_")],
                     DisableDeviceClaimsCount: Annotated[ULONG, SAL("_In_")],
-                    DeviceClaimsToDisable: Annotated[P(UNICODE_STRING), SAL("_In_opt_")],
-                    DeviceGroupsToDisable: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
-                    RestrictedUserAttributes: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_In_opt_")],
-                    RestrictedDeviceAttributes: Annotated[P(TOKEN_SECURITY_ATTRIBUTES_INFORMATION), SAL("_In_opt_")],
-                    RestrictedDeviceGroups: Annotated[P(TOKEN_GROUPS), SAL("_In_opt_")],
-                    NewTokenHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                    DeviceClaimsToDisable: Annotated[P[UNICODE_STRING], SAL("_In_opt_")],
+                    DeviceGroupsToDisable: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
+                    RestrictedUserAttributes: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_In_opt_")],
+                    RestrictedDeviceAttributes: Annotated[P[TOKEN_SECURITY_ATTRIBUTES_INFORMATION], SAL("_In_opt_")],
+                    RestrictedDeviceGroups: Annotated[P[TOKEN_GROUPS], SAL("_In_opt_")],
+                    NewTokenHandle: Annotated[P[HANDLE], SAL("_Out_")]
                     ):
     raise NotImplementedError()
 
@@ -1734,14 +1734,14 @@ def ZwFilterTokenEx(dp: Dumpulator,
 def ZwFindAtom(dp: Dumpulator,
                AtomName: Annotated[PWSTR, SAL("_In_reads_bytes_opt_(Length)")],
                Length: Annotated[ULONG, SAL("_In_")],
-               Atom: Annotated[P(RTL_ATOM), SAL("_Out_opt_")]
+               Atom: Annotated[P[RTL_ATOM], SAL("_Out_opt_")]
                ):
     raise NotImplementedError()
 
 @syscall
 def ZwFlushBuffersFile(dp: Dumpulator,
                        FileHandle: Annotated[HANDLE, SAL("_In_")],
-                       IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")]
+                       IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")]
                        ):
     raise NotImplementedError()
 
@@ -1751,7 +1751,7 @@ def ZwFlushBuffersFileEx(dp: Dumpulator,
                          Flags: Annotated[ULONG, SAL("_In_")],
                          Parameters: Annotated[PVOID, SAL("_In_reads_bytes_(ParametersSize)")],
                          ParametersSize: Annotated[ULONG, SAL("_In_")],
-                         IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")]
+                         IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")]
                          ):
     raise NotImplementedError()
 
@@ -1784,9 +1784,9 @@ def ZwFlushProcessWriteBuffers(dp: Dumpulator
 @syscall
 def ZwFlushVirtualMemory(dp: Dumpulator,
                          ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                         BaseAddress: Annotated[P(PVOID), SAL("_Inout_")],
-                         RegionSize: Annotated[P(SIZE_T), SAL("_Inout_")],
-                         IoStatus: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")]
+                         BaseAddress: Annotated[P[PVOID], SAL("_Inout_")],
+                         RegionSize: Annotated[P[SIZE_T], SAL("_Inout_")],
+                         IoStatus: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")]
                          ):
     raise NotImplementedError()
 
@@ -1798,16 +1798,16 @@ def ZwFlushWriteBuffer(dp: Dumpulator
 @syscall
 def ZwFreeUserPhysicalPages(dp: Dumpulator,
                             ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                            NumberOfPages: Annotated[P(ULONG_PTR), SAL("_Inout_")],
-                            UserPfnArray: Annotated[P(ULONG_PTR), SAL("_In_reads_(*NumberOfPages)")]
+                            NumberOfPages: Annotated[P[ULONG_PTR], SAL("_Inout_")],
+                            UserPfnArray: Annotated[P[ULONG_PTR], SAL("_In_reads_(*NumberOfPages)")]
                             ):
     raise NotImplementedError()
 
 @syscall
 def ZwFreeVirtualMemory(dp: Dumpulator,
                         ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                        BaseAddress: Annotated[P(PVOID), SAL("_Inout_")],
-                        RegionSize: Annotated[P(SIZE_T), SAL("_Inout_")],
+                        BaseAddress: Annotated[P[PVOID], SAL("_Inout_")],
+                        RegionSize: Annotated[P[SIZE_T], SAL("_Inout_")],
                         FreeType: Annotated[ULONG, SAL("_In_")]
                         ):
     base = BaseAddress.read_ptr()
@@ -1838,8 +1838,8 @@ def ZwFreezeRegistry(dp: Dumpulator,
 
 @syscall
 def ZwFreezeTransactions(dp: Dumpulator,
-                         FreezeTimeout: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-                         ThawTimeout: Annotated[P(LARGE_INTEGER), SAL("_In_")]
+                         FreezeTimeout: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+                         ThawTimeout: Annotated[P[LARGE_INTEGER], SAL("_In_")]
                          ):
     raise NotImplementedError()
 
@@ -1847,9 +1847,9 @@ def ZwFreezeTransactions(dp: Dumpulator,
 def ZwFsControlFile(dp: Dumpulator,
                     FileHandle: Annotated[HANDLE, SAL("_In_")],
                     Event: Annotated[HANDLE, SAL("_In_opt_")],
-                    ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                    ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                     ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                    IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                    IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                     FsControlCode: Annotated[ULONG, SAL("_In_")],
                     InputBuffer: Annotated[PVOID, SAL("_In_reads_bytes_opt_(InputBufferLength)")],
                     InputBufferLength: Annotated[ULONG, SAL("_In_")],
@@ -1861,21 +1861,21 @@ def ZwFsControlFile(dp: Dumpulator,
 @syscall
 def ZwGetCachedSigningLevel(dp: Dumpulator,
                             File: Annotated[HANDLE, SAL("_In_")],
-                            Flags: Annotated[P(ULONG), SAL("_Out_")],
-                            SigningLevel: Annotated[P(SE_SIGNING_LEVEL), SAL("_Out_")],
-                            Thumbprint: Annotated[P(UCHAR), SAL("_Out_writes_bytes_to_opt_(*ThumbprintSize, *ThumbprintSize)")],
-                            ThumbprintSize: Annotated[P(ULONG), SAL("_Inout_opt_")],
-                            ThumbprintAlgorithm: Annotated[P(ULONG), SAL("_Out_opt_")]
+                            Flags: Annotated[P[ULONG], SAL("_Out_")],
+                            SigningLevel: Annotated[P[SE_SIGNING_LEVEL], SAL("_Out_")],
+                            Thumbprint: Annotated[P[UCHAR], SAL("_Out_writes_bytes_to_opt_(*ThumbprintSize, *ThumbprintSize)")],
+                            ThumbprintSize: Annotated[P[ULONG], SAL("_Inout_opt_")],
+                            ThumbprintAlgorithm: Annotated[P[ULONG], SAL("_Out_opt_")]
                             ):
     raise NotImplementedError()
 
 @syscall
 def ZwGetCompleteWnfStateSubscription(dp: Dumpulator,
-                                      OldDescriptorStateName: Annotated[P(WNF_STATE_NAME), SAL("_In_opt_")],
-                                      OldSubscriptionId: Annotated[P(ULONG64), SAL("_In_opt_")],
+                                      OldDescriptorStateName: Annotated[P[WNF_STATE_NAME], SAL("_In_opt_")],
+                                      OldSubscriptionId: Annotated[P[ULONG64], SAL("_In_opt_")],
                                       OldDescriptorEventMask: Annotated[ULONG, SAL("_In_opt_")],
                                       OldDescriptorStatus: Annotated[ULONG, SAL("_In_opt_")],
-                                      NewDeliveryDescriptor: Annotated[P(WNF_DELIVERY_DESCRIPTOR), SAL("_Out_writes_bytes_(DescriptorSize)")],
+                                      NewDeliveryDescriptor: Annotated[P[WNF_DELIVERY_DESCRIPTOR], SAL("_Out_writes_bytes_(DescriptorSize)")],
                                       DescriptorSize: Annotated[ULONG, SAL("_In_")]
                                       ):
     raise NotImplementedError()
@@ -1883,7 +1883,7 @@ def ZwGetCompleteWnfStateSubscription(dp: Dumpulator,
 @syscall
 def ZwGetContextThread(dp: Dumpulator,
                        ThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                       ThreadContext: Annotated[P(CONTEXT), SAL("_Inout_")]
+                       ThreadContext: Annotated[P[CONTEXT], SAL("_Inout_")]
                        ):
     raise NotImplementedError()
 
@@ -1894,21 +1894,21 @@ def ZwGetCurrentProcessorNumber(dp: Dumpulator
 
 @syscall
 def ZwGetCurrentProcessorNumberEx(dp: Dumpulator,
-                                  ProcessorNumber: Annotated[P(PROCESSOR_NUMBER), SAL("_Out_opt_")]
+                                  ProcessorNumber: Annotated[P[PROCESSOR_NUMBER], SAL("_Out_opt_")]
                                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwGetDevicePowerState(dp: Dumpulator,
                           Device: Annotated[HANDLE, SAL("_In_")],
-                          State: Annotated[P(DEVICE_POWER_STATE), SAL("_Out_")]
+                          State: Annotated[P[DEVICE_POWER_STATE], SAL("_Out_")]
                           ):
     raise NotImplementedError()
 
 @syscall
 def ZwGetMUIRegistryInfo(dp: Dumpulator,
                          Flags: Annotated[ULONG, SAL("_In_")],
-                         DataSize: Annotated[P(ULONG), SAL("_Inout_")],
+                         DataSize: Annotated[P[ULONG], SAL("_Inout_")],
                          Data: Annotated[PVOID, SAL("_Out_")]
                          ):
     raise NotImplementedError()
@@ -1919,7 +1919,7 @@ def ZwGetNextProcess(dp: Dumpulator,
                      DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                      HandleAttributes: Annotated[ULONG, SAL("_In_")],
                      Flags: Annotated[ULONG, SAL("_In_")],
-                     NewProcessHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                     NewProcessHandle: Annotated[P[HANDLE], SAL("_Out_")]
                      ):
     raise NotImplementedError()
 
@@ -1930,7 +1930,7 @@ def ZwGetNextThread(dp: Dumpulator,
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                     HandleAttributes: Annotated[ULONG, SAL("_In_")],
                     Flags: Annotated[ULONG, SAL("_In_")],
-                    NewThreadHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                    NewThreadHandle: Annotated[P[HANDLE], SAL("_Out_")]
                     ):
     raise NotImplementedError()
 
@@ -1939,18 +1939,18 @@ def ZwGetNlsSectionPtr(dp: Dumpulator,
                        SectionType: Annotated[ULONG, SAL("_In_")],
                        SectionData: Annotated[ULONG, SAL("_In_")],
                        ContextData: Annotated[PVOID, SAL("_In_")],
-                       SectionPointer: Annotated[P(PVOID), SAL("_Out_")],
-                       SectionSize: Annotated[P(ULONG), SAL("_Out_")]
+                       SectionPointer: Annotated[P[PVOID], SAL("_Out_")],
+                       SectionSize: Annotated[P[ULONG], SAL("_Out_")]
                        ):
     raise NotImplementedError()
 
 @syscall
 def ZwGetNotificationResourceManager(dp: Dumpulator,
                                      ResourceManagerHandle: Annotated[HANDLE, SAL("_In_")],
-                                     TransactionNotification: Annotated[P(TRANSACTION_NOTIFICATION), SAL("_Out_")],
+                                     TransactionNotification: Annotated[P[TRANSACTION_NOTIFICATION], SAL("_Out_")],
                                      NotificationLength: Annotated[ULONG, SAL("_In_")],
-                                     Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                                     ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")],
+                                     Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                                     ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")],
                                      Asynchronous: Annotated[ULONG, SAL("_In_")],
                                      AsynchronousContext: Annotated[ULONG_PTR, SAL("_In_opt_")]
                                      ):
@@ -1960,7 +1960,7 @@ def ZwGetNotificationResourceManager(dp: Dumpulator,
 def ZwGetPlugPlayEvent(dp: Dumpulator,
                        EventHandle: Annotated[HANDLE, SAL("_In_")],
                        Context: Annotated[PVOID, SAL("_In_opt_")],
-                       EventBlock: Annotated[P(PLUGPLAY_EVENT_BLOCK), SAL("_Out_writes_bytes_(EventBufferSize)")],
+                       EventBlock: Annotated[P[PLUGPLAY_EVENT_BLOCK], SAL("_Out_writes_bytes_(EventBufferSize)")],
                        EventBufferSize: Annotated[ULONG, SAL("_In_")]
                        ):
     raise NotImplementedError()
@@ -1971,9 +1971,9 @@ def ZwGetWriteWatch(dp: Dumpulator,
                     Flags: Annotated[ULONG, SAL("_In_")],
                     BaseAddress: Annotated[PVOID, SAL("_In_")],
                     RegionSize: Annotated[SIZE_T, SAL("_In_")],
-                    UserAddressArray: Annotated[P(PVOID), SAL("_Out_writes_(*EntriesInUserAddressArray)")],
-                    EntriesInUserAddressArray: Annotated[P(ULONG_PTR), SAL("_Inout_")],
-                    Granularity: Annotated[P(ULONG), SAL("_Out_")]
+                    UserAddressArray: Annotated[P[PVOID], SAL("_Out_writes_(*EntriesInUserAddressArray)")],
+                    EntriesInUserAddressArray: Annotated[P[ULONG_PTR], SAL("_Inout_")],
+                    Granularity: Annotated[P[ULONG], SAL("_Out_")]
                     ):
     raise NotImplementedError()
 
@@ -1986,7 +1986,7 @@ def ZwImpersonateAnonymousToken(dp: Dumpulator,
 @syscall
 def ZwImpersonateClientOfPort(dp: Dumpulator,
                               PortHandle: Annotated[HANDLE, SAL("_In_")],
-                              Message: Annotated[P(PORT_MESSAGE), SAL("_In_")]
+                              Message: Annotated[P[PORT_MESSAGE], SAL("_In_")]
                               ):
     raise NotImplementedError()
 
@@ -1994,7 +1994,7 @@ def ZwImpersonateClientOfPort(dp: Dumpulator,
 def ZwImpersonateThread(dp: Dumpulator,
                         ServerThreadHandle: Annotated[HANDLE, SAL("_In_")],
                         ClientThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                        SecurityQos: Annotated[P(SECURITY_QUALITY_OF_SERVICE), SAL("_In_")]
+                        SecurityQos: Annotated[P[SECURITY_QUALITY_OF_SERVICE], SAL("_In_")]
                         ):
     raise NotImplementedError()
 
@@ -2004,15 +2004,15 @@ def ZwInitializeEnclave(dp: Dumpulator,
                         BaseAddress: Annotated[PVOID, SAL("_In_")],
                         EnclaveInformation: Annotated[PVOID, SAL("_In_reads_bytes_(EnclaveInformationLength)")],
                         EnclaveInformationLength: Annotated[ULONG, SAL("_In_")],
-                        EnclaveError: Annotated[P(ULONG), SAL("_Out_opt_")]
+                        EnclaveError: Annotated[P[ULONG], SAL("_Out_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwInitializeNlsFiles(dp: Dumpulator,
-                         BaseAddress: Annotated[P(PVOID), SAL("_Out_")],
-                         DefaultLocaleId: Annotated[P(LCID), SAL("_Out_")],
-                         DefaultCasingTableSize: Annotated[P(LARGE_INTEGER), SAL("_Out_")]
+                         BaseAddress: Annotated[P[PVOID], SAL("_Out_")],
+                         DefaultLocaleId: Annotated[P[LCID], SAL("_Out_")],
+                         DefaultCasingTableSize: Annotated[P[LARGE_INTEGER], SAL("_Out_")]
                          ):
     raise NotImplementedError()
 
@@ -2024,7 +2024,7 @@ def ZwInitializeRegistry(dp: Dumpulator,
 
 @syscall
 def ZwInitiatePowerAction(dp: Dumpulator,
-                          SystemAction: Annotated[P(OWER_ACTION), SAL("_In_")],
+                          SystemAction: Annotated[P[OWER_ACTION], SAL("_In_")],
                           LightestSystemState: Annotated[SYSTEM_POWER_STATE, SAL("_In_")],
                           Flags: Annotated[ULONG, SAL("_In_", "POWER_ACTION_* flags")],
                           Asynchronous: Annotated[BOOLEAN, SAL("_In_")]
@@ -2051,13 +2051,13 @@ def ZwIsUILanguageComitted(dp: Dumpulator
 @syscall
 def ZwListenPort(dp: Dumpulator,
                  PortHandle: Annotated[HANDLE, SAL("_In_")],
-                 ConnectionRequest: Annotated[P(PORT_MESSAGE), SAL("_Out_")]
+                 ConnectionRequest: Annotated[P[PORT_MESSAGE], SAL("_Out_")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwLoadDriver(dp: Dumpulator,
-                 DriverServiceName: Annotated[P(UNICODE_STRING), SAL("_In_")]
+                 DriverServiceName: Annotated[P[UNICODE_STRING], SAL("_In_")]
                  ):
     print(f"Starting service: {DriverServiceName[0].read_str()}")
     return STATUS_SUCCESS
@@ -2071,48 +2071,48 @@ def ZwLoadEnclaveData(dp: Dumpulator,
                       Protect: Annotated[ULONG, SAL("_In_")],
                       PageInformation: Annotated[PVOID, SAL("_In_reads_bytes_(PageInformationLength)")],
                       PageInformationLength: Annotated[ULONG, SAL("_In_")],
-                      NumberOfBytesWritten: Annotated[P(SIZE_T), SAL("_Out_opt_")],
-                      EnclaveError: Annotated[P(ULONG), SAL("_Out_opt_")]
+                      NumberOfBytesWritten: Annotated[P[SIZE_T], SAL("_Out_opt_")],
+                      EnclaveError: Annotated[P[ULONG], SAL("_Out_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwLoadKey(dp: Dumpulator,
-              TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-              SourceFile: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+              TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+              SourceFile: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
               ):
     raise NotImplementedError()
 
 @syscall
 def ZwLoadKey2(dp: Dumpulator,
-               TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-               SourceFile: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+               TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+               SourceFile: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                Flags: Annotated[ULONG, SAL("_In_")]
                ):
     raise NotImplementedError()
 
 @syscall
 def ZwLoadKey3(dp: Dumpulator,
-               TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-               SourceFile: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+               TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+               SourceFile: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                Flags: Annotated[ULONG, SAL("_In_")],
-               LoadEntries: Annotated[P(KEY_LOAD_ENTRY), SAL("_In_reads_(LoadEntryCount)")],
+               LoadEntries: Annotated[P[KEY_LOAD_ENTRY], SAL("_In_reads_(LoadEntryCount)")],
                LoadEntryCount: Annotated[ULONG, SAL("_In_")],
                DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_opt_")],
-               RootHandle: Annotated[P(HANDLE), SAL("_Out_opt_")],
+               RootHandle: Annotated[P[HANDLE], SAL("_Out_opt_")],
                Reserved: Annotated[PVOID, SAL("_Reserved_")]
                ):
     raise NotImplementedError()
 
 @syscall
 def ZwLoadKeyEx(dp: Dumpulator,
-                TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                SourceFile: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                SourceFile: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                 Flags: Annotated[ULONG, SAL("_In_")],
                 TrustClassKey: Annotated[HANDLE, SAL("_In_opt_", "this and below were added on Win10")],
                 Event: Annotated[HANDLE, SAL("_In_opt_")],
                 DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_opt_")],
-                RootHandle: Annotated[P(HANDLE), SAL("_Out_opt_")],
+                RootHandle: Annotated[P[HANDLE], SAL("_Out_opt_")],
                 Reserved: Annotated[PVOID, SAL("_Reserved_", "previously PIO_STATUS_BLOCK")]
                 ):
     raise NotImplementedError()
@@ -2121,11 +2121,11 @@ def ZwLoadKeyEx(dp: Dumpulator,
 def ZwLockFile(dp: Dumpulator,
                FileHandle: Annotated[HANDLE, SAL("_In_")],
                Event: Annotated[HANDLE, SAL("_In_opt_")],
-               ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+               ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-               IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
-               ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-               Length: Annotated[P(LARGE_INTEGER), SAL("_In_")],
+               IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
+               ByteOffset: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+               Length: Annotated[P[LARGE_INTEGER], SAL("_In_")],
                Key: Annotated[ULONG, SAL("_In_")],
                FailImmediately: Annotated[BOOLEAN, SAL("_In_")],
                ExclusiveLock: Annotated[BOOLEAN, SAL("_In_")]
@@ -2134,8 +2134,8 @@ def ZwLockFile(dp: Dumpulator,
 
 @syscall
 def ZwLockProductActivationKeys(dp: Dumpulator,
-                                pPrivateVer: Annotated[P(ULONG), SAL("_Inout_opt_")],
-                                pSafeMode: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                pPrivateVer: Annotated[P[ULONG], SAL("_Inout_opt_")],
+                                pSafeMode: Annotated[P[ULONG], SAL("_Out_opt_")]
                                 ):
     raise NotImplementedError()
 
@@ -2148,8 +2148,8 @@ def ZwLockRegistryKey(dp: Dumpulator,
 @syscall
 def ZwLockVirtualMemory(dp: Dumpulator,
                         ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                        BaseAddress: Annotated[P(PVOID), SAL("_Inout_")],
-                        RegionSize: Annotated[P(SIZE_T), SAL("_Inout_")],
+                        BaseAddress: Annotated[P[PVOID], SAL("_Inout_")],
+                        RegionSize: Annotated[P[SIZE_T], SAL("_Inout_")],
                         MapType: Annotated[ULONG, SAL("_In_")]
                         ):
     raise NotImplementedError()
@@ -2180,10 +2180,10 @@ def ZwManagePartition(dp: Dumpulator,
 def ZwMapCMFModule(dp: Dumpulator,
                    What: Annotated[ULONG, SAL("_In_")],
                    Index: Annotated[ULONG, SAL("_In_")],
-                   CacheIndexOut: Annotated[P(ULONG), SAL("_Out_opt_")],
-                   CacheFlagsOut: Annotated[P(ULONG), SAL("_Out_opt_")],
-                   ViewSizeOut: Annotated[P(ULONG), SAL("_Out_opt_")],
-                   BaseAddress: Annotated[P(PVOID), SAL("_Out_opt_")]
+                   CacheIndexOut: Annotated[P[ULONG], SAL("_Out_opt_")],
+                   CacheFlagsOut: Annotated[P[ULONG], SAL("_Out_opt_")],
+                   ViewSizeOut: Annotated[P[ULONG], SAL("_Out_opt_")],
+                   BaseAddress: Annotated[P[PVOID], SAL("_Out_opt_")]
                    ):
     raise NotImplementedError()
 
@@ -2191,15 +2191,15 @@ def ZwMapCMFModule(dp: Dumpulator,
 def ZwMapUserPhysicalPages(dp: Dumpulator,
                            VirtualAddress: Annotated[PVOID, SAL("_In_")],
                            NumberOfPages: Annotated[ULONG_PTR, SAL("_In_")],
-                           UserPfnArray: Annotated[P(ULONG_PTR), SAL("_In_reads_opt_(NumberOfPages)")]
+                           UserPfnArray: Annotated[P[ULONG_PTR], SAL("_In_reads_opt_(NumberOfPages)")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwMapUserPhysicalPagesScatter(dp: Dumpulator,
-                                  VirtualAddresses: Annotated[P(PVOID), SAL("_In_reads_(NumberOfPages)")],
+                                  VirtualAddresses: Annotated[P[PVOID], SAL("_In_reads_(NumberOfPages)")],
                                   NumberOfPages: Annotated[ULONG_PTR, SAL("_In_")],
-                                  UserPfnArray: Annotated[P(ULONG_PTR), SAL("_In_reads_opt_(NumberOfPages)")]
+                                  UserPfnArray: Annotated[P[ULONG_PTR], SAL("_In_reads_opt_(NumberOfPages)")]
                                   ):
     raise NotImplementedError()
 
@@ -2207,11 +2207,11 @@ def ZwMapUserPhysicalPagesScatter(dp: Dumpulator,
 def ZwMapViewOfSection(dp: Dumpulator,
                        SectionHandle: Annotated[HANDLE, SAL("_In_")],
                        ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                       BaseAddress: Annotated[P(PVOID), SAL("_Inout_ _At_(*BaseAddress, _Readable_bytes_(*ViewSize) _Writable_bytes_(*ViewSize) _Post_readable_byte_size_(*ViewSize))")],
+                       BaseAddress: Annotated[P[PVOID], SAL("_Inout_ _At_(*BaseAddress, _Readable_bytes_(*ViewSize) _Writable_bytes_(*ViewSize) _Post_readable_byte_size_(*ViewSize))")],
                        ZeroBits: Annotated[ULONG_PTR, SAL("_In_")],
                        CommitSize: Annotated[SIZE_T, SAL("_In_")],
-                       SectionOffset: Annotated[P(LARGE_INTEGER), SAL("_Inout_opt_")],
-                       ViewSize: Annotated[P(SIZE_T), SAL("_Inout_")],
+                       SectionOffset: Annotated[P[LARGE_INTEGER], SAL("_Inout_opt_")],
+                       ViewSize: Annotated[P[SIZE_T], SAL("_Inout_")],
                        InheritDisposition: Annotated[SECTION_INHERIT, SAL("_In_")],
                        AllocationType: Annotated[ULONG, SAL("_In_")],
                        Win32Protect: Annotated[ULONG, SAL("_In_")]
@@ -2236,13 +2236,13 @@ def ZwMapViewOfSection(dp: Dumpulator,
 
 @syscall
 def ZwModifyBootEntry(dp: Dumpulator,
-                      BootEntry: Annotated[P(BOOT_ENTRY), SAL("_In_")]
+                      BootEntry: Annotated[P[BOOT_ENTRY], SAL("_In_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwModifyDriverEntry(dp: Dumpulator,
-                        DriverEntry: Annotated[P(EFI_DRIVER_ENTRY), SAL("_In_")]
+                        DriverEntry: Annotated[P[EFI_DRIVER_ENTRY], SAL("_In_")]
                         ):
     raise NotImplementedError()
 
@@ -2250,9 +2250,9 @@ def ZwModifyDriverEntry(dp: Dumpulator,
 def ZwNotifyChangeDirectoryFile(dp: Dumpulator,
                                 FileHandle: Annotated[HANDLE, SAL("_In_")],
                                 Event: Annotated[HANDLE, SAL("_In_opt_")],
-                                ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                                ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                                 ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                                IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                                IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                                 Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)", "FILE_NOTIFY_INFORMATION")],
                                 Length: Annotated[ULONG, SAL("_In_")],
                                 CompletionFilter: Annotated[ULONG, SAL("_In_")],
@@ -2264,9 +2264,9 @@ def ZwNotifyChangeDirectoryFile(dp: Dumpulator,
 def ZwNotifyChangeDirectoryFileEx(dp: Dumpulator,
                                   FileHandle: Annotated[HANDLE, SAL("_In_")],
                                   Event: Annotated[HANDLE, SAL("_In_opt_")],
-                                  ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                                  ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                                   ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                                  IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                                  IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                                   Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                                   Length: Annotated[ULONG, SAL("_In_")],
                                   CompletionFilter: Annotated[ULONG, SAL("_In_")],
@@ -2279,9 +2279,9 @@ def ZwNotifyChangeDirectoryFileEx(dp: Dumpulator,
 def ZwNotifyChangeKey(dp: Dumpulator,
                       KeyHandle: Annotated[HANDLE, SAL("_In_")],
                       Event: Annotated[HANDLE, SAL("_In_opt_")],
-                      ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                      ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                       ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                      IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                      IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                       CompletionFilter: Annotated[ULONG, SAL("_In_")],
                       WatchTree: Annotated[BOOLEAN, SAL("_In_")],
                       Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(BufferSize)")],
@@ -2294,11 +2294,11 @@ def ZwNotifyChangeKey(dp: Dumpulator,
 def ZwNotifyChangeMultipleKeys(dp: Dumpulator,
                                MasterKeyHandle: Annotated[HANDLE, SAL("_In_")],
                                Count: Annotated[ULONG, SAL("_In_opt_")],
-                               SubordinateObjects: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_reads_opt_(Count)")],
+                               SubordinateObjects: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_reads_opt_(Count)")],
                                Event: Annotated[HANDLE, SAL("_In_opt_")],
-                               ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                               ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                                ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                               IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                               IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                                CompletionFilter: Annotated[ULONG, SAL("_In_")],
                                WatchTree: Annotated[BOOLEAN, SAL("_In_")],
                                Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(BufferSize)")],
@@ -2311,7 +2311,7 @@ def ZwNotifyChangeMultipleKeys(dp: Dumpulator,
 def ZwNotifyChangeSession(dp: Dumpulator,
                           SessionHandle: Annotated[HANDLE, SAL("_In_")],
                           ChangeSequenceNumber: Annotated[ULONG, SAL("_In_")],
-                          ChangeTimeStamp: Annotated[P(LARGE_INTEGER), SAL("_In_")],
+                          ChangeTimeStamp: Annotated[P[LARGE_INTEGER], SAL("_In_")],
                           Event: Annotated[IO_SESSION_EVENT, SAL("_In_")],
                           NewState: Annotated[IO_SESSION_STATE, SAL("_In_")],
                           PreviousState: Annotated[IO_SESSION_STATE, SAL("_In_")],
@@ -2322,44 +2322,44 @@ def ZwNotifyChangeSession(dp: Dumpulator,
 
 @syscall
 def ZwOpenDirectoryObject(dp: Dumpulator,
-                          DirectoryHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                          DirectoryHandle: Annotated[P[HANDLE], SAL("_Out_")],
                           DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                          ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                          ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                           ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenEnlistment(dp: Dumpulator,
-                     EnlistmentHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                     EnlistmentHandle: Annotated[P[HANDLE], SAL("_Out_")],
                      DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                      ResourceManagerHandle: Annotated[HANDLE, SAL("_In_")],
-                     EnlistmentGuid: Annotated[P(GUID), SAL("_In_")],
-                     ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")]
+                     EnlistmentGuid: Annotated[P[GUID], SAL("_In_")],
+                     ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")]
                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenEvent(dp: Dumpulator,
-                EventHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                EventHandle: Annotated[P[HANDLE], SAL("_Out_")],
                 DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenEventPair(dp: Dumpulator,
-                    EventPairHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    EventPairHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                    ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                    ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenFile(dp: Dumpulator,
-               FileHandle: Annotated[P(HANDLE), SAL("_Out_")],
+               FileHandle: Annotated[P[HANDLE], SAL("_Out_")],
                DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-               ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-               IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+               ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+               IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                ShareAccess: Annotated[ULONG, SAL("_In_")],
                OpenOptions: Annotated[ULONG, SAL("_In_")]
                ):
@@ -2374,25 +2374,25 @@ def ZwOpenFile(dp: Dumpulator,
 
 @syscall
 def ZwOpenIoCompletion(dp: Dumpulator,
-                       IoCompletionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                       IoCompletionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                        DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                       ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                       ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                        ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenJobObject(dp: Dumpulator,
-                    JobHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    JobHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                    ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                    ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenKey(dp: Dumpulator,
-              KeyHandle: Annotated[P(HANDLE), SAL("_Out_")],
+              KeyHandle: Annotated[P[HANDLE], SAL("_Out_")],
               DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-              ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+              ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
               ):
     key_name = ObjectAttributes[0].ObjectName[0].read_str()
     assert DesiredAccess == 0x20019
@@ -2403,35 +2403,35 @@ def ZwOpenKey(dp: Dumpulator,
 
 @syscall
 def ZwOpenKeyedEvent(dp: Dumpulator,
-                     KeyedEventHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                     KeyedEventHandle: Annotated[P[HANDLE], SAL("_Out_")],
                      DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                     ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                     ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenKeyEx(dp: Dumpulator,
-                KeyHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                KeyHandle: Annotated[P[HANDLE], SAL("_Out_")],
                 DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                 OpenOptions: Annotated[ULONG, SAL("_In_")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenKeyTransacted(dp: Dumpulator,
-                        KeyHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                        KeyHandle: Annotated[P[HANDLE], SAL("_Out_")],
                         DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                        ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                        ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                         TransactionHandle: Annotated[HANDLE, SAL("_In_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenKeyTransactedEx(dp: Dumpulator,
-                          KeyHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                          KeyHandle: Annotated[P[HANDLE], SAL("_Out_")],
                           DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                          ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                          ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                           OpenOptions: Annotated[ULONG, SAL("_In_")],
                           TransactionHandle: Annotated[HANDLE, SAL("_In_")]
                           ):
@@ -2439,52 +2439,52 @@ def ZwOpenKeyTransactedEx(dp: Dumpulator,
 
 @syscall
 def ZwOpenMutant(dp: Dumpulator,
-                 MutantHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                 MutantHandle: Annotated[P[HANDLE], SAL("_Out_")],
                  DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                 ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                 ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenObjectAuditAlarm(dp: Dumpulator,
-                           SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                           SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                            HandleId: Annotated[PVOID, SAL("_In_opt_")],
-                           ObjectTypeName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                           ObjectName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                           SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_opt_")],
+                           ObjectTypeName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                           ObjectName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                           SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_opt_")],
                            ClientToken: Annotated[HANDLE, SAL("_In_")],
                            DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                            GrantedAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                           Privileges: Annotated[P(PRIVILEGE_SET), SAL("_In_opt_")],
+                           Privileges: Annotated[P[PRIVILEGE_SET], SAL("_In_opt_")],
                            ObjectCreation: Annotated[BOOLEAN, SAL("_In_")],
                            AccessGranted: Annotated[BOOLEAN, SAL("_In_")],
-                           GenerateOnClose: Annotated[P(BOOLEAN), SAL("_Out_")]
+                           GenerateOnClose: Annotated[P[BOOLEAN], SAL("_Out_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenPartition(dp: Dumpulator,
-                    PartitionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    PartitionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                    ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                    ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenPrivateNamespace(dp: Dumpulator,
-                           NamespaceHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                           NamespaceHandle: Annotated[P[HANDLE], SAL("_Out_")],
                            DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                           ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                           BoundaryDescriptor: Annotated[P(OBJECT_BOUNDARY_DESCRIPTOR), SAL("_In_")]
+                           ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                           BoundaryDescriptor: Annotated[P[OBJECT_BOUNDARY_DESCRIPTOR], SAL("_In_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenProcess(dp: Dumpulator,
-                  ProcessHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                  ProcessHandle: Annotated[P[HANDLE], SAL("_Out_")],
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                  ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                  ClientId: Annotated[P(CLIENT_ID), SAL("_In_opt_")]
+                  ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                  ClientId: Annotated[P[CLIENT_ID], SAL("_In_opt_")]
                   ):
     raise NotImplementedError()
 
@@ -2492,7 +2492,7 @@ def ZwOpenProcess(dp: Dumpulator,
 def ZwOpenProcessToken(dp: Dumpulator,
                        ProcessHandle: Annotated[HANDLE, SAL("_In_")],
                        DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                       TokenHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                       TokenHandle: Annotated[P[HANDLE], SAL("_Out_")]
                        ):
     assert ProcessHandle == dp.NtCurrentProcess()
     assert DesiredAccess == 0x20
@@ -2507,58 +2507,58 @@ def ZwOpenProcessTokenEx(dp: Dumpulator,
                          ProcessHandle: Annotated[HANDLE, SAL("_In_")],
                          DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                          HandleAttributes: Annotated[ULONG, SAL("_In_")],
-                         TokenHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                         TokenHandle: Annotated[P[HANDLE], SAL("_Out_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenResourceManager(dp: Dumpulator,
-                          ResourceManagerHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                          ResourceManagerHandle: Annotated[P[HANDLE], SAL("_Out_")],
                           DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                           TmHandle: Annotated[HANDLE, SAL("_In_")],
-                          ResourceManagerGuid: Annotated[P(GUID), SAL("_In_opt_")],
-                          ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")]
+                          ResourceManagerGuid: Annotated[P[GUID], SAL("_In_opt_")],
+                          ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")]
                           ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenSection(dp: Dumpulator,
-                  SectionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                  SectionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                  ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                  ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenSemaphore(dp: Dumpulator,
-                    SemaphoreHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                    SemaphoreHandle: Annotated[P[HANDLE], SAL("_Out_")],
                     DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                    ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                    ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenSession(dp: Dumpulator,
-                  SessionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                  SessionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                   DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                  ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                  ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenSymbolicLinkObject(dp: Dumpulator,
-                             LinkHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                             LinkHandle: Annotated[P[HANDLE], SAL("_Out_")],
                              DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                             ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                             ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                              ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenThread(dp: Dumpulator,
-                 ThreadHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                 ThreadHandle: Annotated[P[HANDLE], SAL("_Out_")],
                  DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                 ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                 ClientId: Annotated[P(CLIENT_ID), SAL("_In_opt_")]
+                 ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                 ClientId: Annotated[P[CLIENT_ID], SAL("_In_opt_")]
                  ):
     raise NotImplementedError()
 
@@ -2567,7 +2567,7 @@ def ZwOpenThreadToken(dp: Dumpulator,
                       ThreadHandle: Annotated[HANDLE, SAL("_In_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                       OpenAsSelf: Annotated[BOOLEAN, SAL("_In_")],
-                      TokenHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                      TokenHandle: Annotated[P[HANDLE], SAL("_Out_")]
                       ):
     raise NotImplementedError()
 
@@ -2577,35 +2577,35 @@ def ZwOpenThreadTokenEx(dp: Dumpulator,
                         DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
                         OpenAsSelf: Annotated[BOOLEAN, SAL("_In_")],
                         HandleAttributes: Annotated[ULONG, SAL("_In_")],
-                        TokenHandle: Annotated[P(HANDLE), SAL("_Out_")]
+                        TokenHandle: Annotated[P[HANDLE], SAL("_Out_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenTimer(dp: Dumpulator,
-                TimerHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                TimerHandle: Annotated[P[HANDLE], SAL("_Out_")],
                 DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenTransaction(dp: Dumpulator,
-                      TransactionHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                      TransactionHandle: Annotated[P[HANDLE], SAL("_Out_")],
                       DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                      ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                      Uow: Annotated[P(GUID), SAL("_In_opt_")],
+                      ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                      Uow: Annotated[P[GUID], SAL("_In_opt_")],
                       TmHandle: Annotated[HANDLE, SAL("_In_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwOpenTransactionManager(dp: Dumpulator,
-                             TmHandle: Annotated[P(HANDLE), SAL("_Out_")],
+                             TmHandle: Annotated[P[HANDLE], SAL("_Out_")],
                              DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                             ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_opt_")],
-                             LogFileName: Annotated[P(UNICODE_STRING), SAL("_In_opt_")],
-                             TmIdentity: Annotated[P(GUID), SAL("_In_opt_")],
+                             ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_opt_")],
+                             LogFileName: Annotated[P[UNICODE_STRING], SAL("_In_opt_")],
+                             TmIdentity: Annotated[P[GUID], SAL("_In_opt_")],
                              OpenOptions: Annotated[ULONG, SAL("_In_opt_")]
                              ):
     raise NotImplementedError()
@@ -2620,7 +2620,7 @@ def ZwPlugPlayControl(dp: Dumpulator,
 
 @syscall
 def ZwPowerInformation(dp: Dumpulator,
-                       InformationLevel: Annotated[P(OWER_INFORMATION_LEVEL), SAL("_In_")],
+                       InformationLevel: Annotated[P[OWER_INFORMATION_LEVEL], SAL("_In_")],
                        InputBuffer: Annotated[PVOID, SAL("_In_reads_bytes_opt_(InputBufferLength)")],
                        InputBufferLength: Annotated[ULONG, SAL("_In_")],
                        OutputBuffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(OutputBufferLength)")],
@@ -2631,56 +2631,56 @@ def ZwPowerInformation(dp: Dumpulator,
 @syscall
 def ZwPrepareComplete(dp: Dumpulator,
                       EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                      TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                      TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwPrepareEnlistment(dp: Dumpulator,
                         EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                        TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                        TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwPrePrepareComplete(dp: Dumpulator,
                          EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                         TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                         TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwPrePrepareEnlistment(dp: Dumpulator,
                            EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                           TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                           TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwPrivilegeCheck(dp: Dumpulator,
                      ClientToken: Annotated[HANDLE, SAL("_In_")],
-                     RequiredPrivileges: Annotated[P(PRIVILEGE_SET), SAL("_Inout_")],
-                     Result: Annotated[P(BOOLEAN), SAL("_Out_")]
+                     RequiredPrivileges: Annotated[P[PRIVILEGE_SET], SAL("_Inout_")],
+                     Result: Annotated[P[BOOLEAN], SAL("_Out_")]
                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwPrivilegedServiceAuditAlarm(dp: Dumpulator,
-                                  SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                  ServiceName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                                  SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                  ServiceName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                                   ClientToken: Annotated[HANDLE, SAL("_In_")],
-                                  Privileges: Annotated[P(PRIVILEGE_SET), SAL("_In_")],
+                                  Privileges: Annotated[P[PRIVILEGE_SET], SAL("_In_")],
                                   AccessGranted: Annotated[BOOLEAN, SAL("_In_")]
                                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwPrivilegeObjectAuditAlarm(dp: Dumpulator,
-                                SubsystemName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                                SubsystemName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                                 HandleId: Annotated[PVOID, SAL("_In_opt_")],
                                 ClientToken: Annotated[HANDLE, SAL("_In_")],
                                 DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
-                                Privileges: Annotated[P(PRIVILEGE_SET), SAL("_In_")],
+                                Privileges: Annotated[P[PRIVILEGE_SET], SAL("_In_")],
                                 AccessGranted: Annotated[BOOLEAN, SAL("_In_")]
                                 ):
     raise NotImplementedError()
@@ -2705,10 +2705,10 @@ def ZwPropagationFailed(dp: Dumpulator,
 @syscall
 def ZwProtectVirtualMemory(dp: Dumpulator,
                            ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                           BaseAddress: Annotated[P(PVOID), SAL("_Inout_")],
-                           RegionSize: Annotated[P(SIZE_T), SAL("_Inout_")],
+                           BaseAddress: Annotated[P[PVOID], SAL("_Inout_")],
+                           RegionSize: Annotated[P[SIZE_T], SAL("_Inout_")],
                            NewProtect: Annotated[ULONG, SAL("_In_")],
-                           OldProtect: Annotated[P(ULONG), SAL("_Out_")]
+                           OldProtect: Annotated[P[ULONG], SAL("_Out_")]
                            ):
     base = BaseAddress.read_ptr() & 0xFFFFFFFFFFFFF000
     size = round_to_pages(RegionSize.read_ptr())
@@ -2722,14 +2722,14 @@ def ZwProtectVirtualMemory(dp: Dumpulator,
 @syscall
 def ZwPulseEvent(dp: Dumpulator,
                  EventHandle: Annotated[HANDLE, SAL("_In_")],
-                 PreviousState: Annotated[P(LONG), SAL("_Out_opt_")]
+                 PreviousState: Annotated[P[LONG], SAL("_Out_opt_")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryAttributesFile(dp: Dumpulator,
-                          ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                          FileInformation: Annotated[P(FILE_BASIC_INFORMATION), SAL("_Out_")]
+                          ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                          FileInformation: Annotated[P[FILE_BASIC_INFORMATION], SAL("_Out_")]
                           ):
     assert ObjectAttributes.ptr != 0
     file_name = ObjectAttributes[0].ObjectName[0].read_str()
@@ -2749,15 +2749,15 @@ def ZwQueryAttributesFile(dp: Dumpulator,
 
 @syscall
 def ZwQueryBootEntryOrder(dp: Dumpulator,
-                          Ids: Annotated[P(ULONG), SAL("_Out_writes_opt_(*Count)")],
-                          Count: Annotated[P(ULONG), SAL("_Inout_")]
+                          Ids: Annotated[P[ULONG], SAL("_Out_writes_opt_(*Count)")],
+                          Count: Annotated[P[ULONG], SAL("_Inout_")]
                           ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryBootOptions(dp: Dumpulator,
-                       BootOptions: Annotated[P(BOOT_OPTIONS), SAL("_Out_writes_bytes_opt_(*BootOptionsLength)")],
-                       BootOptionsLength: Annotated[P(ULONG), SAL("_Inout_")]
+                       BootOptions: Annotated[P[BOOT_OPTIONS], SAL("_Out_writes_bytes_opt_(*BootOptionsLength)")],
+                       BootOptionsLength: Annotated[P[ULONG], SAL("_Inout_")]
                        ):
     raise NotImplementedError()
 
@@ -2772,13 +2772,13 @@ def ZwQueryDebugFilterState(dp: Dumpulator,
 @syscall
 def ZwQueryDefaultLocale(dp: Dumpulator,
                          UserProfile: Annotated[BOOLEAN, SAL("_In_")],
-                         DefaultLocaleId: Annotated[P(LCID), SAL("_Out_")]
+                         DefaultLocaleId: Annotated[P[LCID], SAL("_Out_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryDefaultUILanguage(dp: Dumpulator,
-                             DefaultUILanguageId: Annotated[P(LANGID), SAL("_Out_")]
+                             DefaultUILanguageId: Annotated[P[LANGID], SAL("_Out_")]
                              ):
     raise NotImplementedError()
 
@@ -2786,14 +2786,14 @@ def ZwQueryDefaultUILanguage(dp: Dumpulator,
 def ZwQueryDirectoryFile(dp: Dumpulator,
                          FileHandle: Annotated[HANDLE, SAL("_In_")],
                          Event: Annotated[HANDLE, SAL("_In_opt_")],
-                         ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                         ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                          ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                         IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                         IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                          FileInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                          Length: Annotated[ULONG, SAL("_In_")],
                          FileInformationClass: Annotated[FILE_INFORMATION_CLASS, SAL("_In_")],
                          ReturnSingleEntry: Annotated[BOOLEAN, SAL("_In_")],
-                         FileName: Annotated[P(UNICODE_STRING), SAL("_In_opt_")],
+                         FileName: Annotated[P[UNICODE_STRING], SAL("_In_opt_")],
                          RestartScan: Annotated[BOOLEAN, SAL("_In_")]
                          ):
     raise NotImplementedError()
@@ -2802,14 +2802,14 @@ def ZwQueryDirectoryFile(dp: Dumpulator,
 def ZwQueryDirectoryFileEx(dp: Dumpulator,
                            FileHandle: Annotated[HANDLE, SAL("_In_")],
                            Event: Annotated[HANDLE, SAL("_In_opt_")],
-                           ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                           ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                            ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                           IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                           IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                            FileInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                            Length: Annotated[ULONG, SAL("_In_")],
                            FileInformationClass: Annotated[FILE_INFORMATION_CLASS, SAL("_In_")],
                            QueryFlags: Annotated[ULONG, SAL("_In_")],
-                           FileName: Annotated[P(UNICODE_STRING), SAL("_In_opt_")]
+                           FileName: Annotated[P[UNICODE_STRING], SAL("_In_opt_")]
                            ):
     raise NotImplementedError()
 
@@ -2820,28 +2820,28 @@ def ZwQueryDirectoryObject(dp: Dumpulator,
                            Length: Annotated[ULONG, SAL("_In_")],
                            ReturnSingleEntry: Annotated[BOOLEAN, SAL("_In_")],
                            RestartScan: Annotated[BOOLEAN, SAL("_In_")],
-                           Context: Annotated[P(ULONG), SAL("_Inout_")],
-                           ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                           Context: Annotated[P[ULONG], SAL("_Inout_")],
+                           ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryDriverEntryOrder(dp: Dumpulator,
-                            Ids: Annotated[P(ULONG), SAL("_Out_writes_opt_(*Count)")],
-                            Count: Annotated[P(ULONG), SAL("_Inout_")]
+                            Ids: Annotated[P[ULONG], SAL("_Out_writes_opt_(*Count)")],
+                            Count: Annotated[P[ULONG], SAL("_Inout_")]
                             ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryEaFile(dp: Dumpulator,
                   FileHandle: Annotated[HANDLE, SAL("_In_")],
-                  IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                  IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                   Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                   Length: Annotated[ULONG, SAL("_In_")],
                   ReturnSingleEntry: Annotated[BOOLEAN, SAL("_In_")],
                   EaList: Annotated[PVOID, SAL("_In_reads_bytes_opt_(EaListLength)")],
                   EaListLength: Annotated[ULONG, SAL("_In_")],
-                  EaIndex: Annotated[P(ULONG), SAL("_In_opt_")],
+                  EaIndex: Annotated[P[ULONG], SAL("_In_opt_")],
                   RestartScan: Annotated[BOOLEAN, SAL("_In_")]
                   ):
     raise NotImplementedError()
@@ -2852,14 +2852,14 @@ def ZwQueryEvent(dp: Dumpulator,
                  EventInformationClass: Annotated[EVENT_INFORMATION_CLASS, SAL("_In_")],
                  EventInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(EventInformationLength)")],
                  EventInformationLength: Annotated[ULONG, SAL("_In_")],
-                 ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                 ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryFullAttributesFile(dp: Dumpulator,
-                              ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                              FileInformation: Annotated[P(FILE_NETWORK_OPEN_INFORMATION), SAL("_Out_")]
+                              ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                              FileInformation: Annotated[P[FILE_NETWORK_OPEN_INFORMATION], SAL("_Out_")]
                               ):
     raise NotImplementedError()
 
@@ -2869,14 +2869,14 @@ def ZwQueryInformationAtom(dp: Dumpulator,
                            AtomInformationClass: Annotated[ATOM_INFORMATION_CLASS, SAL("_In_")],
                            AtomInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(AtomInformationLength)")],
                            AtomInformationLength: Annotated[ULONG, SAL("_In_")],
-                           ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                           ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryInformationByName(dp: Dumpulator,
-                             ObjectAttributes: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                             IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                             ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                             IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                              FileInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                              Length: Annotated[ULONG, SAL("_In_")],
                              FileInformationClass: Annotated[FILE_INFORMATION_CLASS, SAL("_In_")]
@@ -2889,14 +2889,14 @@ def ZwQueryInformationEnlistment(dp: Dumpulator,
                                  EnlistmentInformationClass: Annotated[ENLISTMENT_INFORMATION_CLASS, SAL("_In_")],
                                  EnlistmentInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(EnlistmentInformationLength)")],
                                  EnlistmentInformationLength: Annotated[ULONG, SAL("_In_")],
-                                 ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                 ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryInformationFile(dp: Dumpulator,
                            FileHandle: Annotated[HANDLE, SAL("_In_")],
-                           IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                           IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                            FileInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                            Length: Annotated[ULONG, SAL("_In_")],
                            FileInformationClass: Annotated[FILE_INFORMATION_CLASS, SAL("_In_")]
@@ -2963,7 +2963,7 @@ def ZwQueryInformationJobObject(dp: Dumpulator,
                                 JobObjectInformationClass: Annotated[JOBOBJECTINFOCLASS, SAL("_In_")],
                                 JobObjectInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(JobObjectInformationLength)")],
                                 JobObjectInformationLength: Annotated[ULONG, SAL("_In_")],
-                                ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                 ):
     raise NotImplementedError()
 
@@ -2973,7 +2973,7 @@ def ZwQueryInformationPort(dp: Dumpulator,
                            PortInformationClass: Annotated[PORT_INFORMATION_CLASS, SAL("_In_")],
                            PortInformation: Annotated[PVOID, SAL("_Out_writes_bytes_to_(Length, *ReturnLength)")],
                            Length: Annotated[ULONG, SAL("_In_")],
-                           ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                           ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                            ):
     raise NotImplementedError()
 
@@ -2983,7 +2983,7 @@ def ZwQueryInformationProcess(dp: Dumpulator,
                               ProcessInformationClass: Annotated[PROCESSINFOCLASS, SAL("_In_")],
                               ProcessInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(ProcessInformationLength)")],
                               ProcessInformationLength: Annotated[ULONG, SAL("_In_")],
-                              ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                              ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                               ):
     assert ProcessHandle == dp.NtCurrentProcess()
     if ProcessInformationClass == PROCESSINFOCLASS.ProcessDebugPort:
@@ -3066,7 +3066,7 @@ def ZwQueryInformationResourceManager(dp: Dumpulator,
                                       ResourceManagerInformationClass: Annotated[RESOURCEMANAGER_INFORMATION_CLASS, SAL("_In_")],
                                       ResourceManagerInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(ResourceManagerInformationLength)")],
                                       ResourceManagerInformationLength: Annotated[ULONG, SAL("_In_")],
-                                      ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                      ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                       ):
     raise NotImplementedError()
 
@@ -3076,7 +3076,7 @@ def ZwQueryInformationThread(dp: Dumpulator,
                              ThreadInformationClass: Annotated[THREADINFOCLASS, SAL("_In_")],
                              ThreadInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(ThreadInformationLength)")],
                              ThreadInformationLength: Annotated[ULONG, SAL("_In_")],
-                             ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                             ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                              ):
     if ThreadInformationClass == THREADINFOCLASS.ThreadDynamicCodePolicyInfo:
         assert ThreadInformationLength == 4
@@ -3091,7 +3091,7 @@ def ZwQueryInformationToken(dp: Dumpulator,
                             TokenInformationClass: Annotated[TOKEN_INFORMATION_CLASS, SAL("_In_")],
                             TokenInformation: Annotated[PVOID, SAL("_Out_writes_bytes_to_opt_(TokenInformationLength, *ReturnLength)")],
                             TokenInformationLength: Annotated[ULONG, SAL("_In_")],
-                            ReturnLength: Annotated[P(ULONG), SAL("_Out_")]
+                            ReturnLength: Annotated[P[ULONG], SAL("_Out_")]
                             ):
     raise NotImplementedError()
 
@@ -3101,7 +3101,7 @@ def ZwQueryInformationTransaction(dp: Dumpulator,
                                   TransactionInformationClass: Annotated[TRANSACTION_INFORMATION_CLASS, SAL("_In_")],
                                   TransactionInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(TransactionInformationLength)")],
                                   TransactionInformationLength: Annotated[ULONG, SAL("_In_")],
-                                  ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                  ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                   ):
     raise NotImplementedError()
 
@@ -3111,7 +3111,7 @@ def ZwQueryInformationTransactionManager(dp: Dumpulator,
                                          TransactionManagerInformationClass: Annotated[TRANSACTIONMANAGER_INFORMATION_CLASS, SAL("_In_")],
                                          TransactionManagerInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(TransactionManagerInformationLength)")],
                                          TransactionManagerInformationLength: Annotated[ULONG, SAL("_In_")],
-                                         ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                         ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                          ):
     raise NotImplementedError()
 
@@ -3121,20 +3121,20 @@ def ZwQueryInformationWorkerFactory(dp: Dumpulator,
                                     WorkerFactoryInformationClass: Annotated[WORKERFACTORYINFOCLASS, SAL("_In_")],
                                     WorkerFactoryInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(WorkerFactoryInformationLength)")],
                                     WorkerFactoryInformationLength: Annotated[ULONG, SAL("_In_")],
-                                    ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                    ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryInstallUILanguage(dp: Dumpulator,
-                             InstallUILanguageId: Annotated[P(LANGID), SAL("_Out_")]
+                             InstallUILanguageId: Annotated[P[LANGID], SAL("_Out_")]
                              ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryIntervalProfile(dp: Dumpulator,
                            ProfileSource: Annotated[KPROFILE_SOURCE, SAL("_In_")],
-                           Interval: Annotated[P(ULONG), SAL("_Out_")]
+                           Interval: Annotated[P[ULONG], SAL("_Out_")]
                            ):
     raise NotImplementedError()
 
@@ -3144,7 +3144,7 @@ def ZwQueryIoCompletion(dp: Dumpulator,
                         IoCompletionInformationClass: Annotated[IO_COMPLETION_INFORMATION_CLASS, SAL("_In_")],
                         IoCompletionInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(IoCompletionInformationLength)")],
                         IoCompletionInformationLength: Annotated[ULONG, SAL("_In_")],
-                        ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                        ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                         ):
     raise NotImplementedError()
 
@@ -3154,28 +3154,28 @@ def ZwQueryKey(dp: Dumpulator,
                KeyInformationClass: Annotated[KEY_INFORMATION_CLASS, SAL("_In_")],
                KeyInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(Length)")],
                Length: Annotated[ULONG, SAL("_In_")],
-               ResultLength: Annotated[P(ULONG), SAL("_Out_")]
+               ResultLength: Annotated[P[ULONG], SAL("_Out_")]
                ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryLicenseValue(dp: Dumpulator,
-                        ValueName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                        Type: Annotated[P(ULONG), SAL("_Out_opt_")],
+                        ValueName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                        Type: Annotated[P[ULONG], SAL("_Out_opt_")],
                         Data: Annotated[PVOID, SAL("_Out_writes_bytes_to_opt_(DataSize, *ResultDataSize)")],
                         DataSize: Annotated[ULONG, SAL("_In_")],
-                        ResultDataSize: Annotated[P(ULONG), SAL("_Out_")]
+                        ResultDataSize: Annotated[P[ULONG], SAL("_Out_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryMultipleValueKey(dp: Dumpulator,
                             KeyHandle: Annotated[HANDLE, SAL("_In_")],
-                            ValueEntries: Annotated[P(KEY_VALUE_ENTRY), SAL("_Inout_updates_(EntryCount)")],
+                            ValueEntries: Annotated[P[KEY_VALUE_ENTRY], SAL("_Inout_updates_(EntryCount)")],
                             EntryCount: Annotated[ULONG, SAL("_In_")],
                             ValueBuffer: Annotated[PVOID, SAL("_Out_writes_bytes_(*BufferLength)")],
-                            BufferLength: Annotated[P(ULONG), SAL("_Inout_")],
-                            RequiredBufferLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                            BufferLength: Annotated[P[ULONG], SAL("_Inout_")],
+                            RequiredBufferLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                             ):
     raise NotImplementedError()
 
@@ -3185,7 +3185,7 @@ def ZwQueryMutant(dp: Dumpulator,
                   MutantInformationClass: Annotated[MUTANT_INFORMATION_CLASS, SAL("_In_")],
                   MutantInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(MutantInformationLength)")],
                   MutantInformationLength: Annotated[ULONG, SAL("_In_")],
-                  ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                  ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                   ):
     raise NotImplementedError()
 
@@ -3195,7 +3195,7 @@ def ZwQueryObject(dp: Dumpulator,
                   ObjectInformationClass: Annotated[OBJECT_INFORMATION_CLASS, SAL("_In_")],
                   ObjectInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(ObjectInformationLength)")],
                   ObjectInformationLength: Annotated[ULONG, SAL("_In_")],
-                  ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                  ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                   ):
     if ObjectInformationClass == OBJECT_INFORMATION_CLASS.ObjectHandleFlagInformation:
         assert ObjectInformationLength == 2
@@ -3205,36 +3205,35 @@ def ZwQueryObject(dp: Dumpulator,
 
 @syscall
 def ZwQueryOpenSubKeys(dp: Dumpulator,
-                       TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
-                       HandleCount: Annotated[P(ULONG), SAL("_Out_")]
+                       TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                       HandleCount: Annotated[P[ULONG], SAL("_Out_")]
                        ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryOpenSubKeysEx(dp: Dumpulator,
-                         TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                         TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                          BufferLength: Annotated[ULONG, SAL("_In_")],
                          Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(BufferLength)")],
-                         RequiredSize: Annotated[P(ULONG), SAL("_Out_")]
+                         RequiredSize: Annotated[P[ULONG], SAL("_Out_")]
                          ):
     raise NotImplementedError()
 
 @syscall
-def ZwQueryPerformanceCounter(dp: Dumpulator,
-                              PerformanceCounter: Annotated[P(LARGE_INTEGER), SAL("_Out_")],
-                              PerformanceFrequency: Annotated[P(LARGE_INTEGER), SAL("_Out_opt_")]
+def ZwQueryPerformanceCounter(dp: Dumpulator
                               ):
     raise NotImplementedError()
 
 @syscall
-def ZwQueryPortInformationProcess(dp: Dumpulator
+def ZwQueryPortInformationProcess(dp: Dumpulator,
+                                  PerformanceCounter: Annotated[P[LARGE_INTEGER], SAL("_Out_")]
                                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryQuotaInformationFile(dp: Dumpulator,
                                 FileHandle: Annotated[HANDLE, SAL("_In_")],
-                                IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                                IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                                 Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                                 Length: Annotated[ULONG, SAL("_In_")],
                                 ReturnSingleEntry: Annotated[BOOLEAN, SAL("_In_")],
@@ -3251,18 +3250,18 @@ def ZwQuerySection(dp: Dumpulator,
                    SectionInformationClass: Annotated[SECTION_INFORMATION_CLASS, SAL("_In_")],
                    SectionInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(SectionInformationLength)")],
                    SectionInformationLength: Annotated[SIZE_T, SAL("_In_")],
-                   ReturnLength: Annotated[P(SIZE_T), SAL("_Out_opt_")]
+                   ReturnLength: Annotated[P[SIZE_T], SAL("_Out_opt_")]
                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwQuerySecurityAttributesToken(dp: Dumpulator,
                                    TokenHandle: Annotated[HANDLE, SAL("_In_")],
-                                   Attributes: Annotated[P(UNICODE_STRING), SAL("_In_reads_opt_(NumberOfAttributes)")],
+                                   Attributes: Annotated[P[UNICODE_STRING], SAL("_In_reads_opt_(NumberOfAttributes)")],
                                    NumberOfAttributes: Annotated[ULONG, SAL("_In_")],
                                    Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)", "PTOKEN_SECURITY_ATTRIBUTES_INFORMATION")],
                                    Length: Annotated[ULONG, SAL("_In_")],
-                                   ReturnLength: Annotated[P(ULONG), SAL("_Out_")]
+                                   ReturnLength: Annotated[P[ULONG], SAL("_Out_")]
                                    ):
     raise NotImplementedError()
 
@@ -3270,9 +3269,9 @@ def ZwQuerySecurityAttributesToken(dp: Dumpulator,
 def ZwQuerySecurityObject(dp: Dumpulator,
                           Handle: Annotated[HANDLE, SAL("_In_")],
                           SecurityInformation: Annotated[SECURITY_INFORMATION, SAL("_In_")],
-                          SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_Out_writes_bytes_opt_(Length)")],
+                          SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_Out_writes_bytes_opt_(Length)")],
                           Length: Annotated[ULONG, SAL("_In_")],
-                          LengthNeeded: Annotated[P(ULONG), SAL("_Out_")]
+                          LengthNeeded: Annotated[P[ULONG], SAL("_Out_")]
                           ):
     raise NotImplementedError()
 
@@ -3282,34 +3281,34 @@ def ZwQuerySemaphore(dp: Dumpulator,
                      SemaphoreInformationClass: Annotated[SEMAPHORE_INFORMATION_CLASS, SAL("_In_")],
                      SemaphoreInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(SemaphoreInformationLength)")],
                      SemaphoreInformationLength: Annotated[ULONG, SAL("_In_")],
-                     ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                     ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                      ):
     raise NotImplementedError()
 
 @syscall
 def ZwQuerySymbolicLinkObject(dp: Dumpulator,
                               LinkHandle: Annotated[HANDLE, SAL("_In_")],
-                              LinkTarget: Annotated[P(UNICODE_STRING), SAL("_Inout_")],
-                              ReturnedLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                              LinkTarget: Annotated[P[UNICODE_STRING], SAL("_Inout_")],
+                              ReturnedLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                               ):
     raise NotImplementedError()
 
 @syscall
 def ZwQuerySystemEnvironmentValue(dp: Dumpulator,
-                                  VariableName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                                  VariableName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                                   VariableValue: Annotated[PWSTR, SAL("_Out_writes_bytes_(ValueLength)")],
                                   ValueLength: Annotated[USHORT, SAL("_In_")],
-                                  ReturnLength: Annotated[P(USHORT), SAL("_Out_opt_")]
+                                  ReturnLength: Annotated[P[USHORT], SAL("_Out_opt_")]
                                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwQuerySystemEnvironmentValueEx(dp: Dumpulator,
-                                    VariableName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                    VendorGuid: Annotated[P(GUID), SAL("_In_")],
+                                    VariableName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                    VendorGuid: Annotated[P[GUID], SAL("_In_")],
                                     Value: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(*ValueLength)")],
-                                    ValueLength: Annotated[P(ULONG), SAL("_Inout_")],
-                                    Attributes: Annotated[P(ULONG), SAL("_Out_opt_", "EFI_VARIABLE_*")]
+                                    ValueLength: Annotated[P[ULONG], SAL("_Inout_")],
+                                    Attributes: Annotated[P[ULONG], SAL("_Out_opt_", "EFI_VARIABLE_*")]
                                     ):
     raise NotImplementedError()
 
@@ -3318,7 +3317,7 @@ def ZwQuerySystemInformation(dp: Dumpulator,
                              SystemInformationClass: Annotated[SYSTEM_INFORMATION_CLASS, SAL("_In_")],
                              SystemInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(SystemInformationLength)")],
                              SystemInformationLength: Annotated[ULONG, SAL("_In_")],
-                             ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                             ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                              ):
     raise NotImplementedError()
 
@@ -3329,13 +3328,13 @@ def ZwQuerySystemInformationEx(dp: Dumpulator,
                                InputBufferLength: Annotated[ULONG, SAL("_In_")],
                                SystemInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(SystemInformationLength)")],
                                SystemInformationLength: Annotated[ULONG, SAL("_In_")],
-                               ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                               ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                ):
     raise NotImplementedError()
 
 @syscall
 def ZwQuerySystemTime(dp: Dumpulator,
-                      SystemTime: Annotated[P(LARGE_INTEGER), SAL("_Out_")]
+                      SystemTime: Annotated[P[LARGE_INTEGER], SAL("_Out_")]
                       ):
     raise NotImplementedError()
 
@@ -3345,26 +3344,26 @@ def ZwQueryTimer(dp: Dumpulator,
                  TimerInformationClass: Annotated[TIMER_INFORMATION_CLASS, SAL("_In_")],
                  TimerInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(TimerInformationLength)")],
                  TimerInformationLength: Annotated[ULONG, SAL("_In_")],
-                 ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                 ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryTimerResolution(dp: Dumpulator,
-                           MaximumTime: Annotated[P(ULONG), SAL("_Out_")],
-                           MinimumTime: Annotated[P(ULONG), SAL("_Out_")],
-                           CurrentTime: Annotated[P(ULONG), SAL("_Out_")]
+                           MaximumTime: Annotated[P[ULONG], SAL("_Out_")],
+                           MinimumTime: Annotated[P[ULONG], SAL("_Out_")],
+                           CurrentTime: Annotated[P[ULONG], SAL("_Out_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryValueKey(dp: Dumpulator,
                     KeyHandle: Annotated[HANDLE, SAL("_In_")],
-                    ValueName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                    ValueName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                     KeyValueInformationClass: Annotated[KEY_VALUE_INFORMATION_CLASS, SAL("_In_")],
                     KeyValueInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(Length)")],
                     Length: Annotated[ULONG, SAL("_In_")],
-                    ResultLength: Annotated[P(ULONG), SAL("_Out_")]
+                    ResultLength: Annotated[P[ULONG], SAL("_Out_")]
                     ):
     key = dp.handles.get(KeyHandle, RegistryKeyObject)
     name = ValueName[0].read_str()
@@ -3418,7 +3417,7 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          MemoryInformationClass: Annotated[MEMORY_INFORMATION_CLASS, SAL("_In_")],
                          MemoryInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(MemoryInformationLength)")],
                          MemoryInformationLength: Annotated[SIZE_T, SAL("_In_")],
-                         ReturnLength: Annotated[P(SIZE_T), SAL("_Out_opt_")]
+                         ReturnLength: Annotated[P[SIZE_T], SAL("_Out_opt_")]
                          ):
     assert ProcessHandle == dp.NtCurrentProcess()
     if MemoryInformationClass == MEMORY_INFORMATION_CLASS.MemoryBasicInformation:
@@ -3473,7 +3472,7 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
 @syscall
 def ZwQueryVolumeInformationFile(dp: Dumpulator,
                                  FileHandle: Annotated[HANDLE, SAL("_In_")],
-                                 IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                                 IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                                  FsInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                                  Length: Annotated[ULONG, SAL("_In_")],
                                  FsInformationClass: Annotated[FSINFOCLASS, SAL("_In_")]
@@ -3493,18 +3492,18 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
 
 @syscall
 def ZwQueryWnfStateData(dp: Dumpulator,
-                        StateName: Annotated[P(CWNF_STATE_NAME), SAL("_In_")],
-                        TypeId: Annotated[P(CWNF_TYPE_ID), SAL("_In_opt_")],
+                        StateName: Annotated[P[CWNF_STATE_NAME], SAL("_In_")],
+                        TypeId: Annotated[P[CWNF_TYPE_ID], SAL("_In_opt_")],
                         ExplicitScope: Annotated[PVOID, SAL("_In_opt_")],
-                        ChangeStamp: Annotated[P(WNF_CHANGE_STAMP), SAL("_Out_")],
+                        ChangeStamp: Annotated[P[WNF_CHANGE_STAMP], SAL("_Out_")],
                         Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_to_opt_(*BufferSize, *BufferSize)")],
-                        BufferSize: Annotated[P(ULONG), SAL("_Inout_")]
+                        BufferSize: Annotated[P[ULONG], SAL("_Inout_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwQueryWnfStateNameInformation(dp: Dumpulator,
-                                   StateName: Annotated[P(CWNF_STATE_NAME), SAL("_In_")],
+                                   StateName: Annotated[P[CWNF_STATE_NAME], SAL("_In_")],
                                    NameInfoClass: Annotated[WNF_STATE_NAME_INFORMATION, SAL("_In_")],
                                    ExplicitScope: Annotated[PVOID, SAL("_In_opt_")],
                                    InfoBuffer: Annotated[PVOID, SAL("_Out_writes_bytes_(InfoBufferSize)")],
@@ -3515,7 +3514,7 @@ def ZwQueryWnfStateNameInformation(dp: Dumpulator,
 @syscall
 def ZwQueueApcThread(dp: Dumpulator,
                      ThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                     ApcRoutine: Annotated[P(PS_APC_ROUTINE), SAL("_In_")],
+                     ApcRoutine: Annotated[P[PS_APC_ROUTINE], SAL("_In_")],
                      ApcArgument1: Annotated[PVOID, SAL("_In_opt_")],
                      ApcArgument2: Annotated[PVOID, SAL("_In_opt_")],
                      ApcArgument3: Annotated[PVOID, SAL("_In_opt_")]
@@ -3526,7 +3525,7 @@ def ZwQueueApcThread(dp: Dumpulator,
 def ZwQueueApcThreadEx(dp: Dumpulator,
                        ThreadHandle: Annotated[HANDLE, SAL("_In_")],
                        ReserveHandle: Annotated[HANDLE, SAL("_In_opt_", "NtAllocateReserveObject")],
-                       ApcRoutine: Annotated[P(PS_APC_ROUTINE), SAL("_In_")],
+                       ApcRoutine: Annotated[P[PS_APC_ROUTINE], SAL("_In_")],
                        ApcArgument1: Annotated[PVOID, SAL("_In_opt_")],
                        ApcArgument2: Annotated[PVOID, SAL("_In_opt_")],
                        ApcArgument3: Annotated[PVOID, SAL("_In_opt_")]
@@ -3538,7 +3537,7 @@ def ZwQueueApcThreadEx2(dp: Dumpulator,
                         ThreadHandle: Annotated[HANDLE, SAL("_In_")],
                         ReserveHandle: Annotated[HANDLE, SAL("_In_opt_", "NtAllocateReserveObject")],
                         ApcFlags: Annotated[ULONG, SAL("_In_", "QUEUE_USER_APC_FLAGS")],
-                        ApcRoutine: Annotated[P(PS_APC_ROUTINE), SAL("_In_")],
+                        ApcRoutine: Annotated[P[PS_APC_ROUTINE], SAL("_In_")],
                         ApcArgument1: Annotated[PVOID, SAL("_In_opt_")],
                         ApcArgument2: Annotated[PVOID, SAL("_In_opt_")],
                         ApcArgument3: Annotated[PVOID, SAL("_In_opt_")]
@@ -3547,8 +3546,8 @@ def ZwQueueApcThreadEx2(dp: Dumpulator,
 
 @syscall
 def ZwRaiseException(dp: Dumpulator,
-                     ExceptionRecord: Annotated[P(EXCEPTION_RECORD), SAL("_In_")],
-                     ContextRecord: Annotated[P(CONTEXT), SAL("_In_")],
+                     ExceptionRecord: Annotated[P[EXCEPTION_RECORD], SAL("_In_")],
+                     ContextRecord: Annotated[P[CONTEXT], SAL("_In_")],
                      FirstChance: Annotated[BOOLEAN, SAL("_In_")]
                      ):
     if not FirstChance:
@@ -3565,9 +3564,9 @@ def ZwRaiseHardError(dp: Dumpulator,
                      ErrorStatus: Annotated[NTSTATUS, SAL("_In_")],
                      NumberOfParameters: Annotated[ULONG, SAL("_In_")],
                      UnicodeStringParameterMask: Annotated[ULONG, SAL("_In_")],
-                     Parameters: Annotated[P(ULONG_PTR), SAL("_In_reads_(NumberOfParameters)")],
+                     Parameters: Annotated[P[ULONG_PTR], SAL("_In_reads_(NumberOfParameters)")],
                      ValidResponseOptions: Annotated[ULONG, SAL("_In_")],
-                     Response: Annotated[P(ULONG), SAL("_Out_")]
+                     Response: Annotated[P[ULONG], SAL("_Out_")]
                      ):
     raise NotImplementedError()
 
@@ -3575,13 +3574,13 @@ def ZwRaiseHardError(dp: Dumpulator,
 def ZwReadFile(dp: Dumpulator,
                FileHandle: Annotated[HANDLE, SAL("_In_")],
                Event: Annotated[HANDLE, SAL("_In_opt_")],
-               ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+               ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-               IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+               IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_(Length)")],
                Length: Annotated[ULONG, SAL("_In_")],
-               ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-               Key: Annotated[P(ULONG), SAL("_In_opt_")]
+               ByteOffset: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+               Key: Annotated[P[ULONG], SAL("_In_opt_")]
                ):
     assert Event == 0
     assert ApcRoutine == 0
@@ -3611,31 +3610,31 @@ def ZwReadFile(dp: Dumpulator,
 def ZwReadFileScatter(dp: Dumpulator,
                       FileHandle: Annotated[HANDLE, SAL("_In_")],
                       Event: Annotated[HANDLE, SAL("_In_opt_")],
-                      ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                      ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                       ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                      IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
-                      SegmentArray: Annotated[P(FILE_SEGMENT_ELEMENT), SAL("_In_")],
+                      IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
+                      SegmentArray: Annotated[P[FILE_SEGMENT_ELEMENT], SAL("_In_")],
                       Length: Annotated[ULONG, SAL("_In_")],
-                      ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                      Key: Annotated[P(ULONG), SAL("_In_opt_")]
+                      ByteOffset: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                      Key: Annotated[P[ULONG], SAL("_In_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwReadOnlyEnlistment(dp: Dumpulator,
                          EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                         TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                         TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwReadRequestData(dp: Dumpulator,
                       PortHandle: Annotated[HANDLE, SAL("_In_")],
-                      Message: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                      Message: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                       DataEntryIndex: Annotated[ULONG, SAL("_In_")],
                       Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_to_(BufferSize, *NumberOfBytesRead)")],
                       BufferSize: Annotated[SIZE_T, SAL("_In_")],
-                      NumberOfBytesRead: Annotated[P(SIZE_T), SAL("_Out_opt_")]
+                      NumberOfBytesRead: Annotated[P[SIZE_T], SAL("_Out_opt_")]
                       ):
     raise NotImplementedError()
 
@@ -3645,7 +3644,7 @@ def ZwReadVirtualMemory(dp: Dumpulator,
                         BaseAddress: Annotated[PVOID, SAL("_In_opt_")],
                         Buffer: Annotated[PVOID, SAL("_Out_writes_bytes_(BufferSize)")],
                         BufferSize: Annotated[SIZE_T, SAL("_In_")],
-                        NumberOfBytesRead: Annotated[P(SIZE_T), SAL("_Out_opt_")]
+                        NumberOfBytesRead: Annotated[P[SIZE_T], SAL("_Out_opt_")]
                         ):
     raise NotImplementedError()
 
@@ -3671,7 +3670,7 @@ def ZwRecoverTransactionManager(dp: Dumpulator,
 @syscall
 def ZwRegisterProtocolAddressInformation(dp: Dumpulator,
                                          ResourceManager: Annotated[HANDLE, SAL("_In_")],
-                                         ProtocolId: Annotated[P(CRM_PROTOCOL_ID), SAL("_In_")],
+                                         ProtocolId: Annotated[P[CRM_PROTOCOL_ID], SAL("_In_")],
                                          ProtocolInformationSize: Annotated[ULONG, SAL("_In_")],
                                          ProtocolInformation: Annotated[PVOID, SAL("_In_")],
                                          CreateOptions: Annotated[ULONG, SAL("_In_opt_")]
@@ -3694,14 +3693,14 @@ def ZwReleaseKeyedEvent(dp: Dumpulator,
                         KeyedEventHandle: Annotated[HANDLE, SAL("_In_")],
                         KeyValue: Annotated[PVOID, SAL("_In_")],
                         Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                        Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                        Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwReleaseMutant(dp: Dumpulator,
                     MutantHandle: Annotated[HANDLE, SAL("_In_")],
-                    PreviousCount: Annotated[P(LONG), SAL("_Out_opt_")]
+                    PreviousCount: Annotated[P[LONG], SAL("_Out_opt_")]
                     ):
     raise NotImplementedError()
 
@@ -3709,7 +3708,7 @@ def ZwReleaseMutant(dp: Dumpulator,
 def ZwReleaseSemaphore(dp: Dumpulator,
                        SemaphoreHandle: Annotated[HANDLE, SAL("_In_")],
                        ReleaseCount: Annotated[LONG, SAL("_In_")],
-                       PreviousCount: Annotated[P(LONG), SAL("_Out_opt_")]
+                       PreviousCount: Annotated[P[LONG], SAL("_Out_opt_")]
                        ):
     raise NotImplementedError()
 
@@ -3722,20 +3721,20 @@ def ZwReleaseWorkerFactoryWorker(dp: Dumpulator,
 @syscall
 def ZwRemoveIoCompletion(dp: Dumpulator,
                          IoCompletionHandle: Annotated[HANDLE, SAL("_In_")],
-                         KeyContext: Annotated[P(PVOID), SAL("_Out_")],
-                         ApcContext: Annotated[P(PVOID), SAL("_Out_")],
-                         IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
-                         Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                         KeyContext: Annotated[P[PVOID], SAL("_Out_")],
+                         ApcContext: Annotated[P[PVOID], SAL("_Out_")],
+                         IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
+                         Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwRemoveIoCompletionEx(dp: Dumpulator,
                            IoCompletionHandle: Annotated[HANDLE, SAL("_In_")],
-                           IoCompletionInformation: Annotated[P(FILE_IO_COMPLETION_INFORMATION), SAL("_Out_writes_to_(Count, *NumEntriesRemoved)")],
+                           IoCompletionInformation: Annotated[P[FILE_IO_COMPLETION_INFORMATION], SAL("_Out_writes_to_(Count, *NumEntriesRemoved)")],
                            Count: Annotated[ULONG, SAL("_In_")],
-                           NumEntriesRemoved: Annotated[P(ULONG), SAL("_Out_")],
-                           Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
+                           NumEntriesRemoved: Annotated[P[ULONG], SAL("_Out_")],
+                           Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
                            Alertable: Annotated[BOOLEAN, SAL("_In_")]
                            ):
     raise NotImplementedError()
@@ -3750,29 +3749,29 @@ def ZwRemoveProcessDebug(dp: Dumpulator,
 @syscall
 def ZwRenameKey(dp: Dumpulator,
                 KeyHandle: Annotated[HANDLE, SAL("_In_")],
-                NewName: Annotated[P(UNICODE_STRING), SAL("_In_")]
+                NewName: Annotated[P[UNICODE_STRING], SAL("_In_")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwRenameTransactionManager(dp: Dumpulator,
-                               LogFileName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                               ExistingTransactionManagerGuid: Annotated[P(GUID), SAL("_In_")]
+                               LogFileName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                               ExistingTransactionManagerGuid: Annotated[P[GUID], SAL("_In_")]
                                ):
     raise NotImplementedError()
 
 @syscall
 def ZwReplaceKey(dp: Dumpulator,
-                 NewFile: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                 NewFile: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                  TargetHandle: Annotated[HANDLE, SAL("_In_")],
-                 OldFile: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                 OldFile: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwReplacePartitionUnit(dp: Dumpulator,
-                           TargetInstancePath: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                           SpareInstancePath: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                           TargetInstancePath: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                           SpareInstancePath: Annotated[P[UNICODE_STRING], SAL("_In_")],
                            Flags: Annotated[ULONG, SAL("_In_")]
                            ):
     raise NotImplementedError()
@@ -3780,48 +3779,48 @@ def ZwReplacePartitionUnit(dp: Dumpulator,
 @syscall
 def ZwReplyPort(dp: Dumpulator,
                 PortHandle: Annotated[HANDLE, SAL("_In_")],
-                ReplyMessage: Annotated[P(PORT_MESSAGE), SAL("_In_reads_bytes_(ReplyMessage->u1.s1.TotalLength)")]
+                ReplyMessage: Annotated[P[PORT_MESSAGE], SAL("_In_reads_bytes_(ReplyMessage->u1.s1.TotalLength)")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwReplyWaitReceivePort(dp: Dumpulator,
                            PortHandle: Annotated[HANDLE, SAL("_In_")],
-                           PortContext: Annotated[P(PVOID), SAL("_Out_opt_")],
-                           ReplyMessage: Annotated[P(PORT_MESSAGE), SAL("_In_reads_bytes_opt_(ReplyMessage->u1.s1.TotalLength)")],
-                           ReceiveMessage: Annotated[P(PORT_MESSAGE), SAL("_Out_")]
+                           PortContext: Annotated[P[PVOID], SAL("_Out_opt_")],
+                           ReplyMessage: Annotated[P[PORT_MESSAGE], SAL("_In_reads_bytes_opt_(ReplyMessage->u1.s1.TotalLength)")],
+                           ReceiveMessage: Annotated[P[PORT_MESSAGE], SAL("_Out_")]
                            ):
     raise NotImplementedError()
 
 @syscall
 def ZwReplyWaitReceivePortEx(dp: Dumpulator,
                              PortHandle: Annotated[HANDLE, SAL("_In_")],
-                             PortContext: Annotated[P(PVOID), SAL("_Out_opt_")],
-                             ReplyMessage: Annotated[P(PORT_MESSAGE), SAL("_In_reads_bytes_opt_(ReplyMessage->u1.s1.TotalLength)")],
-                             ReceiveMessage: Annotated[P(PORT_MESSAGE), SAL("_Out_")],
-                             Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                             PortContext: Annotated[P[PVOID], SAL("_Out_opt_")],
+                             ReplyMessage: Annotated[P[PORT_MESSAGE], SAL("_In_reads_bytes_opt_(ReplyMessage->u1.s1.TotalLength)")],
+                             ReceiveMessage: Annotated[P[PORT_MESSAGE], SAL("_Out_")],
+                             Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                              ):
     raise NotImplementedError()
 
 @syscall
 def ZwReplyWaitReplyPort(dp: Dumpulator,
                          PortHandle: Annotated[HANDLE, SAL("_In_")],
-                         ReplyMessage: Annotated[P(PORT_MESSAGE), SAL("_Inout_")]
+                         ReplyMessage: Annotated[P[PORT_MESSAGE], SAL("_Inout_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwRequestPort(dp: Dumpulator,
                   PortHandle: Annotated[HANDLE, SAL("_In_")],
-                  RequestMessage: Annotated[P(PORT_MESSAGE), SAL("_In_reads_bytes_(RequestMessage->u1.s1.TotalLength)")]
+                  RequestMessage: Annotated[P[PORT_MESSAGE], SAL("_In_reads_bytes_(RequestMessage->u1.s1.TotalLength)")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwRequestWaitReplyPort(dp: Dumpulator,
                            PortHandle: Annotated[HANDLE, SAL("_In_")],
-                           RequestMessage: Annotated[P(PORT_MESSAGE), SAL("_In_reads_bytes_(RequestMessage->u1.s1.TotalLength)")],
-                           ReplyMessage: Annotated[P(PORT_MESSAGE), SAL("_Out_")]
+                           RequestMessage: Annotated[P[PORT_MESSAGE], SAL("_In_reads_bytes_(RequestMessage->u1.s1.TotalLength)")],
+                           ReplyMessage: Annotated[P[PORT_MESSAGE], SAL("_Out_")]
                            ):
     raise NotImplementedError()
 
@@ -3834,7 +3833,7 @@ def ZwRequestWakeupLatency(dp: Dumpulator,
 @syscall
 def ZwResetEvent(dp: Dumpulator,
                  EventHandle: Annotated[HANDLE, SAL("_In_")],
-                 PreviousState: Annotated[P(LONG), SAL("_Out_opt_")]
+                 PreviousState: Annotated[P[LONG], SAL("_Out_opt_")]
                  ):
     raise NotImplementedError()
 
@@ -3863,7 +3862,7 @@ def ZwResumeProcess(dp: Dumpulator,
 @syscall
 def ZwResumeThread(dp: Dumpulator,
                    ThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                   PreviousSuspendCount: Annotated[P(ULONG), SAL("_Out_opt_")]
+                   PreviousSuspendCount: Annotated[P[ULONG], SAL("_Out_opt_")]
                    ):
     raise NotImplementedError()
 
@@ -3875,14 +3874,14 @@ def ZwRevertContainerImpersonation(dp: Dumpulator
 @syscall
 def ZwRollbackComplete(dp: Dumpulator,
                        EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                       TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                       TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                        ):
     raise NotImplementedError()
 
 @syscall
 def ZwRollbackEnlistment(dp: Dumpulator,
                          EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                         TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                         TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                          ):
     raise NotImplementedError()
 
@@ -3896,7 +3895,7 @@ def ZwRollbackTransaction(dp: Dumpulator,
 @syscall
 def ZwRollforwardTransactionManager(dp: Dumpulator,
                                     TransactionManagerHandle: Annotated[HANDLE, SAL("_In_")],
-                                    TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                                    TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                                     ):
     raise NotImplementedError()
 
@@ -3925,15 +3924,15 @@ def ZwSaveMergedKeys(dp: Dumpulator,
 
 @syscall
 def ZwSecureConnectPort(dp: Dumpulator,
-                        PortHandle: Annotated[P(HANDLE), SAL("_Out_")],
-                        PortName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                        SecurityQos: Annotated[P(SECURITY_QUALITY_OF_SERVICE), SAL("_In_")],
-                        ClientView: Annotated[P(PORT_VIEW), SAL("_Inout_opt_")],
+                        PortHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                        PortName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                        SecurityQos: Annotated[P[SECURITY_QUALITY_OF_SERVICE], SAL("_In_")],
+                        ClientView: Annotated[P[PORT_VIEW], SAL("_Inout_opt_")],
                         RequiredServerSid: Annotated[PSID, SAL("_In_opt_")],
-                        ServerView: Annotated[P(REMOTE_PORT_VIEW), SAL("_Inout_opt_")],
-                        MaxMessageLength: Annotated[P(ULONG), SAL("_Out_opt_")],
+                        ServerView: Annotated[P[REMOTE_PORT_VIEW], SAL("_Inout_opt_")],
+                        MaxMessageLength: Annotated[P[ULONG], SAL("_Out_opt_")],
                         ConnectionInformation: Annotated[PVOID, SAL("_Inout_updates_bytes_to_opt_(*ConnectionInformationLength, *ConnectionInformationLength)")],
-                        ConnectionInformationLength: Annotated[P(ULONG), SAL("_Inout_opt_")]
+                        ConnectionInformationLength: Annotated[P[ULONG], SAL("_Inout_opt_")]
                         ):
     raise NotImplementedError()
 
@@ -3944,14 +3943,14 @@ def ZwSerializeBoot(dp: Dumpulator
 
 @syscall
 def ZwSetBootEntryOrder(dp: Dumpulator,
-                        Ids: Annotated[P(ULONG), SAL("_In_reads_(Count)")],
+                        Ids: Annotated[P[ULONG], SAL("_In_reads_(Count)")],
                         Count: Annotated[ULONG, SAL("_In_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetBootOptions(dp: Dumpulator,
-                     BootOptions: Annotated[P(BOOT_OPTIONS), SAL("_In_")],
+                     BootOptions: Annotated[P[BOOT_OPTIONS], SAL("_In_")],
                      FieldsToChange: Annotated[ULONG, SAL("_In_")]
                      ):
     raise NotImplementedError()
@@ -3960,7 +3959,7 @@ def ZwSetBootOptions(dp: Dumpulator,
 def ZwSetCachedSigningLevel(dp: Dumpulator,
                             Flags: Annotated[ULONG, SAL("_In_")],
                             InputSigningLevel: Annotated[SE_SIGNING_LEVEL, SAL("_In_")],
-                            SourceFiles: Annotated[P(HANDLE), SAL("_In_reads_(SourceFileCount)")],
+                            SourceFiles: Annotated[P[HANDLE], SAL("_In_reads_(SourceFileCount)")],
                             SourceFileCount: Annotated[ULONG, SAL("_In_")],
                             TargetFile: Annotated[HANDLE, SAL("_In_opt_")]
                             ):
@@ -3969,7 +3968,7 @@ def ZwSetCachedSigningLevel(dp: Dumpulator,
 @syscall
 def ZwSetContextThread(dp: Dumpulator,
                        ThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                       ThreadContext: Annotated[P(CONTEXT), SAL("_In_")]
+                       ThreadContext: Annotated[P[CONTEXT], SAL("_In_")]
                        ):
     raise NotImplementedError()
 
@@ -4002,7 +4001,7 @@ def ZwSetDefaultUILanguage(dp: Dumpulator,
 
 @syscall
 def ZwSetDriverEntryOrder(dp: Dumpulator,
-                          Ids: Annotated[P(ULONG), SAL("_In_reads_(Count)")],
+                          Ids: Annotated[P[ULONG], SAL("_In_reads_(Count)")],
                           Count: Annotated[ULONG, SAL("_In_")]
                           ):
     raise NotImplementedError()
@@ -4010,7 +4009,7 @@ def ZwSetDriverEntryOrder(dp: Dumpulator,
 @syscall
 def ZwSetEaFile(dp: Dumpulator,
                 FileHandle: Annotated[HANDLE, SAL("_In_")],
-                IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                 Buffer: Annotated[PVOID, SAL("_In_reads_bytes_(Length)")],
                 Length: Annotated[ULONG, SAL("_In_")]
                 ):
@@ -4019,7 +4018,7 @@ def ZwSetEaFile(dp: Dumpulator,
 @syscall
 def ZwSetEvent(dp: Dumpulator,
                EventHandle: Annotated[HANDLE, SAL("_In_")],
-               PreviousState: Annotated[P(LONG), SAL("_Out_opt_")]
+               PreviousState: Annotated[P[LONG], SAL("_Out_opt_")]
                ):
     return STATUS_SUCCESS
 
@@ -4047,7 +4046,7 @@ def ZwSetInformationDebugObject(dp: Dumpulator,
                                 DebugObjectInformationClass: Annotated[DEBUGOBJECTINFOCLASS, SAL("_In_")],
                                 DebugInformation: Annotated[PVOID, SAL("_In_")],
                                 DebugInformationLength: Annotated[ULONG, SAL("_In_")],
-                                ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                                ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                                 ):
     raise NotImplementedError()
 
@@ -4063,7 +4062,7 @@ def ZwSetInformationEnlistment(dp: Dumpulator,
 @syscall
 def ZwSetInformationFile(dp: Dumpulator,
                          FileHandle: Annotated[HANDLE, SAL("_In_")],
-                         IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                         IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                          FileInformation: Annotated[PVOID, SAL("_In_reads_bytes_(Length)")],
                          Length: Annotated[ULONG, SAL("_In_")],
                          FileInformationClass: Annotated[FILE_INFORMATION_CLASS, SAL("_In_")]
@@ -4210,7 +4209,7 @@ def ZwSetInformationVirtualMemory(dp: Dumpulator,
                                   ProcessHandle: Annotated[HANDLE, SAL("_In_")],
                                   VmInformationClass: Annotated[VIRTUAL_MEMORY_INFORMATION_CLASS, SAL("_In_")],
                                   NumberOfEntries: Annotated[ULONG_PTR, SAL("_In_")],
-                                  VirtualAddresses: Annotated[P(MEMORY_RANGE_ENTRY), SAL("_In_reads_ (NumberOfEntries)")],
+                                  VirtualAddresses: Annotated[P[MEMORY_RANGE_ENTRY], SAL("_In_reads_ (NumberOfEntries)")],
                                   VmInformation: Annotated[PVOID, SAL("_In_reads_bytes_ (VmInformationLength)")],
                                   VmInformationLength: Annotated[ULONG, SAL("_In_")]
                                   ):
@@ -4256,7 +4255,7 @@ def ZwSetIoCompletionEx(dp: Dumpulator,
 @syscall
 def ZwSetIRTimer(dp: Dumpulator,
                  TimerHandle: Annotated[HANDLE, SAL("_In_")],
-                 DueTime: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                 DueTime: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                  ):
     raise NotImplementedError()
 
@@ -4286,7 +4285,7 @@ def ZwSetLowWaitHighEventPair(dp: Dumpulator,
 @syscall
 def ZwSetQuotaInformationFile(dp: Dumpulator,
                               FileHandle: Annotated[HANDLE, SAL("_In_")],
-                              IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                              IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                               Buffer: Annotated[PVOID, SAL("_In_reads_bytes_(Length)")],
                               Length: Annotated[ULONG, SAL("_In_")]
                               ):
@@ -4296,21 +4295,21 @@ def ZwSetQuotaInformationFile(dp: Dumpulator,
 def ZwSetSecurityObject(dp: Dumpulator,
                         Handle: Annotated[HANDLE, SAL("_In_")],
                         SecurityInformation: Annotated[SECURITY_INFORMATION, SAL("_In_")],
-                        SecurityDescriptor: Annotated[P(SECURITY_DESCRIPTOR), SAL("_In_")]
+                        SecurityDescriptor: Annotated[P[SECURITY_DESCRIPTOR], SAL("_In_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetSystemEnvironmentValue(dp: Dumpulator,
-                                VariableName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                VariableValue: Annotated[P(UNICODE_STRING), SAL("_In_")]
+                                VariableName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                VariableValue: Annotated[P[UNICODE_STRING], SAL("_In_")]
                                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetSystemEnvironmentValueEx(dp: Dumpulator,
-                                  VariableName: Annotated[P(UNICODE_STRING), SAL("_In_")],
-                                  VendorGuid: Annotated[P(GUID), SAL("_In_")],
+                                  VariableName: Annotated[P[UNICODE_STRING], SAL("_In_")],
+                                  VendorGuid: Annotated[P[GUID], SAL("_In_")],
                                   Value: Annotated[PVOID, SAL("_In_reads_bytes_opt_(ValueLength)")],
                                   ValueLength: Annotated[ULONG, SAL("_In_", "0 = delete variable")],
                                   Attributes: Annotated[ULONG, SAL("_In_", "EFI_VARIABLE_*")]
@@ -4329,7 +4328,7 @@ def ZwSetSystemInformation(dp: Dumpulator,
 
 @syscall
 def ZwSetSystemPowerState(dp: Dumpulator,
-                          SystemAction: Annotated[P(OWER_ACTION), SAL("_In_")],
+                          SystemAction: Annotated[P[OWER_ACTION], SAL("_In_")],
                           LightestSystemState: Annotated[SYSTEM_POWER_STATE, SAL("_In_")],
                           Flags: Annotated[ULONG, SAL("_In_", "POWER_ACTION_* flags")]
                           ):
@@ -4337,36 +4336,36 @@ def ZwSetSystemPowerState(dp: Dumpulator,
 
 @syscall
 def ZwSetSystemTime(dp: Dumpulator,
-                    SystemTime: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                    PreviousTime: Annotated[P(LARGE_INTEGER), SAL("_Out_opt_")]
+                    SystemTime: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                    PreviousTime: Annotated[P[LARGE_INTEGER], SAL("_Out_opt_")]
                     ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetThreadExecutionState(dp: Dumpulator,
                               NewFlags: Annotated[EXECUTION_STATE, SAL("_In_", "ES_* flags")],
-                              PreviousFlags: Annotated[P(EXECUTION_STATE), SAL("_Out_")]
+                              PreviousFlags: Annotated[P[EXECUTION_STATE], SAL("_Out_")]
                               ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetTimer(dp: Dumpulator,
                TimerHandle: Annotated[HANDLE, SAL("_In_")],
-               DueTime: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-               TimerApcRoutine: Annotated[P(TIMER_APC_ROUTINE), SAL("_In_opt_")],
+               DueTime: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+               TimerApcRoutine: Annotated[P[TIMER_APC_ROUTINE], SAL("_In_opt_")],
                TimerContext: Annotated[PVOID, SAL("_In_opt_")],
                ResumeTimer: Annotated[BOOLEAN, SAL("_In_")],
                Period: Annotated[LONG, SAL("_In_opt_")],
-               PreviousState: Annotated[P(BOOLEAN), SAL("_Out_opt_")]
+               PreviousState: Annotated[P[BOOLEAN], SAL("_Out_opt_")]
                ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetTimer2(dp: Dumpulator,
                 TimerHandle: Annotated[HANDLE, SAL("_In_")],
-                DueTime: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-                Period: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                Parameters: Annotated[P(T2_SET_PARAMETERS), SAL("_In_")]
+                DueTime: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+                Period: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                Parameters: Annotated[P[T2_SET_PARAMETERS], SAL("_In_")]
                 ):
     raise NotImplementedError()
 
@@ -4383,20 +4382,20 @@ def ZwSetTimerEx(dp: Dumpulator,
 def ZwSetTimerResolution(dp: Dumpulator,
                          DesiredTime: Annotated[ULONG, SAL("_In_")],
                          SetResolution: Annotated[BOOLEAN, SAL("_In_")],
-                         ActualTime: Annotated[P(ULONG), SAL("_Out_")]
+                         ActualTime: Annotated[P[ULONG], SAL("_Out_")]
                          ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetUuidSeed(dp: Dumpulator,
-                  Seed: Annotated[P(CHAR), SAL("_In_")]
+                  Seed: Annotated[P[CHAR], SAL("_In_")]
                   ):
     raise NotImplementedError()
 
 @syscall
 def ZwSetValueKey(dp: Dumpulator,
                   KeyHandle: Annotated[HANDLE, SAL("_In_")],
-                  ValueName: Annotated[P(UNICODE_STRING), SAL("_In_")],
+                  ValueName: Annotated[P[UNICODE_STRING], SAL("_In_")],
                   TitleIndex: Annotated[ULONG, SAL("_In_opt_")],
                   Type: Annotated[ULONG, SAL("_In_")],
                   Data: Annotated[PVOID, SAL("_In_reads_bytes_opt_(DataSize)")],
@@ -4407,7 +4406,7 @@ def ZwSetValueKey(dp: Dumpulator,
 @syscall
 def ZwSetVolumeInformationFile(dp: Dumpulator,
                                FileHandle: Annotated[HANDLE, SAL("_In_")],
-                               IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                               IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                                FsInformation: Annotated[PVOID, SAL("_In_reads_bytes_(Length)")],
                                Length: Annotated[ULONG, SAL("_In_")],
                                FsInformationClass: Annotated[FSINFOCLASS, SAL("_In_")]
@@ -4429,7 +4428,7 @@ def ZwShutdownSystem(dp: Dumpulator,
 @syscall
 def ZwShutdownWorkerFactory(dp: Dumpulator,
                             WorkerFactoryHandle: Annotated[HANDLE, SAL("_In_")],
-                            PendingWorkerCount: Annotated[P(LONG), SAL("_Inout_")]
+                            PendingWorkerCount: Annotated[P[LONG], SAL("_Inout_")]
                             ):
     raise NotImplementedError()
 
@@ -4438,14 +4437,14 @@ def ZwSignalAndWaitForSingleObject(dp: Dumpulator,
                                    SignalHandle: Annotated[HANDLE, SAL("_In_")],
                                    WaitHandle: Annotated[HANDLE, SAL("_In_")],
                                    Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                                   Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                                   Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwSinglePhaseReject(dp: Dumpulator,
                         EnlistmentHandle: Annotated[HANDLE, SAL("_In_")],
-                        TmVirtualClock: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                        TmVirtualClock: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                         ):
     raise NotImplementedError()
 
@@ -4463,10 +4462,10 @@ def ZwStopProfile(dp: Dumpulator,
 
 @syscall
 def ZwSubscribeWnfStateChange(dp: Dumpulator,
-                              StateName: Annotated[P(CWNF_STATE_NAME), SAL("_In_")],
+                              StateName: Annotated[P[CWNF_STATE_NAME], SAL("_In_")],
                               ChangeStamp: Annotated[WNF_CHANGE_STAMP, SAL("_In_opt_")],
                               EventMask: Annotated[ULONG, SAL("_In_")],
-                              SubscriptionId: Annotated[P(ULONG64), SAL("_Out_opt_")]
+                              SubscriptionId: Annotated[P[ULONG64], SAL("_Out_opt_")]
                               ):
     raise NotImplementedError()
 
@@ -4479,7 +4478,7 @@ def ZwSuspendProcess(dp: Dumpulator,
 @syscall
 def ZwSuspendThread(dp: Dumpulator,
                     ThreadHandle: Annotated[HANDLE, SAL("_In_")],
-                    PreviousSuspendCount: Annotated[P(ULONG), SAL("_Out_opt_")]
+                    PreviousSuspendCount: Annotated[P[ULONG], SAL("_Out_opt_")]
                     ):
     raise NotImplementedError()
 
@@ -4490,7 +4489,7 @@ def ZwSystemDebugControl(dp: Dumpulator,
                          InputBufferLength: Annotated[ULONG, SAL("_In_")],
                          OutputBuffer: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(OutputBufferLength)")],
                          OutputBufferLength: Annotated[ULONG, SAL("_In_")],
-                         ReturnLength: Annotated[P(ULONG), SAL("_Out_opt_")]
+                         ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
                          ):
     raise NotImplementedError()
 
@@ -4551,7 +4550,7 @@ def ZwTraceControl(dp: Dumpulator,
                    InputBufferLength: Annotated[ULONG, SAL("_In_")],
                    TraceInformation: Annotated[PVOID, SAL("_Out_writes_bytes_opt_(TraceInformationLength)")],
                    TraceInformationLength: Annotated[ULONG, SAL("_In_")],
-                   ReturnLength: Annotated[P(ULONG), SAL("_Out_")]
+                   ReturnLength: Annotated[P[ULONG], SAL("_Out_")]
                    ):
     raise NotImplementedError()
 
@@ -4566,10 +4565,10 @@ def ZwTraceEvent(dp: Dumpulator,
 
 @syscall
 def ZwTranslateFilePath(dp: Dumpulator,
-                        InputFilePath: Annotated[P(FILE_PATH), SAL("_In_")],
+                        InputFilePath: Annotated[P[FILE_PATH], SAL("_In_")],
                         OutputType: Annotated[ULONG, SAL("_In_")],
-                        OutputFilePath: Annotated[P(FILE_PATH), SAL("_Out_writes_bytes_opt_(*OutputFilePathLength)")],
-                        OutputFilePathLength: Annotated[P(ULONG), SAL("_Inout_opt_")]
+                        OutputFilePath: Annotated[P[FILE_PATH], SAL("_Out_writes_bytes_opt_(*OutputFilePathLength)")],
+                        OutputFilePathLength: Annotated[P[ULONG], SAL("_Inout_opt_")]
                         ):
     raise NotImplementedError()
 
@@ -4581,26 +4580,26 @@ def ZwUmsThreadYield(dp: Dumpulator,
 
 @syscall
 def ZwUnloadDriver(dp: Dumpulator,
-                   DriverServiceName: Annotated[P(UNICODE_STRING), SAL("_In_")]
+                   DriverServiceName: Annotated[P[UNICODE_STRING], SAL("_In_")]
                    ):
     raise NotImplementedError()
 
 @syscall
 def ZwUnloadKey(dp: Dumpulator,
-                TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")]
+                TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")]
                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwUnloadKey2(dp: Dumpulator,
-                 TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                 TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                  Flags: Annotated[ULONG, SAL("_In_")]
                  ):
     raise NotImplementedError()
 
 @syscall
 def ZwUnloadKeyEx(dp: Dumpulator,
-                  TargetKey: Annotated[P(OBJECT_ATTRIBUTES), SAL("_In_")],
+                  TargetKey: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
                   Event: Annotated[HANDLE, SAL("_In_opt_")]
                   ):
     raise NotImplementedError()
@@ -4608,9 +4607,9 @@ def ZwUnloadKeyEx(dp: Dumpulator,
 @syscall
 def ZwUnlockFile(dp: Dumpulator,
                  FileHandle: Annotated[HANDLE, SAL("_In_")],
-                 IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
-                 ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_")],
-                 Length: Annotated[P(LARGE_INTEGER), SAL("_In_")],
+                 IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
+                 ByteOffset: Annotated[P[LARGE_INTEGER], SAL("_In_")],
+                 Length: Annotated[P[LARGE_INTEGER], SAL("_In_")],
                  Key: Annotated[ULONG, SAL("_In_")]
                  ):
     raise NotImplementedError()
@@ -4618,8 +4617,8 @@ def ZwUnlockFile(dp: Dumpulator,
 @syscall
 def ZwUnlockVirtualMemory(dp: Dumpulator,
                           ProcessHandle: Annotated[HANDLE, SAL("_In_")],
-                          BaseAddress: Annotated[P(PVOID), SAL("_Inout_")],
-                          RegionSize: Annotated[P(SIZE_T), SAL("_Inout_")],
+                          BaseAddress: Annotated[P[PVOID], SAL("_Inout_")],
+                          RegionSize: Annotated[P[SIZE_T], SAL("_Inout_")],
                           MapType: Annotated[ULONG, SAL("_In_")]
                           ):
     raise NotImplementedError()
@@ -4641,16 +4640,16 @@ def ZwUnmapViewOfSectionEx(dp: Dumpulator,
 
 @syscall
 def ZwUnsubscribeWnfStateChange(dp: Dumpulator,
-                                StateName: Annotated[P(CWNF_STATE_NAME), SAL("_In_")]
+                                StateName: Annotated[P[CWNF_STATE_NAME], SAL("_In_")]
                                 ):
     raise NotImplementedError()
 
 @syscall
 def ZwUpdateWnfStateData(dp: Dumpulator,
-                         StateName: Annotated[P(CWNF_STATE_NAME), SAL("_In_")],
+                         StateName: Annotated[P[CWNF_STATE_NAME], SAL("_In_")],
                          Buffer: Annotated[PVOID, SAL("_In_reads_bytes_opt_(Length)")],
                          Length: Annotated[ULONG, SAL("_In_opt_")],
-                         TypeId: Annotated[P(CWNF_TYPE_ID), SAL("_In_opt_")],
+                         TypeId: Annotated[P[CWNF_TYPE_ID], SAL("_In_opt_")],
                          ExplicitScope: Annotated[PVOID, SAL("_In_opt_")],
                          MatchingChangeStamp: Annotated[WNF_CHANGE_STAMP, SAL("_In_")],
                          CheckStamp: Annotated[LOGICAL, SAL("_In_")]
@@ -4667,7 +4666,7 @@ def ZwVdmControl(dp: Dumpulator,
 @syscall
 def ZwWaitForAlertByThreadId(dp: Dumpulator,
                              Address: Annotated[PVOID, SAL("_In_")],
-                             Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                             Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                              ):
     raise NotImplementedError()
 
@@ -4675,8 +4674,8 @@ def ZwWaitForAlertByThreadId(dp: Dumpulator,
 def ZwWaitForDebugEvent(dp: Dumpulator,
                         DebugObjectHandle: Annotated[HANDLE, SAL("_In_")],
                         Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                        Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                        WaitStateChange: Annotated[P(DBGUI_WAIT_STATE_CHANGE), SAL("_Out_")]
+                        Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                        WaitStateChange: Annotated[P[DBGUI_WAIT_STATE_CHANGE], SAL("_Out_")]
                         ):
     raise NotImplementedError()
 
@@ -4685,27 +4684,27 @@ def ZwWaitForKeyedEvent(dp: Dumpulator,
                         KeyedEventHandle: Annotated[HANDLE, SAL("_In_")],
                         KeyValue: Annotated[PVOID, SAL("_In_")],
                         Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                        Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                        Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                         ):
     raise NotImplementedError()
 
 @syscall
 def ZwWaitForMultipleObjects(dp: Dumpulator,
                              Count: Annotated[ULONG, SAL("_In_")],
-                             Handles: Annotated[P(HANDLE), SAL("_In_reads_(Count)")],
+                             Handles: Annotated[P[HANDLE], SAL("_In_reads_(Count)")],
                              WaitType: Annotated[WAIT_TYPE, SAL("_In_")],
                              Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                             Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                             Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                              ):
     raise NotImplementedError()
 
 @syscall
 def ZwWaitForMultipleObjects32(dp: Dumpulator,
                                Count: Annotated[ULONG, SAL("_In_")],
-                               Handles: Annotated[P(LONG), SAL("_In_reads_(Count)")],
+                               Handles: Annotated[P[LONG], SAL("_In_reads_(Count)")],
                                WaitType: Annotated[WAIT_TYPE, SAL("_In_")],
                                Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                               Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                               Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                                ):
     raise NotImplementedError()
 
@@ -4713,17 +4712,17 @@ def ZwWaitForMultipleObjects32(dp: Dumpulator,
 def ZwWaitForSingleObject(dp: Dumpulator,
                           Handle: Annotated[HANDLE, SAL("_In_")],
                           Alertable: Annotated[BOOLEAN, SAL("_In_")],
-                          Timeout: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")]
+                          Timeout: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")]
                           ):
     raise NotImplementedError()
 
 @syscall
 def ZwWaitForWorkViaWorkerFactory(dp: Dumpulator,
                                   WorkerFactoryHandle: Annotated[HANDLE, SAL("_In_")],
-                                  MiniPackets: Annotated[P(FILE_IO_COMPLETION_INFORMATION), SAL("_Out_writes_to_(Count, *PacketsReturned)")],
+                                  MiniPackets: Annotated[P[FILE_IO_COMPLETION_INFORMATION], SAL("_Out_writes_to_(Count, *PacketsReturned)")],
                                   Count: Annotated[ULONG, SAL("_In_")],
-                                  PacketsReturned: Annotated[P(ULONG), SAL("_Out_")],
-                                  DeferredWork: Annotated[P(WORKER_FACTORY_DEFERRED_WORK), SAL("_In_")]
+                                  PacketsReturned: Annotated[P[ULONG], SAL("_Out_")],
+                                  DeferredWork: Annotated[P[WORKER_FACTORY_DEFERRED_WORK], SAL("_In_")]
                                   ):
     raise NotImplementedError()
 
@@ -4756,13 +4755,13 @@ def ZwWow64IsProcessorFeaturePresent(dp: Dumpulator,
 def ZwWriteFile(dp: Dumpulator,
                 FileHandle: Annotated[HANDLE, SAL("_In_")],
                 Event: Annotated[HANDLE, SAL("_In_opt_")],
-                ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                 ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
+                IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
                 Buffer: Annotated[PVOID, SAL("_In_reads_bytes_(Length)")],
                 Length: Annotated[ULONG, SAL("_In_")],
-                ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                Key: Annotated[P(ULONG), SAL("_In_opt_")]
+                ByteOffset: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                Key: Annotated[P[ULONG], SAL("_In_opt_")]
                 ):
     assert Event == 0
     assert ApcRoutine == 0
@@ -4789,24 +4788,24 @@ def ZwWriteFile(dp: Dumpulator,
 def ZwWriteFileGather(dp: Dumpulator,
                       FileHandle: Annotated[HANDLE, SAL("_In_")],
                       Event: Annotated[HANDLE, SAL("_In_opt_")],
-                      ApcRoutine: Annotated[P(IO_APC_ROUTINE), SAL("_In_opt_")],
+                      ApcRoutine: Annotated[P[IO_APC_ROUTINE], SAL("_In_opt_")],
                       ApcContext: Annotated[PVOID, SAL("_In_opt_")],
-                      IoStatusBlock: Annotated[P(IO_STATUS_BLOCK), SAL("_Out_")],
-                      SegmentArray: Annotated[P(FILE_SEGMENT_ELEMENT), SAL("_In_")],
+                      IoStatusBlock: Annotated[P[IO_STATUS_BLOCK], SAL("_Out_")],
+                      SegmentArray: Annotated[P[FILE_SEGMENT_ELEMENT], SAL("_In_")],
                       Length: Annotated[ULONG, SAL("_In_")],
-                      ByteOffset: Annotated[P(LARGE_INTEGER), SAL("_In_opt_")],
-                      Key: Annotated[P(ULONG), SAL("_In_opt_")]
+                      ByteOffset: Annotated[P[LARGE_INTEGER], SAL("_In_opt_")],
+                      Key: Annotated[P[ULONG], SAL("_In_opt_")]
                       ):
     raise NotImplementedError()
 
 @syscall
 def ZwWriteRequestData(dp: Dumpulator,
                        PortHandle: Annotated[HANDLE, SAL("_In_")],
-                       Message: Annotated[P(PORT_MESSAGE), SAL("_In_")],
+                       Message: Annotated[P[PORT_MESSAGE], SAL("_In_")],
                        DataEntryIndex: Annotated[ULONG, SAL("_In_")],
                        Buffer: Annotated[PVOID, SAL("_In_reads_bytes_(BufferSize)")],
                        BufferSize: Annotated[SIZE_T, SAL("_In_")],
-                       NumberOfBytesWritten: Annotated[P(SIZE_T), SAL("_Out_opt_")]
+                       NumberOfBytesWritten: Annotated[P[SIZE_T], SAL("_Out_opt_")]
                        ):
     raise NotImplementedError()
 
@@ -4816,7 +4815,7 @@ def ZwWriteVirtualMemory(dp: Dumpulator,
                          BaseAddress: Annotated[PVOID, SAL("_In_opt_")],
                          Buffer: Annotated[PVOID, SAL("_In_reads_bytes_(BufferSize)")],
                          BufferSize: Annotated[SIZE_T, SAL("_In_")],
-                         NumberOfBytesWritten: Annotated[P(SIZE_T), SAL("_Out_opt_")]
+                         NumberOfBytesWritten: Annotated[P[SIZE_T], SAL("_Out_opt_")]
                          ):
     raise NotImplementedError()
 

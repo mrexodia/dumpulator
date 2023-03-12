@@ -5,9 +5,9 @@ from dumpulator.native import *
 
 @syscall
 def ZwOpenKey(dp: Dumpulator,
-              KeyHandle: P(HANDLE),
+              KeyHandle: P[HANDLE],
               DesiredAccess: ACCESS_MASK,
-              ObjectAttributes: P(OBJECT_ATTRIBUTES)
+              ObjectAttributes: P[OBJECT_ATTRIBUTES]
               ):
     return STATUS_NOT_IMPLEMENTED
 

@@ -1,6 +1,7 @@
 import struct
 import ctypes
-from typing import Optional, Annotated
+import typing
+from typing import Optional, Annotated, Generic, TypeVar, Type
 from enum import Enum
 from dataclasses import dataclass
 
@@ -85,11 +86,32 @@ class Architecture(object):
 
         return data.decode(encoding)
 
-class PVOID:
-    def __init__(self, ptr: int, arch: Architecture):
-        self.ptr = ptr
-        self.type: Optional[type] = None
+
+T = TypeVar("T")
+
+
+class P(Generic[T]):
+    _ptr_ = True
+
+    def __init__(self, arch: Architecture, ptr: int = 0):
         self.arch = arch
+        self.ptr = ptr
+
+    @property
+    def type(self) -> Type[T]:
+        try:
+            # https://github.com/Stewori/pytypes/blob/ff82bf5a6c9cc1159ac2bf817bae8aa4141e88fc/pytypes/type_util.py#L182
+            args = object.__getattribute__(self, "__orig_class__")
+        except AttributeError as e:
+            return None
+        t, = typing.get_args(args)
+        if t is type(None):
+            raise TypeError("P[None] is not allowed")
+        return t
+
+    @classmethod
+    def is_ptr(cls, tv):
+        return hasattr(tv, "_ptr_")
 
     def read(self, size) -> bytes:
         return self.arch.read(self.ptr, size)
@@ -98,16 +120,17 @@ class PVOID:
         self.arch.write(self.ptr, data)
 
     def __getitem__(self, index):
-        if self.type is None:
+        ptype = self.type
+        if ptype is None:
             return self.arch.read_ptr(self.ptr + index * self.arch.ptr_size())
         else:
             assert index == 0  # TODO: sizeof() not yet implemented
             sizeof = self.arch.ptr_size()
             ptr = self.ptr + index * sizeof
-            if issubclass(self.type, PVOID):
-                return self.type(self.arch.read_ptr(ptr), self.arch)
+            if P.is_ptr(ptype):
+                return ptype(self.arch, self.arch.read_ptr(ptr))
             else:
-                return self.type(PVOID(ptr, self.arch))
+                return ptype(PVOID(self.arch, ptr))
 
     def __int__(self):
         return self.ptr
@@ -145,15 +168,67 @@ class PVOID:
         return self.arch.read_ulong(self.ptr)
 
     def deref(self):
-        assert self.type is not None
         return self[0]
 
-def P(t):
-    class P(PVOID):
-        def __init__(self, ptr, mem_read):
-            super().__init__(ptr, mem_read)
-            self.type = t
-    return P
+class PVOID(P):
+    pass
+
+class Struct:
+    def __init__(self, arch: Architecture):
+        self._hints = typing.get_type_hints(self)
+        self._arch = arch
+        fields = []
+        for name, t in self._hints.items():
+            fields.append((name, self._translate_ctype(name, t)))
+        self._ctype = Struct.create_type(
+            self.__class__.__name__ + "_ctype",
+            ctypes.Structure,
+            _fields_=fields,
+            _alignment_=arch.alignment()
+        )
+        self._cself = self._ctype()
+
+    # https://stackoverflow.com/questions/28552433/dynamically-create-ctypes-in-python
+    @staticmethod
+    def _create_type(name, *bases, **attrs):
+        return type(name, bases, attrs)
+
+    def _translate_ctype(self, name: str, t: type):
+        if t is P:
+            return self._arch.ptr_type()
+        elif issubclass(t, Enum):
+            return ctypes.c_uint32
+        elif issubclass(t, UCHAR):
+            return ctypes.c_uint8
+        elif issubclass(t, CHAR):
+            return ctypes.c_int8
+        elif issubclass(t, USHORT):
+            return ctypes.c_uint16
+        elif issubclass(t, SHORT):
+            return ctypes.c_int16
+        elif issubclass(t, ULONG):
+            return ctypes.c_uint32
+        elif issubclass(t, LONG):
+            return ctypes.c_int32
+        elif issubclass(t, ULONG_PTR):
+            return self._arch.ptr_type()
+        else:
+            raise TypeError(f"Unsupported native type {t.__name__} for member {self.__class__.__name__}{name}")
+
+    def __getattribute__(self, name):
+        if name.startswith("_"):
+            return object.__getattribute__(self, name)
+        if name not in self._hints:
+            raise AttributeError(f"Attribute not found: {self.__class__.__name__}.{name}")
+        return getattr(self._cself, name)
+
+    def __setattr__(self, name, value):
+        if name.startswith("_"):
+            object.__setattr__(self, name, value)
+        else:
+            if name not in self._hints:
+                raise AttributeError(f"Attribute not found: {self.__class__.__name__}.{name}")
+            return setattr(self._cself, name, value)
 
 # Note: this is very WIP
 class ArchStream:
@@ -179,11 +254,9 @@ class ArchStream:
     def read_ulong(self):
         return struct.unpack("<I", self.read(4))[0]
 
-    def read_ptr(self, ptrtype=None):
+    def read_ptr(self, ptrtype: T = None) -> P[T]:
         ptr = struct.unpack("<Q" if self.x64 else "<I", self.read(self.ptr.arch.ptr_size()))[0]
-        m = PVOID(ptr, self.ptr.arch)
-        m.type = ptrtype
-        return m
+        return P[ptrtype](self.ptr.arch, ptr)
 
 class Int(int):
     def __str__(self):
@@ -205,6 +278,13 @@ class USHORT(Int):
     def __new__(cls, value):
         return Int.__new__(cls, value & 0xFFFF)
 
+class SHORT(Int):
+    def __new__(cls, value):
+        value = value & 0xFFFF
+        if value & 0x8000 != 0:
+            value = -((~value) & 0xFFFF)
+        return Int.__new__(cls, value)
+
 class ULONG(Int):
     def __new__(cls, value):
         return Int.__new__(cls, value & 0xFFFFFFFF)
@@ -216,20 +296,22 @@ class LONG(Int):
             value = -((~value) & 0xFFFFFFFF)
         return Int.__new__(cls, value)
 
+
 class ULONG_PTR(Int):
-    pass
-
-class SIZE_T(Int):
-    pass
-
-class HANDLE(Int):
-    pass
+    def __new__(cls, value):
+        return Int.__new__(cls, value & 0xFFFFFFFFFFFFFFFF)
 
 # TODO: how does this work in 32 bit?
 class ULONG64(Int):
     pass
 
 # Alias types
+class HANDLE(ULONG_PTR):  # TODO: probably shouldn't be an alias
+    pass
+
+class SIZE_T(ULONG_PTR):
+    pass
+
 class ULONGLONG(ULONG64):
     pass
 

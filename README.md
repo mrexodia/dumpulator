@@ -92,7 +92,7 @@ from dumpulator.native import *
 @syscall
 def ZwQueryVolumeInformationFile(dp: Dumpulator,
                                  FileHandle: HANDLE,
-                                 IoStatusBlock: P(IO_STATUS_BLOCK),
+                                 IoStatusBlock: P[IO_STATUS_BLOCK],
                                  FsInformation: PVOID,
                                  Length: ULONG,
                                  FsInformationClass: FSINFOCLASS
