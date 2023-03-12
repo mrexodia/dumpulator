@@ -1280,7 +1280,19 @@ def ZwCreateThreadEx(dp: Dumpulator,
                      MaximumStackSize: Annotated[SIZE_T, SAL("_In_")],
                      AttributeList: Annotated[P(PS_ATTRIBUTE_LIST), SAL("_In_opt_")]
                      ):
-    raise NotImplementedError()
+    assert DesiredAccess == 0x1fffff
+    assert ObjectAttributes == 0
+    assert ProcessHandle == dp.NtCurrentProcess()
+    assert CreateFlags == 0
+    assert ZeroBits == 0
+    assert StackSize == 0
+    assert MaximumStackSize == 0
+    # TODO: sanity check AttributeList
+    thread = ThreadObject(StartRoutine.ptr, Argument.ptr)
+    handle = dp.handles.new(thread)
+    print(f"Started new thread {thread}, handle: {hex(handle)}")
+    dp.write_ptr(ThreadHandle, handle)
+    return STATUS_SUCCESS
 
 @syscall
 def ZwCreateThreadStateChange(dp: Dumpulator,
@@ -3024,6 +3036,27 @@ def ZwQueryInformationProcess(dp: Dumpulator,
         ProcessInformation.write(bytes(sii))
         if ReturnLength.ptr:
             dp.write_ulong(ReturnLength.ptr, ctypes.sizeof(sii))
+        return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessBasicInformation:
+        pbi = PROCESS_BASIC_INFORMATION(dp)
+        assert ProcessInformationLength == ctypes.sizeof(pbi)
+        pbi.ExitCode = 259  # STILL_ACTIVE
+        pbi.PebBaseAddress = dp.peb
+        pbi.AffinityMask = 0xFFFF
+        pbi.BasePriority = 8
+        pbi.UniqueProcessId = dp.process_id
+        pbi.InheritedFromUniqueProcessId = dp.parent_process_id
+        ProcessInformation.write(bytes(pbi))
+        if ReturnLength.ptr:
+            dp.write_ulong(ReturnLength.ptr, ctypes.sizeof(pbi))
+        return STATUS_SUCCESS
+    elif ProcessInformationClass == PROCESSINFOCLASS.ProcessImageFileNameWin32:
+        main_module = dp.modules[dp.modules.main]
+        buffer = UNICODE_STRING.create_buffer(main_module.path, ProcessInformation)
+        assert ProcessInformationLength >= len(buffer)
+        if ReturnLength.ptr:
+            dp.write_ulong(ReturnLength.ptr, len(buffer))
+        ProcessInformation.write(buffer)
         return STATUS_SUCCESS
     raise NotImplementedError()
 

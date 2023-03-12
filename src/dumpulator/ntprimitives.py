@@ -70,6 +70,7 @@ class Architecture(object):
         self.write(addr, struct.pack("<Q" if self._x64 else "<I", value))
 
     def read_str(self, addr: int, encoding="utf-8") -> str:
+        # TODO: safely read the memory
         data = self.read(addr, 512)
 
         # Note: this is awful

@@ -166,6 +166,10 @@ class DeviceControlData:
         data = self.read(4)
         return struct.unpack("<I", data)[0]
 
+    def read_ulonglong(self):
+        data = self.read(8)
+        return struct.unpack("<Q", data)[0]
+
 @dataclass
 class DeviceObject(AbstractObject):
     path: str
@@ -187,6 +191,11 @@ class RegistryKeyObject(AbstractObject):
 
     def __str__(self):
         return self.pretty("key")
+
+@dataclass
+class ThreadObject(AbstractObject):
+    entry: int
+    argument: int = 0
 
 class HandleManager:
     def __init__(self):

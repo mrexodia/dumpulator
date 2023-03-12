@@ -12,9 +12,9 @@ class ConsoleDeviceObject(DeviceObject):
         if control.code == 0x500016:  # ConsoleCallServerGeneric
             print(f"console: ConsoleCallServerGeneric(")
             # TODO: this changed in Windows 10, Windows 8.1/7 uses a different structure
-            assert dp.ptr_size() == 8  # TODO: support 32-bit
+            assert dp.ptr_size() == 8 or dp.wow64  # TODO: support 32-bit
 
-            console_handle = control.read_ptr()
+            console_handle = control.read_ulonglong()
             console_file = dp.handles.get(console_handle, ConsoleFileObject)
             assert console_file is not None
             unk1 = control.read_ulong()
@@ -22,10 +22,10 @@ class ConsoleDeviceObject(DeviceObject):
             assert unk1 == unk2 and unk1 == 1  # TODO: which is which?
             unk3 = control.read_ulong()
             control.skip(4)  # padding
-            data_ptr = control.read_ptr()
+            data_ptr = control.read_ulonglong()
             result_size = control.read_ulong()
             control.skip(4)  # padding
-            result_ptr = control.read_ptr()
+            result_ptr = control.read_ulonglong()
 
             # TODO: refactor this into a generic call logger
             print(f"    ConsoleHandle = {hex(console_handle)} /* {console_file} */")
