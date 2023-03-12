@@ -430,7 +430,7 @@ class Dumpulator(Architecture):
 
     def _setup_pebteb(self, thread):
         self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
-        is_wow64 = self.modules["ntdll.dll"].find_export("Wow64Transition") is not None
+        self.wow64 = self.modules["ntdll.dll"].find_export("Wow64Transition") is not None
 
         for i in range(0, len(self._minidump.threads.threads)):
             thread = self._minidump.threads.threads[i]
@@ -451,7 +451,7 @@ class Dumpulator(Architecture):
 
             teb_size = 2 * PAGE_SIZE
             self.memory.set_region_info(teb, f"TEB (thread {tid})", size=teb_size)
-            if is_wow64:
+            if self.wow64:
                 self.memory.set_region_info(teb - teb_size, f"WoW64 TEB (thread {tid})", size=teb_size)
 
         # https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
@@ -501,7 +501,7 @@ class Dumpulator(Architecture):
             leap_second_data = self.read_ptr(self.peb + 0x470)
 
         self.memory.set_region_info(self.peb, "PEB", size=PAGE_SIZE)
-        if is_wow64:
+        if self.wow64:
             self.memory.set_region_info(self.peb - PAGE_SIZE, "WoW64 PEB", size=PAGE_SIZE)
 
         self.info(f"TEB: 0x{self.teb:x}, PEB: 0x{self.peb:x}")
