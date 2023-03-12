@@ -5,9 +5,9 @@ from dumpulator.native import *
 
 @syscall
 def ZwOpenKey(dp: Dumpulator,
-              KeyHandle: P(HANDLE),
+              KeyHandle: P[HANDLE],
               DesiredAccess: ACCESS_MASK,
-              ObjectAttributes: P(OBJECT_ATTRIBUTES)
+              ObjectAttributes: P[OBJECT_ATTRIBUTES]
               ):
     return STATUS_NOT_IMPLEMENTED
 
@@ -18,22 +18,22 @@ def ZwQueryVirtualMemory(dp: Dumpulator,
                          MemoryInformationClass: MEMORY_INFORMATION_CLASS,
                          MemoryInformation: PVOID,
                          MemoryInformationLength: SIZE_T,
-                         ReturnLength: P(SIZE_T)
+                         ReturnLength: P[SIZE_T]
                          ):
     return STATUS_SUCCESS
 
 @syscall
 def ZwOpenSection(dp: Dumpulator,
-                  SectionHandle: P(HANDLE),
+                  SectionHandle: P[HANDLE],
                   DesiredAccess: ACCESS_MASK,
-                  ObjectAttributes: P(OBJECT_ATTRIBUTES)
+                  ObjectAttributes: P[OBJECT_ATTRIBUTES]
                   ):
     return STATUS_NOT_IMPLEMENTED
 
 @syscall
 def ZwSetEvent(dp: Dumpulator,
                EventHandle: HANDLE,
-               PreviousState: P(LONG)
+               PreviousState: P[LONG]
                ):
     return STATUS_NOT_IMPLEMENTED
 
