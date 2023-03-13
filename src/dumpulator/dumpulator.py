@@ -1072,7 +1072,7 @@ rsp in KiUserExceptionDispatcher:
         self.regs.cip = FORCE_KILL_ADDR
         self.kill_me = exc
         if exc is not None:
-            raise exc
+            return exc
         else:
             self.kill_me = True
             self._uc.emu_stop()
@@ -1501,7 +1501,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     try:
                         argvalue = argtype(dp.args[i] & 0xFFFFFFFF)
                     except KeyError as x:
-                        raise Exception(f"Unknown enum value {dp.args[i]} for {type(argtype)}")
+                        raise Exception(f"Unknown enum value {dp.args[i]} for {type(argtype)}") from None
                 else:
                     argvalue = argtype(argvalue)
                 args.append(argvalue)
@@ -1517,7 +1517,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 if isinstance(status, ExceptionInfo):
                     print("context switch, stopping emulation")
                     dp.exception = status
-                    dp.raise_kill(UcError(UC_ERR_EXCEPTION))
+                    raise dp.raise_kill(UcError(UC_ERR_EXCEPTION)) from None
                 else:
                     dp.info(f"status = {status:x}")
                     dp.regs.cax = status
@@ -1530,17 +1530,14 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             except UcError as err:
                 raise err
             except Exception as exc:
-                traceback.print_exc()
                 dp.error(f"Exception thrown during syscall implementation, stopping emulation!")
-                dp.raise_kill(exc)
+                raise dp.raise_kill(exc) from None
             finally:
                 dp.sequence_id += 1
         else:
-            dp.error(f"syscall index: {index:x} -> {name} not implemented!")
-            dp.raise_kill(NotImplementedError())
+            raise dp.raise_kill(NotImplementedError(f"syscall index: {index:x} -> {name} not implemented!")) from None
     else:
-        dp.error(f"syscall index {index:x} out of range")
-        dp.raise_kill(IndexError())
+        raise dp.raise_kill(IndexError(f"syscall index {index:x} out of range")) from None
 
 def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
     if instr.id == X86_INS_RDRAND:

@@ -19,7 +19,9 @@ jobs:
       with:
         python-version: '3.9'
         architecture: 'x64'
-    
+        cache: 'pip'
+        cache-dependency-path: 'setup.cfg'
+
     - name: Python setup
       run: |
         python setup.py develop
