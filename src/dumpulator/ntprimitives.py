@@ -1,11 +1,11 @@
 import struct
 import ctypes
 import typing
-from typing import Optional, Annotated, Generic, TypeVar, Type
+from typing import Optional, Annotated, Generic, TypeVar, Type, Union, SupportsInt, SupportsBytes
 from enum import Enum
 from dataclasses import dataclass
 
-class Architecture(object):
+class Architecture:
     def __init__(self, x64: bool):
         self._x64 = x64
 
@@ -16,61 +16,61 @@ class Architecture(object):
     def ptr_size(self):
         return 8 if self._x64 else 4
 
-    def ptr_type(self, t=None):  # TODO: implement type
+    def ptr_type(self):
         return ctypes.c_uint64 if self._x64 else ctypes.c_uint32
 
     def alignment(self):
         return 16 if self._x64 else 8
 
-    def read(self, addr: int, size: int) -> bytes:
+    def read(self, addr: SupportsInt, size: int) -> bytes:
         raise NotImplementedError()
 
-    def write(self, addr: int, data: bytes):
+    def write(self, addr: SupportsInt, data: Union[SupportsBytes, bytes]):
         raise NotImplementedError()
 
-    def read_char(self, addr: int) -> int:
+    def read_char(self, addr: SupportsInt) -> int:
         return struct.unpack("<b", self.read(addr, 1))[0]
 
-    def read_short(self, addr: int) -> int:
+    def read_short(self, addr: SupportsInt) -> int:
         return struct.unpack("<h", self.read(addr, 2))[0]
 
-    def read_long(self, addr: int) -> int:
+    def read_long(self, addr: SupportsInt) -> int:
         return struct.unpack("<i", self.read(addr, 4))[0]
 
-    def read_byte(self, addr: int) -> int:
+    def read_byte(self, addr: SupportsInt) -> int:
         return struct.unpack("<B", self.read(addr, 1))[0]
 
-    def read_ushort(self, addr: int) -> int:
+    def read_ushort(self, addr: SupportsInt) -> int:
         return struct.unpack("<H", self.read(addr, 2))[0]
 
-    def read_ulong(self, addr: int) -> int:
+    def read_ulong(self, addr: SupportsInt) -> int:
         return struct.unpack("<I", self.read(addr, 4))[0]
 
-    def read_ptr(self, addr: int) -> int:
+    def read_ptr(self, addr: SupportsInt) -> int:
         return struct.unpack("<Q" if self._x64 else "<I", self.read(addr, self.ptr_size()))[0]
 
-    def write_char(self, addr: int, value: int):
+    def write_char(self, addr: SupportsInt, value: int):
         self.write(addr, struct.pack("<b", value))
 
-    def write_short(self, addr: int, value: int):
+    def write_short(self, addr: SupportsInt, value: int):
         self.write(addr, struct.pack("<h", value))
 
-    def write_long(self, addr: int, value: int):
+    def write_long(self, addr: SupportsInt, value: int):
         self.write(addr, struct.pack("<i", value))
 
-    def write_byte(self, addr: int, value: int):
+    def write_byte(self, addr: SupportsInt, value: int):
         self.write(addr, struct.pack("<B", value))
 
-    def write_ushort(self, addr: int, value: int):
+    def write_ushort(self, addr: SupportsInt, value: int):
         self.write(addr, struct.pack("<H", value))
 
-    def write_ulong(self, addr: int, value: int):
+    def write_ulong(self, addr: SupportsInt, value: int):
         self.write(addr, struct.pack("<I", value))
 
-    def write_ptr(self, addr: int, value: int):
+    def write_ptr(self, addr: SupportsInt, value: int):
         self.write(addr, struct.pack("<Q" if self._x64 else "<I", value))
 
-    def read_str(self, addr: int, encoding="utf-8") -> str:
+    def read_str(self, addr: SupportsInt, encoding="utf-8") -> str:
         # TODO: safely read the memory
         data = self.read(addr, 512)
 
@@ -86,9 +86,7 @@ class Architecture(object):
 
         return data.decode(encoding)
 
-
 T = TypeVar("T")
-
 
 class P(Generic[T]):
     _ptr_ = True
@@ -113,24 +111,34 @@ class P(Generic[T]):
     def is_ptr(cls, tv):
         return hasattr(tv, "_ptr_")
 
-    def read(self, size) -> bytes:
+    def read(self, size: int) -> bytes:
         return self.arch.read(self.ptr, size)
 
-    def write(self, data: bytes):
+    def write(self, data: Union[SupportsBytes, bytes]):
         self.arch.write(self.ptr, data)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> T:
         ptype = self.type
         if ptype is None:
-            return self.arch.read_ptr(self.ptr + index * self.arch.ptr_size())
+            raise TypeError(f"No type associated with pointer")
+
+        if P.is_ptr(ptype):
+            ptr = self.ptr + index * self.arch.ptr_size()
+            return ptype(self.arch, self.arch.read_ptr(ptr))
         else:
-            assert index == 0  # TODO: sizeof() not yet implemented
-            sizeof = self.arch.ptr_size()
-            ptr = self.ptr + index * sizeof
-            if P.is_ptr(ptype):
-                return ptype(self.arch, self.arch.read_ptr(ptr))
+            size = Struct.sizeof(ptype, self.arch)
+            ptr = self.ptr + index * size
+            if issubclass(ptype, Struct):
+                return ptype(self.arch, ptr)
             else:
-                return ptype(PVOID(self.arch, ptr))
+                ctype = Struct.translate_ctype(self.arch.ptr_type(), ptype)
+                size = ctypes.sizeof(ctype)
+                data = self.arch.read(ptr, size)
+                value = ctype.from_buffer(data)
+                return ptype(value)
+
+    def deref(self) -> T:
+        return self[0]
 
     def __int__(self):
         return self.ptr
@@ -144,10 +152,10 @@ class P(Generic[T]):
     def __str__(self):
         return hex(self.ptr)
 
-    def read_byte_str(self, size):
+    def read_byte_str(self, size: int):
         return bytes(self.read(size))
 
-    def read_str(self, size, encoding="utf8"):
+    def read_str(self, size: int, encoding="utf8"):
         return self.read(size).decode(encoding)
 
     def read_unicode_str(self):
@@ -158,44 +166,89 @@ class P(Generic[T]):
     def read_ptr(self):
         return self.arch.read_ptr(self.ptr)
 
-    def write_ptr(self, value: int):
-        return self.arch.write_ptr(self.ptr, value)
+    def write_ptr(self, value: typing.SupportsInt):
+        return self.arch.write_ptr(self.ptr, int(value))
 
-    def write_ulong(self, value: int):
-        return self.arch.write_ulong(self.ptr, value)
+    def write_ulong(self, value: typing.SupportsInt):
+        return self.arch.write_ulong(self.ptr, int(value))
 
     def read_ulong(self):
         return self.arch.read_ulong(self.ptr)
 
-    def deref(self):
-        return self[0]
-
 class PVOID(P):
     pass
 
+# TODO: find a way to show the fields in the PyCharm debugger (properties?)
 class Struct:
-    def __init__(self, arch: Architecture):
+    def __init__(self, arch: Architecture, ptr: int = 0):
         self._hints = typing.get_type_hints(self)
+        # TODO: allow 'binding' the pointer
+        self._ptr = ptr
         self._arch = arch
         fields = []
         for name, t in self._hints.items():
-            fields.append((name, self._translate_ctype(name, t)))
-        self._ctype = Struct.create_type(
+            ctype = Struct.translate_ctype(arch.ptr_type(), t)
+            if ctype is None:
+                raise TypeError(f"Unsupported native type {t.__name__} for member {self.__class__.__name__}{name}")
+            fields.append((name, ctype))
+        self._ctype = Struct._create_type(
             self.__class__.__name__ + "_ctype",
             ctypes.Structure,
             _fields_=fields,
             _alignment_=arch.alignment()
         )
-        self._cself = self._ctype()
+        if ptr != 0:
+            data = arch.read(ptr, Struct.sizeof(self))
+            self._cself = self._ctype.from_buffer_copy(data)
+        else:
+            self._cself = self._ctype()
+        # Add properties to visualize things in the debugger
+        for name in self._hints:
+            object.__setattr__(self, name, property(lambda s: getattr(s, name)))
+
+    @classmethod
+    def sizeof(cls, value, arch: Optional[Architecture] = None) -> int:
+        if P.is_ptr(value):
+            if arch is None:
+                ctype = value.arch.ptr_type()
+            else:
+                ctype = arch.ptr_type()
+        elif isinstance(value, Struct):
+            ctype = value._ctype
+        elif issubclass(value, Struct):
+            if arch is None:
+                raise TypeError("No architecture passed")
+            ctype = value(arch)._ctype
+        elif isinstance(value, Int):
+            if arch is None:
+                raise TypeError("No architecture passed")
+            ctype = Struct.translate_ctype(arch.ptr_type(), type(value))
+        elif issubclass(value, Int):
+            if arch is None:
+                raise TypeError("No architecture passed")
+            ctype = Struct.translate_ctype(arch.ptr_type(), value)
+        else:
+            raise NotImplementedError()
+        assert ctype is not None
+        return ctypes.sizeof(ctype)
+
+    @classmethod
+    def bytes(cls, value: "Struct") -> bytes:
+        assert isinstance(value, Struct)
+        return bytes(value)
+
+    def __bytes__(self) -> bytes:
+        return bytes(self._cself)
 
     # https://stackoverflow.com/questions/28552433/dynamically-create-ctypes-in-python
     @staticmethod
     def _create_type(name, *bases, **attrs):
         return type(name, bases, attrs)
 
-    def _translate_ctype(self, name: str, t: type):
-        if t is P:
-            return self._arch.ptr_type()
+    @staticmethod
+    def translate_ctype(ptr_type, t: type):
+        if P.is_ptr(t):
+            return ptr_type
         elif issubclass(t, Enum):
             return ctypes.c_uint32
         elif issubclass(t, UCHAR):
@@ -211,56 +264,41 @@ class Struct:
         elif issubclass(t, LONG):
             return ctypes.c_int32
         elif issubclass(t, ULONG_PTR):
-            return self._arch.ptr_type()
+            return ptr_type
         else:
-            raise TypeError(f"Unsupported native type {t.__name__} for member {self.__class__.__name__}{name}")
+            return None
 
-    def __getattribute__(self, name):
-        if name.startswith("_"):
+    def __getattribute__(self, name: str):
+        if name.startswith("__"):
             return object.__getattribute__(self, name)
-        if name not in self._hints:
-            raise AttributeError(f"Attribute not found: {self.__class__.__name__}.{name}")
-        return getattr(self._cself, name)
+        elif name != "_hints" and name in self._hints:
+            # Proxy the ctypes fields
+            atype = self._hints[name]
+            avalue = getattr(self._cself, name)
+            if P.is_ptr(atype):
+                return atype(self._arch, avalue)
+            elif issubclass(atype, Enum):
+                return atype(avalue)
+            else:
+                return atype(avalue)
+        else:
+            return object.__getattribute__(self, name)
 
-    def __setattr__(self, name, value):
-        if name.startswith("_"):
+    def __setattr__(self, name: str, value):
+        if name.startswith("__"):
+            object.__setattr__(self, name, value)
+        elif name != "_hints" and name in self._hints:
+            # TODO: support assigning pointers properly
+            # TODO: support assigning enums properly
+            setattr(self._cself, name, int(value))
+        elif name.startswith("_") or name in self.__dict__:
             object.__setattr__(self, name, value)
         else:
-            if name not in self._hints:
-                raise AttributeError(f"Attribute not found: {self.__class__.__name__}.{name}")
-            return setattr(self._cself, name, value)
-
-# Note: this is very WIP
-class ArchStream:
-    def __init__(self, ptr: PVOID):
-        self.ptr = ptr
-        self.pos = 0
-
-    @property
-    def x64(self):
-        return self.ptr.arch.ptr_size() == 8
-
-    def skip(self, size):
-        self.pos += size
-
-    def read(self, size):
-        data = self.ptr.arch.read(self.ptr.ptr + self.pos, size)
-        self.pos += size
-        return data
-
-    def read_ushort(self):
-        return struct.unpack("<H", self.read(2))[0]
-
-    def read_ulong(self):
-        return struct.unpack("<I", self.read(4))[0]
-
-    def read_ptr(self, ptrtype: T = None) -> P[T]:
-        ptr = struct.unpack("<Q" if self.x64 else "<I", self.read(self.ptr.arch.ptr_size()))[0]
-        return P[ptrtype](self.ptr.arch, ptr)
+            raise AttributeError(f"Unknown attribute {self.__class__.__name__}.{name}")
 
 class Int(int):
     def __str__(self):
-        return f"0x{self:X}"
+        return hex(self)
 
 # Actual primitives
 class UCHAR(Int):
@@ -349,6 +387,9 @@ class WNF_CHANGE_STAMP(ULONG):
     pass
 
 class KAFFINITY(ULONG_PTR):
+    pass
+
+class KPRIORITY(ULONG_PTR):
     pass
 
 # TODO: should probably be bool

@@ -596,18 +596,13 @@ def SECTION_IMAGE_INFORMATION(arch: Architecture):
         ]
     return SECTION_IMAGE_INFORMATION()
 
-def PROCESS_BASIC_INFORMATION(arch: Architecture):
-    class PROCESS_BASIC_INFORMATION(ctypes.Structure):
-        _alignment_ = arch.alignment()
-        _fields_ = [
-            ("ExitStatus", ctypes.c_uint32),
-            ("PebBaseAddress", arch.ptr_type()),
-            ("AffinityMask", arch.ptr_type()),
-            ("BasePriority", ctypes.c_uint32),
-            ("UniqueProcessId", arch.ptr_type()),
-            ("InheritedFromUniqueProcessId", arch.ptr_type()),
-        ]
-    return PROCESS_BASIC_INFORMATION()
+class PROCESS_BASIC_INFORMATION(Struct):
+    ExitStatus: ULONG
+    PebBaseAddress: PVOID
+    AffinityMask: KAFFINITY
+    BasePriority: KPRIORITY
+    UniqueProcessId: ULONG_PTR
+    InheritedFromUniqueProcessId: ULONG_PTR
 
 class KEY_VALUE_FULL_INFORMATION(ctypes.Structure):
     _fields_ = [

@@ -3039,8 +3039,8 @@ def ZwQueryInformationProcess(dp: Dumpulator,
         return STATUS_SUCCESS
     elif ProcessInformationClass == PROCESSINFOCLASS.ProcessBasicInformation:
         pbi = PROCESS_BASIC_INFORMATION(dp)
-        assert ProcessInformationLength == ctypes.sizeof(pbi)
-        pbi.ExitCode = 259  # STILL_ACTIVE
+        assert ProcessInformationLength == Struct.sizeof(pbi)
+        pbi.ExitStatus = 259  # STILL_ACTIVE
         pbi.PebBaseAddress = dp.peb
         pbi.AffinityMask = 0xFFFF
         pbi.BasePriority = 8
@@ -3048,7 +3048,7 @@ def ZwQueryInformationProcess(dp: Dumpulator,
         pbi.InheritedFromUniqueProcessId = dp.parent_process_id
         ProcessInformation.write(bytes(pbi))
         if ReturnLength.ptr:
-            dp.write_ulong(ReturnLength.ptr, ctypes.sizeof(pbi))
+            dp.write_ulong(ReturnLength.ptr, Struct.sizeof(pbi))
         return STATUS_SUCCESS
     elif ProcessInformationClass == PROCESSINFOCLASS.ProcessImageFileNameWin32:
         main_module = dp.modules[dp.modules.main]
