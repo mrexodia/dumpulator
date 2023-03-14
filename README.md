@@ -141,3 +141,4 @@ What sets dumpulator apart from sandboxes like speakeasy and qiling is that the 
 - [herrcore](https://twitter.com/herrcore) for inspiring me to make this
 - [secret club](https://secret.club)
 - [JetBrains](https://www.jetbrains.com/opensource/) for free PyCharm license!
+- [Image by GraphiqaStock](https://www.freepik.com/free-vector/virus-internet_1040653.htm) on Freepik
