@@ -511,13 +511,13 @@ def open_x64dbg_trace(filename, tracef):
             instr = next(md.disasm(opcodes, ip, 1))
             address = ip
             address_name = ""
-            line = f"0x{address:x}{address_name}|{instr.mnemonic}"
+            line = f"{hex(address)}{address_name}|{instr.mnemonic}"
             if instr.op_str:
                 line += " "
                 line += instr.op_str
             for reg in _get_regs(instr):
                 if reg in reg_indexes:
-                    line += f"|{reg}=0x{get_reg(reg):x}"
+                    line += f"|{reg}={hex(get_reg(reg))}"
                 else:
                     line += f"|{reg}=0x???"  # TODO: add xmm support
 
