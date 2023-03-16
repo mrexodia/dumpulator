@@ -47,6 +47,9 @@ class MemoryViolation(Enum):
     ReadProtect = 4
     WriteProtect = 5
     ExecuteProtect = 6
+    ReadUnaligned = 7
+    WriteUnaligned = 8
+    ExecuteUnaligned = 9
 
 @dataclass
 class ExceptionInfo:
@@ -991,7 +994,8 @@ rsp in KiUserExceptionDispatcher:
         context_ex.XState.Offset = 0xF0 if self._x64 else 0x20
         context_ex.XState.Length = 0x160 if self._x64 else 0x140
         record = record_type()
-        if self._exception.type == ExceptionType.Memory:
+        alignment_violations = [MemoryViolation.ReadUnaligned, MemoryViolation.WriteUnaligned, MemoryViolation.ExecuteUnaligned]
+        if self._exception.type == ExceptionType.Memory and self._exception.memory_violation not in alignment_violations:
             record.ExceptionCode = STATUS_ACCESS_VIOLATION
             record.ExceptionFlags = 0
             record.ExceptionAddress = self.regs.cip
@@ -1004,7 +1008,7 @@ rsp in KiUserExceptionDispatcher:
                 MemoryViolation.WriteProtect: EXCEPTION_WRITE_FAULT,
                 MemoryViolation.ExecuteProtect: EXCEPTION_EXECUTE_FAULT,
             }
-            record.ExceptionInformation[0] = types.get(self._exception.memory_violation, EXCEPTION_READ_FAULT)
+            record.ExceptionInformation[0] = types[self._exception.memory_violation]
             record.ExceptionInformation[1] = self._exception.memory_address
         elif self._exception.type == ExceptionType.Interrupt and self._exception.interrupt_number == 3:
             if self._x64:
