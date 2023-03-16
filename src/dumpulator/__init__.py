@@ -1,2 +1,2 @@
-from .dumpulator import Dumpulator
+from .dumpulator import Dumpulator, ExceptionType, MemoryViolation, ExceptionInfo
 from .ntsyscalls import syscall

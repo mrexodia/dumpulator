@@ -3,7 +3,7 @@ import struct
 import sys
 import traceback
 from enum import Enum
-from typing import List, Union, NamedTuple
+from typing import List, Union, NamedTuple, Callable
 import inspect
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -323,6 +323,7 @@ class Dumpulator(Architecture):
         self.exports = self._all_exports()
         self._exception = UnicornExceptionInfo()
         self._last_exception: Optional[UnicornExceptionInfo] = None
+        self._exception_hook: Optional[Callable[[ExceptionInfo], Optional[int]]] = None
         if not self._quiet:
             print("Memory map:")
             self.print_memory()
@@ -912,9 +913,22 @@ class Dumpulator(Architecture):
         self.memory.commit(self.memory.align_page(ptr), self.memory.align_page(size))
         return ptr
 
+    def set_exception_hook(self, exception_hook: Optional[Callable[[ExceptionInfo], Optional[int]]]):
+        previous_hook = self._exception_hook
+        self._exception_hook = exception_hook
+        return previous_hook
+
     def handle_exception(self):
         assert not self._exception._handling
         self._exception._handling = True
+
+        if self._exception_hook is not None:
+            hook_result = self._exception_hook(self._exception)
+            if hook_result is not None:
+                # Clear the pending exception
+                self._last_exception = self._exception
+                self._exception = UnicornExceptionInfo()
+                return hook_result
 
         if self._exception.type == ExceptionType.ContextSwitch:
             self.info(f"context switch, cip: {hex(self.regs.cip)}")
