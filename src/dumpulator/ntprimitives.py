@@ -408,14 +408,10 @@ class PSID(PVOID):
 class PWSTR(PVOID):
     pass
 
-def make_global(t):
-    globals().update(t.__members__)
-
 # Some unsupported enum
 class LATENCY_TIME(Enum):
     LT_DONT_CARE = 0
     LT_LOWEST_LATENCY = 1
-make_global(LATENCY_TIME)
 
 @dataclass
 class SAL:
