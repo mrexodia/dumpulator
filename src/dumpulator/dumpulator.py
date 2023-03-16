@@ -1016,7 +1016,7 @@ rsp in KiUserExceptionDispatcher:
 
                         try:
                             emu_begin = self.handle_exception()
-                        except:
+                        except Exception:
                             traceback.print_exc()
                             self.error(f"exception during exception handling (stack overflow?)")
                             break
@@ -1062,7 +1062,7 @@ rsp in KiUserExceptionDispatcher:
             self.exit_code = None
             if exit_code is not None:
                 self.exit_code = int(exit_code)
-        except:
+        except Exception:
             traceback.print_exc()
             self.error("Invalid type passed to exit_code!")
         self._uc.emu_stop()
