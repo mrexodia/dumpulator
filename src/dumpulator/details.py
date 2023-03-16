@@ -395,7 +395,7 @@ class Arguments:
         regs = self._regs
 
         if not self._x64:
-            arg_addr = regs.esp + (index + 2) * 4
+            arg_addr = regs.esp + (index + 1) * 4
             data = self._memory.read(arg_addr, 4)
             return struct.unpack("<I", data)[0]
 

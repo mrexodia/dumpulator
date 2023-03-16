@@ -296,6 +296,7 @@ class Dumpulator(Architecture):
         self.debug(f"total commit: {hex(self._pages.total_commit)}, pages: {self._pages.total_commit // PAGE_SIZE}")
         self._setup_modules()
         self.syscalls = []
+        self.win32k_syscalls = []
         self._setup_syscalls()
         self._setup_emulator(thread)
         self.handles = HandleManager()
@@ -779,10 +780,10 @@ class Dumpulator(Architecture):
     def _setup_syscalls(self):
         # Load the ntdll module from memory
         ntdll = self.modules["ntdll.dll"]
-        syscalls = []
+        nt_syscalls = []
         for export in ntdll.exports:
             if export.name and export.name.startswith("Zw"):
-                syscalls.append((export.address, export.name))
+                nt_syscalls.append((export.address, export.name))
             elif export.name == "Wow64Transition":
                 patch_addr = self.read_ptr(export.address)
                 self.info(f"Patching Wow64Transition: {hex(export.address)} -> {hex(patch_addr)}")
@@ -795,19 +796,45 @@ class Dumpulator(Architecture):
             elif export.name == "LdrLoadDll":
                 self.LdrLoadDll = export.address
 
-        syscalls.sort()
-        for index, (rva, name) in enumerate(syscalls):
-            cb = syscall_functions.get(name, None)
-            argcount = 0
-            if cb:
-                argspec = inspect.getfullargspec(cb)
-                argcount = len(argspec.args) - 1
-            self.syscalls.append((name, cb, argcount))
+        def add_syscalls(syscalls, table):
+            # The index when sorting by RVA is the syscall index
+            syscalls.sort()
+            for index, (rva, name) in enumerate(syscalls):
+                cb = syscall_functions.get(name, None)
+                argcount = 0
+                if cb:
+                    argspec = inspect.getfullargspec(cb)
+                    argcount = len(argspec.args) - 1
+                table.append((name, cb, argcount))
+
+        add_syscalls(nt_syscalls, self.syscalls)
+
+        # Get the syscalls for win32u
+        win32u = self.modules.find("win32u.dll")
+        if win32u is not None:
+            win32k_syscalls = []
+            for export in win32u.exports:
+                if export.name and export.name.startswith("Nt"):
+                    win32k_syscalls.append((export.address, export.name))
+
+            add_syscalls(win32k_syscalls, self.win32k_syscalls)
+
 
     def push(self, value):
         csp = self.regs.csp - self.ptr_size()
         self.write_ptr(csp, value)
         self.regs.csp = csp
+
+    def pop(self):
+        csp = self.regs.csp
+        value = self.read_ptr(csp)
+        self.regs.csp = csp + self.ptr_size()
+        return value
+
+    def ret(self, imm=0):
+        return_address = self.pop()
+        self.regs.csp -= imm
+        return return_address
 
     def read(self, addr, size):
         if not isinstance(addr, int):
@@ -1464,19 +1491,36 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
     # Flush the trace for easier debugging
     if dp.trace is not None:
         dp.trace.flush()
-    index = dp.regs.cax & 0xffff
-    if index < len(dp.syscalls):
-        name, syscall_impl, argcount = dp.syscalls[index]
+
+    # Extract the table and function number from eax
+    service_number = dp.regs.cax & 0xffff
+    table_number = (service_number >> 12) & 0xf  # 0: ntoskrnl, 1: win32k
+    function_index = service_number & 0xfff
+    if table_number == 0:
+        table = dp.syscalls
+        table_prefix = ""
+    elif table_number == 1:
+        table = dp.win32k_syscalls
+        table_prefix = "win32k "
+    else:
+        table = []
+        table_prefix = f"unknown:{table_number} "
+
+    if function_index < len(table):
+        name, syscall_impl, argcount = table[function_index]
         if syscall_impl:
             argspec = inspect.getfullargspec(syscall_impl)
             args = []
 
             def syscall_arg(index):
+                # There is an extra call that adds a return address to the stack
+                if dp.wow64:
+                    index += 1
                 if index == 0 and dp.ptr_size() == 8:
                     return dp.regs.r10
                 return dp.args[index]
 
-            dp.info(f"[{dp.sequence_id}] syscall (index: {hex(index)}): {name}(")
+            dp.info(f"[{dp.sequence_id}] {table_prefix}syscall: {name}( /* index: {hex(service_number)} */")
             for i in range(0, argcount):
                 argname = argspec.args[1 + i]
                 argtype = argspec.annotations[argname]
@@ -1499,9 +1543,9 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                     argvalue = argtype(dp, argvalue)
                 elif issubclass(argtype, Enum):
                     try:
-                        argvalue = argtype(dp.args[i] & 0xFFFFFFFF)
+                        argvalue = argtype(argvalue & 0xFFFFFFFF)
                     except KeyError as x:
-                        raise Exception(f"Unknown enum value {dp.args[i]} for {type(argtype)}") from None
+                        raise Exception(f"Unknown enum value {argvalue} for {type(argtype)}") from None
                 else:
                     argvalue = argtype(argvalue)
                 args.append(argvalue)
@@ -1535,9 +1579,9 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
             finally:
                 dp.sequence_id += 1
         else:
-            raise dp.raise_kill(NotImplementedError(f"syscall index: {index:x} -> {name} not implemented!")) from None
+            raise dp.raise_kill(NotImplementedError(f"{table_prefix}syscall {hex(service_number)} -> {name} not implemented!")) from None
     else:
-        raise dp.raise_kill(IndexError(f"syscall index {index:x} out of range")) from None
+        raise dp.raise_kill(IndexError(f"{table_prefix}syscall {hex(service_number)} (index: {hex(function_index)}) out of range")) from None
 
 def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
     if instr.id == X86_INS_RDRAND:

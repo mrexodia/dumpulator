@@ -10,9 +10,11 @@ from pathlib import Path
 
 def syscall(func):
     name: str = func.__name__
-    if name.startswith("Nt"):
-        name = "Zw" + name[2:]
-    syscall_functions[name] = func
+    if name[:2] not in ["Zw", "Nt"]:
+        raise Exception(f"All syscalls have to be prefixed with 'Zw' or 'Nt'")
+    # Add the function with both prefixes to avoid name bugs
+    syscall_functions["Zw" + name[2:]] = func
+    syscall_functions["Nt" + name[2:]] = func
     return func
 
 @syscall
@@ -4138,6 +4140,9 @@ def ZwSetInformationProcess(dp: Dumpulator,
         return STATUS_SUCCESS
     elif ProcessInformationClass == PROCESSINFOCLASS.ProcessFaultInformation:
         assert ProcessInformationLength == 8
+        # https://github.com/blackhatethicalhacking/sandbox-attacksurface-analysis-tools/blob/946912f55770522ed4a2c957d5f57a6a2e2845df/NtApiDotNet/NtProcessNative.cs#L403
+        fault_flags = dp.read_ulong(ProcessInformation.ptr)
+        additional_info = dp.read_ulong(ProcessInformation.ptr + 4)
         return STATUS_SUCCESS
     elif ProcessInformationClass == PROCESSINFOCLASS.ProcessLoaderDetour:
         assert ProcessInformationLength == 4
