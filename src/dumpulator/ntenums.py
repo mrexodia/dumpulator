@@ -1,28 +1,23 @@
 # Automatically generated with parse_phnt.py, do not edit
 from enum import Enum
-from .ntprimitives import make_global
 
 class EVENT_TYPE(Enum):
     NotificationEvent = 0
     SynchronizationEvent = 1
-make_global(EVENT_TYPE)
 
 class TIMER_TYPE(Enum):
     NotificationTimer = 0
     SynchronizationTimer = 1
-make_global(TIMER_TYPE)
 
 class WAIT_TYPE(Enum):
     WaitAll = 0
     WaitAny = 1
     WaitNotification = 2
-make_global(WAIT_TYPE)
 
 class NT_PRODUCT_TYPE(Enum):
     NtProductWinNt = 1
     NtProductLanManNt = 2
     NtProductServer = 3
-make_global(NT_PRODUCT_TYPE)
 
 class SUITE_TYPE(Enum):
     SmallBusiness = 0
@@ -43,7 +38,6 @@ class SUITE_TYPE(Enum):
     WHServer = 15
     PhoneNT = 16
     MaxSuiteType = 17
-make_global(SUITE_TYPE)
 
 class KTHREAD_STATE(Enum):
     Initialized = 0
@@ -57,7 +51,6 @@ class KTHREAD_STATE(Enum):
     GateWaitObsolete = 8
     WaitingForProcessInSwap = 9
     MaximumThreadState = 10
-make_global(KTHREAD_STATE)
 
 class KHETERO_CPU_POLICY(Enum):
     KHeteroCpuPolicyAll = 0
@@ -71,7 +64,6 @@ class KHETERO_CPU_POLICY(Enum):
     KHeteroCpuPolicyBiasedLarge = 7
     KHeteroCpuPolicyDefault = 8
     KHeteroCpuPolicyMax = 9
-make_global(KHETERO_CPU_POLICY)
 
 class KWAIT_REASON(Enum):
     Executive = 0
@@ -117,7 +109,6 @@ class KWAIT_REASON(Enum):
     WrIoRing = 40
     WrMdlCache = 41
     MaximumWaitReason = 42
-make_global(KWAIT_REASON)
 
 class KPROFILE_SOURCE(Enum):
     ProfileTime = 0
@@ -145,7 +136,6 @@ class KPROFILE_SOURCE(Enum):
     ProfileMemoryBarrierCycles = 22
     ProfileLoadLinkedIssues = 23
     ProfileMaximum = 24
-make_global(KPROFILE_SOURCE)
 
 class LDR_DDAG_STATE(Enum):
     LdrModulesMerged = -5
@@ -163,7 +153,6 @@ class LDR_DDAG_STATE(Enum):
     LdrModulesReadyToInit = 7
     LdrModulesInitializing = 8
     LdrModulesReadyToRun = 9
-make_global(LDR_DDAG_STATE)
 
 class LDR_DLL_LOAD_REASON(Enum):
     LoadReasonStaticDependency = 0
@@ -177,7 +166,6 @@ class LDR_DLL_LOAD_REASON(Enum):
     LoadReasonEnclaveDependency = 8
     LoadReasonPatchImage = 9  # since WIN11
     LoadReasonUnknown = -1
-make_global(LDR_DLL_LOAD_REASON)
 
 class LDR_HOT_PATCH_STATE(Enum):
     LdrHotPatchBaseImage = 0
@@ -186,55 +174,45 @@ class LDR_HOT_PATCH_STATE(Enum):
     LdrHotPatchAppliedForward = 3
     LdrHotPatchFailedToPatch = 4
     LdrHotPatchStateMax = 5
-make_global(LDR_HOT_PATCH_STATE)
 
 class SYSTEM_ENVIRONMENT_INFORMATION_CLASS(Enum):
     SystemEnvironmentNameInformation = 1  # q: VARIABLE_NAME
     SystemEnvironmentValueInformation = 2  # q: VARIABLE_NAME_AND_VALUE
     MaxSystemEnvironmentInfoClass = 3
-make_global(SYSTEM_ENVIRONMENT_INFORMATION_CLASS)
 
 class FILTER_BOOT_OPTION_OPERATION(Enum):
     FilterBootOptionOperationOpenSystemStore = 0
     FilterBootOptionOperationSetElement = 1
     FilterBootOptionOperationDeleteElement = 2
     FilterBootOptionOperationMax = 3
-make_global(FILTER_BOOT_OPTION_OPERATION)
 
 class EVENT_INFORMATION_CLASS(Enum):
     EventBasicInformation = 0
-make_global(EVENT_INFORMATION_CLASS)
 
 class MUTANT_INFORMATION_CLASS(Enum):
     MutantBasicInformation = 0  # MUTANT_BASIC_INFORMATION
     MutantOwnerInformation = 1  # MUTANT_OWNER_INFORMATION
-make_global(MUTANT_INFORMATION_CLASS)
 
 class SEMAPHORE_INFORMATION_CLASS(Enum):
     SemaphoreBasicInformation = 0
-make_global(SEMAPHORE_INFORMATION_CLASS)
 
 class TIMER_INFORMATION_CLASS(Enum):
     TimerBasicInformation = 0  # TIMER_BASIC_INFORMATION
-make_global(TIMER_INFORMATION_CLASS)
 
 class TIMER_SET_INFORMATION_CLASS(Enum):
     TimerSetCoalescableTimer = 0  # TIMER_SET_COALESCABLE_TIMER_INFO
     MaxTimerInfoClass = 1
-make_global(TIMER_SET_INFORMATION_CLASS)
 
 class WNF_STATE_NAME_LIFETIME(Enum):
     WnfWellKnownStateName = 0
     WnfPermanentStateName = 1
     WnfPersistentStateName = 2
     WnfTemporaryStateName = 3
-make_global(WNF_STATE_NAME_LIFETIME)
 
 class WNF_STATE_NAME_INFORMATION(Enum):
     WnfInfoStateNameExist = 0
     WnfInfoSubscribersPresent = 1
     WnfInfoIsQuiescent = 2
-make_global(WNF_STATE_NAME_INFORMATION)
 
 class WNF_DATA_SCOPE(Enum):
     WnfDataScopeSystem = 0
@@ -243,7 +221,6 @@ class WNF_DATA_SCOPE(Enum):
     WnfDataScopeProcess = 3
     WnfDataScopeMachine = 4  # REDSTONE3
     WnfDataScopePhysicalMachine = 5  # WIN11
-make_global(WNF_DATA_SCOPE)
 
 class WORKERFACTORYINFOCLASS(Enum):
     WorkerFactoryTimeout = 0  # LARGE_INTEGER
@@ -263,7 +240,6 @@ class WORKERFACTORYINFOCLASS(Enum):
     WorkerFactoryThreadSoftMaximum = 14  # s: ULONG
     WorkerFactoryThreadCpuSets = 15  # since REDSTONE5
     MaxWorkerFactoryInfoClass = 16
-make_global(WORKERFACTORYINFOCLASS)
 
 class SYSTEM_INFORMATION_CLASS(Enum):
     SystemBasicInformation = 0  # q: SYSTEM_BASIC_INFORMATION
@@ -506,7 +482,6 @@ class SYSTEM_INFORMATION_CLASS(Enum):
     SystemSecureKernelDebuggerInformation = 237
     SystemOriginalImageFeatureInformation = 238
     MaxSystemInfoClass = 239
-make_global(SYSTEM_INFORMATION_CLASS)
 
 class EVENT_TRACE_INFORMATION_CLASS(Enum):
     EventTraceKernelVersionInformation = 0  # EVENT_TRACE_VERSION_INFORMATION
@@ -537,13 +512,11 @@ class EVENT_TRACE_INFORMATION_CLASS(Enum):
     EventTraceCoverageSamplerInformation = 25  # EVENT_TRACE_COVERAGE_SAMPLER_INFORMATION
     EventTraceUnifiedStackCachingInformation = 26  # sicne 21H1
     MaxEventTraceInfoClass = 27
-make_global(EVENT_TRACE_INFORMATION_CLASS)
 
 class SYSTEM_CRASH_DUMP_CONFIGURATION_CLASS(Enum):
     SystemCrashDumpDisable = 0
     SystemCrashDumpReconfigure = 1
     SystemCrashDumpInitializationComplete = 2
-make_global(SYSTEM_CRASH_DUMP_CONFIGURATION_CLASS)
 
 class WATCHDOG_HANDLER_ACTION(Enum):
     WdActionSetTimeoutValue = 0
@@ -554,7 +527,6 @@ class WATCHDOG_HANDLER_ACTION(Enum):
     WdActionSetTriggerAction = 5
     WdActionQueryTriggerAction = 6
     WdActionQueryState = 7
-make_global(WATCHDOG_HANDLER_ACTION)
 
 class WATCHDOG_INFORMATION_CLASS(Enum):
     WdInfoTimeoutValue = 0
@@ -567,13 +539,11 @@ class WATCHDOG_INFORMATION_CLASS(Enum):
     WdInfoNop = 7
     WdInfoGeneratedLastReset = 8
     WdInfoInvalid = 9
-make_global(WATCHDOG_INFORMATION_CLASS)
 
 class SYSTEM_FIRMWARE_TABLE_ACTION(Enum):
     SystemFirmwareTableEnumerate = 0
     SystemFirmwareTableGet = 1
     SystemFirmwareTableMax = 2
-make_global(SYSTEM_FIRMWARE_TABLE_ACTION)
 
 class SYSTEM_MEMORY_LIST_COMMAND(Enum):
     MemoryCaptureAccessedBits = 0
@@ -583,13 +553,11 @@ class SYSTEM_MEMORY_LIST_COMMAND(Enum):
     MemoryPurgeStandbyList = 4
     MemoryPurgeLowPriorityStandbyList = 5
     MemoryCommandMax = 6
-make_global(SYSTEM_MEMORY_LIST_COMMAND)
 
 class COVERAGE_REQUEST_CODES(Enum):
     CoverageAllModules = 0
     CoverageSearchByHash = 1
     CoverageSearchByName = 2
-make_global(COVERAGE_REQUEST_CODES)
 
 class SYSTEM_VA_TYPE(Enum):
     SystemVaTypeAll = 0
@@ -599,7 +567,6 @@ class SYSTEM_VA_TYPE(Enum):
     SystemVaTypeSystemPtes = 4
     SystemVaTypeSessionSpace = 5
     SystemVaTypeMax = 6
-make_global(SYSTEM_VA_TYPE)
 
 class STORE_INFORMATION_CLASS(Enum):
     StorePageRequest = 1
@@ -626,7 +593,6 @@ class STORE_INFORMATION_CLASS(Enum):
     MemCompressionInfoRequest = 22  # q: SM_MEM_COMPRESSION_INFO_REQUEST // SmProcessCompressionInfoRequest
     ProcessStoreInfoRequest = 23  # SmProcessProcessStoreInfoRequest
     StoreInformationMax = 24
-make_global(STORE_INFORMATION_CLASS)
 
 class ST_STATS_LEVEL(Enum):
     StStatsLevelBasic = 0
@@ -634,26 +600,22 @@ class ST_STATS_LEVEL(Enum):
     StStatsLevelRegionSpace = 2  # requires SeProfileSingleProcessPrivilege
     StStatsLevelSpaceBitmap = 3  # requires SeProfileSingleProcessPrivilege
     StStatsLevelMax = 4
-make_global(ST_STATS_LEVEL)
 
 class SM_STORE_TYPE(Enum):
     StoreTypeInMemory = 0
     StoreTypeFile = 1
     StoreTypeMax = 2
-make_global(SM_STORE_TYPE)
 
 class SM_STORE_MANAGER_TYPE(Enum):
     SmStoreManagerTypePhysical = 0
     SmStoreManagerTypeVirtual = 1
     SmStoreManagerTypeMax = 2
-make_global(SM_STORE_MANAGER_TYPE)
 
 class SM_CONFIG_TYPE(Enum):
     SmConfigDirtyPageCompression = 0
     SmConfigAsyncInswap = 1
     SmConfigPrefetchSeekThreshold = 2
     SmConfigTypeMax = 3
-make_global(SM_CONFIG_TYPE)
 
 class TPM_BOOT_ENTROPY_RESULT_CODE(Enum):
     TpmBootEntropyStructureUninitialized = 0
@@ -661,7 +623,6 @@ class TPM_BOOT_ENTROPY_RESULT_CODE(Enum):
     TpmBootEntropyNoTpmFound = 2
     TpmBootEntropyTpmError = 3
     TpmBootEntropySuccess = 4
-make_global(TPM_BOOT_ENTROPY_RESULT_CODE)
 
 class SYSTEM_PIXEL_FORMAT(Enum):
     SystemPixelFormatUnknown = 0
@@ -669,7 +630,6 @@ class SYSTEM_PIXEL_FORMAT(Enum):
     SystemPixelFormatR8G8B8X8 = 2
     SystemPixelFormatB8G8R8 = 3
     SystemPixelFormatB8G8R8X8 = 4
-make_global(SYSTEM_PIXEL_FORMAT)
 
 class SYSTEM_PROCESS_CLASSIFICATION(Enum):
     SystemProcessClassificationNormal = 0
@@ -678,25 +638,21 @@ class SYSTEM_PROCESS_CLASSIFICATION(Enum):
     SystemProcessClassificationMemCompression = 3
     SystemProcessClassificationRegistry = 4  # REDSTONE4
     SystemProcessClassificationMaximum = 5
-make_global(SYSTEM_PROCESS_CLASSIFICATION)
 
 class SYSTEM_ACTIVITY_MODERATION_STATE(Enum):
     SystemActivityModerationStateSystemManaged = 0
     SystemActivityModerationStateUserManagedAllowThrottling = 1
     SystemActivityModerationStateUserManagedDisableThrottling = 2
     MaxSystemActivityModerationState = 3
-make_global(SYSTEM_ACTIVITY_MODERATION_STATE)
 
 class SYSTEM_ACTIVITY_MODERATION_APP_TYPE(Enum):
     SystemActivityModerationAppTypeClassic = 0
     SystemActivityModerationAppTypePackaged = 1
     MaxSystemActivityModerationAppType = 2
-make_global(SYSTEM_ACTIVITY_MODERATION_APP_TYPE)
 
 class SYSTEM_IOMMU_STATE(Enum):
     IommuStateBlock = 0
     IommuStateUnblock = 1
-make_global(SYSTEM_IOMMU_STATE)
 
 class SYSDBG_COMMAND(Enum):
     SysDbgQueryModuleInformation = 0
@@ -739,7 +695,6 @@ class SYSDBG_COMMAND(Enum):
     SysDbgGetLiveKernelDump = 37  # SYSDBG_LIVEDUMP_CONTROL
     SysDbgKdPullRemoteFile = 38  # SYSDBG_KD_PULL_REMOTE_FILE
     SysDbgMaxInfoClass = 39
-make_global(SYSDBG_COMMAND)
 
 class HARDERROR_RESPONSE_OPTION(Enum):
     OptionAbortRetryIgnore = 0
@@ -751,7 +706,6 @@ class HARDERROR_RESPONSE_OPTION(Enum):
     OptionShutdownSystem = 6
     OptionOkNoWait = 7
     OptionCancelTryContinue = 8
-make_global(HARDERROR_RESPONSE_OPTION)
 
 class HARDERROR_RESPONSE(Enum):
     ResponseReturnToCaller = 0
@@ -765,25 +719,21 @@ class HARDERROR_RESPONSE(Enum):
     ResponseYes = 8
     ResponseTryAgain = 9
     ResponseContinue = 10
-make_global(HARDERROR_RESPONSE)
 
 class ALTERNATIVE_ARCHITECTURE_TYPE(Enum):
     StandardDesign = 0
     NEC98x86 = 1
     EndAlternatives = 2
-make_global(ALTERNATIVE_ARCHITECTURE_TYPE)
 
 class ATOM_INFORMATION_CLASS(Enum):
     AtomBasicInformation = 0
     AtomTableInformation = 1
-make_global(ATOM_INFORMATION_CLASS)
 
 class SHUTDOWN_ACTION(Enum):
     ShutdownNoReboot = 0
     ShutdownReboot = 1
     ShutdownPowerOff = 2
     ShutdownRebootForRecovery = 3  # since WIN11
-make_global(SHUTDOWN_ACTION)
 
 class BCD_MESSAGE_TYPE(Enum):
     BCD_MESSAGE_TYPE_NONE = 0
@@ -792,25 +742,21 @@ class BCD_MESSAGE_TYPE(Enum):
     BCD_MESSAGE_TYPE_WARNING = 3
     BCD_MESSAGE_TYPE_ERROR = 4
     BCD_MESSAGE_TYPE_MAXIMUM = 5
-make_global(BCD_MESSAGE_TYPE)
 
 class BCD_IMPORT_FLAGS(Enum):
     BCD_IMPORT_NONE = 0
     BCD_IMPORT_DELETE_FIRMWARE_OBJECTS = 1
-make_global(BCD_IMPORT_FLAGS)
 
 class BCD_OPEN_FLAGS(Enum):
     BCD_OPEN_NONE = 0
     BCD_OPEN_OPEN_STORE_OFFLINE = 1
     BCD_OPEN_SYNC_FIRMWARE_ENTRIES = 2
-make_global(BCD_OPEN_FLAGS)
 
 class BCD_OBJECT_TYPE(Enum):
     BCD_OBJECT_TYPE_NONE = 0
     BCD_OBJECT_TYPE_APPLICATION = 1
     BCD_OBJECT_TYPE_INHERITED = 2
     BCD_OBJECT_TYPE_DEVICE = 3
-make_global(BCD_OBJECT_TYPE)
 
 class BCD_APPLICATION_OBJECT_TYPE(Enum):
     BCD_APPLICATION_OBJECT_NONE = 0
@@ -825,7 +771,6 @@ class BCD_APPLICATION_OBJECT_TYPE(Enum):
     BCD_APPLICATION_OBJECT_STARTUP_MODULE = 9
     BCD_APPLICATION_OBJECT_GENERIC_APPLICATION = 10
     BCD_APPLICATION_OBJECT_RESERVED = 1048575
-make_global(BCD_APPLICATION_OBJECT_TYPE)
 
 class BCD_APPLICATION_IMAGE_TYPE(Enum):
     BCD_APPLICATION_IMAGE_NONE = 0
@@ -833,14 +778,12 @@ class BCD_APPLICATION_IMAGE_TYPE(Enum):
     BCD_APPLICATION_IMAGE_BOOT_APPLICATION = 2
     BCD_APPLICATION_IMAGE_LEGACY_LOADER = 3
     BCD_APPLICATION_IMAGE_REALMODE_CODE = 4
-make_global(BCD_APPLICATION_IMAGE_TYPE)
 
 class BCD_INHERITED_CLASS_TYPE(Enum):
     BCD_INHERITED_CLASS_NONE = 0
     BCD_INHERITED_CLASS_LIBRARY = 1
     BCD_INHERITED_CLASS_APPLICATION = 2
     BCD_INHERITED_CLASS_DEVICE = 3
-make_global(BCD_INHERITED_CLASS_TYPE)
 
 class BCD_COPY_FLAGS(Enum):
     BCD_COPY_NONE = 0
@@ -850,7 +793,6 @@ class BCD_COPY_FLAGS(Enum):
     BCD_COPY_IGNORE_SETUP_TEMPLATE_ELEMENTS = 8
     BCD_COPY_RETAIN_ELEMENT_DATA = 16
     BCD_COPY_MIGRATE_ELEMENT_DATA = 32
-make_global(BCD_COPY_FLAGS)
 
 class BCD_ELEMENT_DATATYPE_FORMAT(Enum):
     BCD_ELEMENT_DATATYPE_FORMAT_UNKNOWN = 0
@@ -862,7 +804,6 @@ class BCD_ELEMENT_DATATYPE_FORMAT(Enum):
     BCD_ELEMENT_DATATYPE_FORMAT_BOOLEAN = 6  # 0x06000000
     BCD_ELEMENT_DATATYPE_FORMAT_INTEGERLIST = 7  # 0x07000000
     BCD_ELEMENT_DATATYPE_FORMAT_BINARY = 8  # 0x08000000
-make_global(BCD_ELEMENT_DATATYPE_FORMAT)
 
 class BCD_ELEMENT_DATATYPE_CLASS(Enum):
     BCD_ELEMENT_DATATYPE_CLASS_NONE = 0
@@ -871,7 +812,6 @@ class BCD_ELEMENT_DATATYPE_CLASS(Enum):
     BCD_ELEMENT_DATATYPE_CLASS_DEVICE = 3
     BCD_ELEMENT_DATATYPE_CLASS_SETUPTEMPLATE = 4
     BCD_ELEMENT_DATATYPE_CLASS_OEM = 5
-make_global(BCD_ELEMENT_DATATYPE_CLASS)
 
 class BCD_ELEMENT_DEVICE_TYPE(Enum):
     BCD_ELEMENT_DEVICE_TYPE_NONE = 0
@@ -885,7 +825,6 @@ class BCD_ELEMENT_DEVICE_TYPE(Enum):
     BCD_ELEMENT_DEVICE_TYPE_LOCATE_DEVICE = 8
     BCD_ELEMENT_DEVICE_TYPE_URI = 9
     BCD_ELEMENT_DEVICE_TYPE_COMPOSITE = 10
-make_global(BCD_ELEMENT_DEVICE_TYPE)
 
 class BCD_FLAGS(Enum):
     BCD_FLAG_NONE = 0
@@ -897,7 +836,6 @@ class BCD_FLAGS(Enum):
     BCD_FLAG_DISABLE_VHD_NT_TRANSLATION = 32
     BCD_FLAG_DISABLE_VHD_DEVICE_DETECTION = 64
     BCD_FLAG_DISABLE_POLICY_CHECKS = 128
-make_global(BCD_FLAGS)
 
 class BcdBootMgrElementTypes(Enum):
     BcdBootMgrObjectList_DisplayOrder = 603979777
@@ -920,13 +858,11 @@ class BcdBootMgrElementTypes(Enum):
     BcdBootMgrIntegerList_CustomActionsList = 654311472
     BcdBootMgrBoolean_PersistBootSequence = 637534257
     BcdBootMgrBoolean_SkipStartupSequence = 637534258
-make_global(BcdBootMgrElementTypes)
 
 class BcdLibrary_FirstMegabytePolicy(Enum):
     FirstMegabytePolicyUseNone = 0
     FirstMegabytePolicyUseAll = 1
     FirstMegabytePolicyUsePrivate = 2
-make_global(BcdLibrary_FirstMegabytePolicy)
 
 class BcdLibrary_DebuggerType(Enum):
     DebuggerSerial = 0
@@ -934,18 +870,15 @@ class BcdLibrary_DebuggerType(Enum):
     DebuggerUsb = 2
     DebuggerNet = 3
     DebuggerLocal = 4
-make_global(BcdLibrary_DebuggerType)
 
 class BcdLibrary_DebuggerStartPolicy(Enum):
     DebuggerStartActive = 0
     DebuggerStartAutoEnable = 1
     DebuggerStartDisable = 2
-make_global(BcdLibrary_DebuggerStartPolicy)
 
 class BcdLibrary_ConfigAccessPolicy(Enum):
     ConfigAccessPolicyDefault = 0
     ConfigAccessPolicyDisallowMmConfig = 1
-make_global(BcdLibrary_ConfigAccessPolicy)
 
 class BcdLibrary_UxDisplayMessageType(Enum):
     DisplayMessageTypeDefault = 0
@@ -957,13 +890,11 @@ class BcdLibrary_UxDisplayMessageType(Enum):
     DisplayMessageTypeCommandPrompt = 6
     DisplayMessageTypeSystemRestore = 7
     DisplayMessageTypePushButtonReset = 8
-make_global(BcdLibrary_UxDisplayMessageType)
 
 class BcdLibrary_SafeBoot(Enum):
     SafemodeMinimal = 0
     SafemodeNetwork = 1
     SafemodeDsRepair = 2
-make_global(BcdLibrary_SafeBoot)
 
 class BcdLibraryElementTypes(Enum):
     BcdLibraryDevice_ApplicationDevice = 285212673
@@ -1050,7 +981,6 @@ class BcdLibraryElementTypes(Enum):
     BcdLibraryDevice_WindowsSystemDevice = 285212804
     BcdLibraryBoolean_NumLockOn = 369098887
     BcdLibraryString_AdditionalCiPolicy = 301990024
-make_global(BcdLibraryElementTypes)
 
 class BcdTemplateElementTypes(Enum):
     BcdSetupInteger_DeviceType = 1157627905
@@ -1059,20 +989,17 @@ class BcdTemplateElementTypes(Enum):
     BcdSetupBoolean_OmitOsLoaderElements = 1174405124
     BcdSetupIntegerList_ElementsToMigrateList = 1191182342
     BcdSetupBoolean_RecoveryOs = 1174405136
-make_global(BcdTemplateElementTypes)
 
 class BcdOSLoader_NxPolicy(Enum):
     NxPolicyOptIn = 0
     NxPolicyOptOut = 1
     NxPolicyAlwaysOff = 2
     NxPolicyAlwaysOn = 3
-make_global(BcdOSLoader_NxPolicy)
 
 class BcdOSLoader_PAEPolicy(Enum):
     PaePolicyDefault = 0
     PaePolicyForceEnable = 1
     PaePolicyForceDisable = 2
-make_global(BcdOSLoader_PAEPolicy)
 
 class BcdOSLoader_BootStatusPolicy(Enum):
     BootStatusPolicyDisplayAllFailures = 0
@@ -1083,7 +1010,6 @@ class BcdOSLoader_BootStatusPolicy(Enum):
     BootStatusPolicyDisplayShutdownFailures = 5
     BootStatusPolicyDisplayBootFailures = 6
     BootStatusPolicyDisplayCheckpointFailures = 7
-make_global(BcdOSLoader_BootStatusPolicy)
 
 class BcdOSLoaderElementTypes(Enum):
     BcdOSLoaderDevice_OSDevice = 553648129
@@ -1213,7 +1139,6 @@ class BcdOSLoaderElementTypes(Enum):
     BcdOSLoaderDevice_BspFilepath = 553648469
     BcdOSLoaderString_KernelDebuggerNetHostIpv6 = 570425686
     BcdOSLoaderString_HypervisorDebuggerNetHostIpv6 = 570425697
-make_global(BcdOSLoaderElementTypes)
 
 class MEMORY_INFORMATION_CLASS(Enum):
     MemoryBasicInformation = 0  # MEMORY_BASIC_INFORMATION
@@ -1231,14 +1156,12 @@ class MEMORY_INFORMATION_CLASS(Enum):
     MemoryBadInformation = 12  # since WIN11
     MemoryBadInformationAllProcesses = 13  # since 22H1
     MaxMemoryInfoClass = 14
-make_global(MEMORY_INFORMATION_CLASS)
 
 class MEMORY_WORKING_SET_EX_LOCATION(Enum):
     MemoryLocationInvalid = 0
     MemoryLocationResident = 1
     MemoryLocationPagefile = 2
     MemoryLocationReserved = 3
-make_global(MEMORY_WORKING_SET_EX_LOCATION)
 
 class MEMORY_PHYSICAL_CONTIGUITY_UNIT_STATE(Enum):
     MemoryNotContiguous = 0
@@ -1246,7 +1169,6 @@ class MEMORY_PHYSICAL_CONTIGUITY_UNIT_STATE(Enum):
     MemoryNotResident = 2
     MemoryNotEligibleToMakeContiguous = 3
     MemoryContiguityStateMax = 4
-make_global(MEMORY_PHYSICAL_CONTIGUITY_UNIT_STATE)
 
 class SECTION_INFORMATION_CLASS(Enum):
     SectionBasicInformation = 0  # q; SECTION_BASIC_INFORMATION
@@ -1255,12 +1177,10 @@ class SECTION_INFORMATION_CLASS(Enum):
     SectionOriginalBaseInformation = 3  # PVOID BaseAddress
     SectionInternalImageInformation = 4  # SECTION_INTERNAL_IMAGE_INFORMATION // since REDSTONE2
     MaxSectionInfoClass = 5
-make_global(SECTION_INFORMATION_CLASS)
 
 class SECTION_INHERIT(Enum):
     ViewShare = 1
     ViewUnmap = 2
-make_global(SECTION_INHERIT)
 
 class VIRTUAL_MEMORY_INFORMATION_CLASS(Enum):
     VmPrefetchInformation = 0  # ULONG
@@ -1272,7 +1192,6 @@ class VIRTUAL_MEMORY_INFORMATION_CLASS(Enum):
     VmVirtualMachinePrepopulateInformation = 6
     VmRemoveFromWorkingSetInformation = 7
     MaxVmInfoClass = 8
-make_global(VIRTUAL_MEMORY_INFORMATION_CLASS)
 
 class PARTITION_INFORMATION_CLASS(Enum):
     SystemMemoryPartitionInformation = 0  # q: MEMORY_PARTITION_CONFIGURATION_INFORMATION
@@ -1290,7 +1209,6 @@ class PARTITION_INFORMATION_CLASS(Enum):
     SystemMemoryPartitionClearAttributes = 12
     SystemMemoryPartitionSetMemoryThresholds = 13  # since WIN11
     SystemMemoryPartitionMax = 14
-make_global(PARTITION_INFORMATION_CLASS)
 
 class OBJECT_INFORMATION_CLASS(Enum):
     ObjectBasicInformation = 0  # q: OBJECT_BASIC_INFORMATION
@@ -1301,20 +1219,17 @@ class OBJECT_INFORMATION_CLASS(Enum):
     ObjectSessionInformation = 5  # s: void // change object session // (requires SeTcbPrivilege)
     ObjectSessionObjectInformation = 6  # s: void // change object session // (requires SeTcbPrivilege)
     MaxObjectInfoClass = 7
-make_global(OBJECT_INFORMATION_CLASS)
 
 class BOUNDARY_ENTRY_TYPE(Enum):
     OBNS_Invalid = 0
     OBNS_Name = 1
     OBNS_SID = 2
     OBNS_IL = 3
-make_global(BOUNDARY_ENTRY_TYPE)
 
 class SYMBOLIC_LINK_INFO_CLASS(Enum):
     SymbolicLinkGlobalInformation = 1  # s: ULONG
     SymbolicLinkAccessMask = 2  # s: ACCESS_MASK
     MaxnSymbolicLinkInfoClass = 3
-make_global(SYMBOLIC_LINK_INFO_CLASS)
 
 class PROCESSINFOCLASS(Enum):
     ProcessBasicInformation = 0  # q: PROCESS_BASIC_INFORMATION, PROCESS_EXTENDED_BASIC_INFORMATION
@@ -1430,7 +1345,6 @@ class PROCESSINFOCLASS(Enum):
     ProcessEffectiveIoPriority = 110  # q: IO_PRIORITY_HINT
     ProcessEffectivePagePriority = 111  # q: ULONG
     MaxProcessInfoClass = 112
-make_global(PROCESSINFOCLASS)
 
 class THREADINFOCLASS(Enum):
     ThreadBasicInformation = 0  # q: THREAD_BASIC_INFORMATION
@@ -1490,26 +1404,22 @@ class THREADINFOCLASS(Enum):
     ThreadEffectiveIoPriority = 54  # q: IO_PRIORITY_HINT
     ThreadEffectivePagePriority = 55  # q: ULONG
     MaxThreadInfoClass = 56
-make_global(THREADINFOCLASS)
 
 class PROCESS_TLS_INFORMATION_TYPE(Enum):
     ProcessTlsReplaceIndex = 0
     ProcessTlsReplaceVector = 1
     MaxProcessTlsOperation = 2
-make_global(PROCESS_TLS_INFORMATION_TYPE)
 
 class PROCESS_WORKING_SET_OPERATION(Enum):
     ProcessWorkingSetSwap = 0
     ProcessWorkingSetEmpty = 1
     ProcessWorkingSetOperationMax = 2
-make_global(PROCESS_WORKING_SET_OPERATION)
 
 class PS_PROTECTED_TYPE(Enum):
     PsProtectedTypeNone = 0
     PsProtectedTypeProtectedLight = 1
     PsProtectedTypeProtected = 2
     PsProtectedTypeMax = 3
-make_global(PS_PROTECTED_TYPE)
 
 class PS_PROTECTED_SIGNER(Enum):
     PsProtectedSignerNone = 0
@@ -1522,38 +1432,32 @@ class PS_PROTECTED_SIGNER(Enum):
     PsProtectedSignerWinSystem = 7
     PsProtectedSignerApp = 8
     PsProtectedSignerMax = 9
-make_global(PS_PROTECTED_SIGNER)
 
 class THREAD_UMS_INFORMATION_COMMAND(Enum):
     UmsInformationCommandInvalid = 0
     UmsInformationCommandAttach = 1
     UmsInformationCommandDetach = 2
     UmsInformationCommandQuery = 3
-make_global(THREAD_UMS_INFORMATION_COMMAND)
 
 class SUBSYSTEM_INFORMATION_TYPE(Enum):
     SubsystemInformationTypeWin32 = 0
     SubsystemInformationTypeWSL = 1
     MaxSubsystemInformationType = 2
-make_global(SUBSYSTEM_INFORMATION_TYPE)
 
 class THREAD_WORKLOAD_CLASS(Enum):
     ThreadWorkloadClassDefault = 0
     ThreadWorkloadClassGraphics = 1
     MaxThreadWorkloadClass = 2
-make_global(THREAD_WORKLOAD_CLASS)
 
 class PROCESS_STATE_CHANGE_TYPE(Enum):
     ProcessStateChangeSuspend = 0
     ProcessStateChangeResume = 1
     ProcessStateChangeMax = 2
-make_global(PROCESS_STATE_CHANGE_TYPE)
 
 class THREAD_STATE_CHANGE_TYPE(Enum):
     ThreadStateChangeSuspend = 0
     ThreadStateChangeResume = 1
     ThreadStateChangeMax = 2
-make_global(THREAD_STATE_CHANGE_TYPE)
 
 class SE_SAFE_OPEN_PROMPT_EXPERIENCE_RESULTS(Enum):
     SeSafeOpenExperienceNone = 0
@@ -1565,7 +1469,6 @@ class SE_SAFE_OPEN_PROMPT_EXPERIENCE_RESULTS(Enum):
     SeSafeOpenExperienceIgnoreUnknownOrBad = 32
     SeSafeOpenExperienceDefenderTrustedInstaller = 64
     SeSafeOpenExperienceMOTWPresent = 128
-make_global(SE_SAFE_OPEN_PROMPT_EXPERIENCE_RESULTS)
 
 class PS_ATTRIBUTE_NUM(Enum):
     PsAttributeParentProcess = 0  # in HANDLE
@@ -1600,14 +1503,12 @@ class PS_ATTRIBUTE_NUM(Enum):
     PsAttributeComponentFilter = 29
     PsAttributeEnableOptionalXStateFeatures = 30  # since WIN11
     PsAttributeMax = 31
-make_global(PS_ATTRIBUTE_NUM)
 
 class PS_STD_HANDLE_STATE(Enum):
     PsNeverDuplicate = 0
     PsRequestDuplicate = 1  # duplicate standard handles specified by PseudoHandleMask, and only if StdHandleSubsystemType matches the image subsystem
     PsAlwaysDuplicate = 2  # always duplicate standard handles
     PsMaxStdHandleStates = 3
-make_global(PS_STD_HANDLE_STATE)
 
 class PS_MITIGATION_OPTION(Enum):
     PS_MITIGATION_OPTION_NX = 0
@@ -1646,7 +1547,6 @@ class PS_MITIGATION_OPTION(Enum):
     PS_MITIGATION_OPTION_BLOCK_NON_CET_BINARIES = 33
     PS_MITIGATION_OPTION_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY = 34
     PS_MITIGATION_OPTION_REDIRECTION_TRUST = 35  # since 22H1
-make_global(PS_MITIGATION_OPTION)
 
 class PS_CREATE_STATE(Enum):
     PsCreateInitialState = 0
@@ -1657,13 +1557,11 @@ class PS_CREATE_STATE(Enum):
     PsCreateFailExeName = 5  # Debugger specified
     PsCreateSuccess = 6
     PsCreateMaximumStates = 7
-make_global(PS_CREATE_STATE)
 
 class MEMORY_RESERVE_TYPE(Enum):
     MemoryReserveUserApc = 0
     MemoryReserveIoCompletion = 1
     MemoryReserveTypeMax = 2
-make_global(MEMORY_RESERVE_TYPE)
 
 class DBG_STATE(Enum):
     DbgIdle = 0
@@ -1677,13 +1575,11 @@ class DBG_STATE(Enum):
     DbgSingleStepStateChange = 8
     DbgLoadDllStateChange = 9
     DbgUnloadDllStateChange = 10
-make_global(DBG_STATE)
 
 class DEBUGOBJECTINFOCLASS(Enum):
     DebugObjectUnusedInformation = 0
     DebugObjectKillProcessOnExitInformation = 1  # s: ULONG
     MaxDebugObjectInfoClass = 2
-make_global(DEBUGOBJECTINFOCLASS)
 
 class FILE_INFORMATION_CLASS(Enum):
     FileDirectoryInformation = 1  # FILE_DIRECTORY_INFORMATION
@@ -1763,7 +1659,6 @@ class FILE_INFORMATION_CLASS(Enum):
     FileCaseSensitiveInformationForceAccessCheck = 75  # FILE_CASE_SENSITIVE_INFORMATION
     FileKnownFolderInformation = 76  # FILE_KNOWN_FOLDER_INFORMATION // since WIN11
     FileMaximumInformation = 77
-make_global(FILE_INFORMATION_CLASS)
 
 class IO_PRIORITY_HINT(Enum):
     IoPriorityVeryLow = 0  # Defragging, content indexing and other background I/Os.
@@ -1772,7 +1667,6 @@ class IO_PRIORITY_HINT(Enum):
     IoPriorityHigh = 3  # Used by filesystems for checkpoint I/O.
     IoPriorityCritical = 4  # Used by memory manager. Not available for applications.
     MaxIoPriorityTypes = 5
-make_global(IO_PRIORITY_HINT)
 
 class FILE_KNOWN_FOLDER_TYPE(Enum):
     KnownFolderNone = 0
@@ -1784,7 +1678,6 @@ class FILE_KNOWN_FOLDER_TYPE(Enum):
     KnownFolderVideos = 6
     KnownFolderOther = 7
     KnownFolderMax = 7
-make_global(FILE_KNOWN_FOLDER_TYPE)
 
 class FSINFOCLASS(Enum):
     FileFsVolumeInformation = 1  # FILE_FS_VOLUME_INFORMATION
@@ -1802,18 +1695,15 @@ class FSINFOCLASS(Enum):
     FileFsMetadataSizeInformation = 13  # FILE_FS_METADATA_SIZE_INFORMATION // since THRESHOLD
     FileFsFullSizeInformationEx = 14  # FILE_FS_FULL_SIZE_INFORMATION_EX // since REDSTONE5
     FileFsMaximumInformation = 15
-make_global(FSINFOCLASS)
 
 class DIRECTORY_NOTIFY_INFORMATION_CLASS(Enum):
     DirectoryNotifyInformation = 1  # FILE_NOTIFY_INFORMATION
     DirectoryNotifyExtendedInformation = 2  # FILE_NOTIFY_EXTENDED_INFORMATION
     DirectoryNotifyFullInformation = 3  # since 22H2
     DirectoryNotifyMaximumInformation = 4
-make_global(DIRECTORY_NOTIFY_INFORMATION_CLASS)
 
 class IO_COMPLETION_INFORMATION_CLASS(Enum):
     IoCompletionBasicInformation = 0
-make_global(IO_COMPLETION_INFORMATION_CLASS)
 
 class IO_SESSION_EVENT(Enum):
     IoSessionEventIgnore = 0
@@ -1824,7 +1714,6 @@ class IO_SESSION_EVENT(Enum):
     IoSessionEventLogon = 5
     IoSessionEventLogoff = 6
     IoSessionEventMax = 7
-make_global(IO_SESSION_EVENT)
 
 class IO_SESSION_STATE(Enum):
     IoSessionStateCreated = 1
@@ -1836,7 +1725,6 @@ class IO_SESSION_STATE(Enum):
     IoSessionStateLoggedOff = 7
     IoSessionStateTerminated = 8
     IoSessionStateMax = 9
-make_global(IO_SESSION_STATE)
 
 class INTERFACE_TYPE(Enum):
     InterfaceTypeUndefined = -1
@@ -1859,7 +1747,6 @@ class INTERFACE_TYPE(Enum):
     Vmcs = 16
     ACPIBus = 17
     MaximumInterfaceType = 18
-make_global(INTERFACE_TYPE)
 
 class DMA_WIDTH(Enum):
     Width8Bits = 0
@@ -1868,7 +1755,6 @@ class DMA_WIDTH(Enum):
     Width64Bits = 3
     WidthNoWrap = 4
     MaximumDmaWidth = 5
-make_global(DMA_WIDTH)
 
 class DMA_SPEED(Enum):
     Compatible = 0
@@ -1877,7 +1763,6 @@ class DMA_SPEED(Enum):
     TypeC = 3
     TypeF = 4
     MaximumDmaSpeed = 5
-make_global(DMA_SPEED)
 
 class BUS_DATA_TYPE(Enum):
     ConfigurationSpaceUndefined = -1
@@ -1894,12 +1779,10 @@ class BUS_DATA_TYPE(Enum):
     PNPISAConfiguration = 10
     SgiInternalConfiguration = 11
     MaximumBusDataType = 12
-make_global(BUS_DATA_TYPE)
 
 class PORT_INFORMATION_CLASS(Enum):
     PortBasicInformation = 0
     PortDumpInformation = 1
-make_global(PORT_INFORMATION_CLASS)
 
 class ALPC_PORT_INFORMATION_CLASS(Enum):
     AlpcBasicInformation = 0  # q: out ALPC_BASIC_INFORMATION
@@ -1915,7 +1798,6 @@ class ALPC_PORT_INFORMATION_CLASS(Enum):
     AlpcCompletionListRundownInformation = 10  # s: VOID // 10
     AlpcWaitForPortReferences = 11
     AlpcServerSessionInformation = 12  # q: ALPC_SERVER_SESSION_INFORMATION // since 19H2
-make_global(ALPC_PORT_INFORMATION_CLASS)
 
 class ALPC_MESSAGE_INFORMATION_CLASS(Enum):
     AlpcMessageSidInformation = 0  # q: out SID
@@ -1923,7 +1805,6 @@ class ALPC_MESSAGE_INFORMATION_CLASS(Enum):
     AlpcMessageDirectStatusInformation = 2
     AlpcMessageHandleInformation = 3  # ALPC_MESSAGE_HANDLE_INFORMATION
     MaxAlpcMessageInfoClass = 4
-make_global(ALPC_MESSAGE_INFORMATION_CLASS)
 
 class PF_BOOT_PHASE_ID(Enum):
     PfKernelInitPhase = 0
@@ -1936,14 +1817,12 @@ class PF_BOOT_PHASE_ID(Enum):
     PfBootAcceptedRegistryInitPhase = 270
     PfUserShellReadyPhase = 300
     PfMaxBootPhaseId = 900
-make_global(PF_BOOT_PHASE_ID)
 
 class PF_ENABLE_STATUS(Enum):
     PfSvNotSpecified = 0
     PfSvEnabled = 1
     PfSvDisabled = 2
     PfSvMaxEnableStatus = 3
-make_global(PF_ENABLE_STATUS)
 
 class PREFETCHER_INFORMATION_CLASS(Enum):
     PrefetcherRetrieveTrace = 1  # q: CHAR[]
@@ -1955,14 +1834,12 @@ class PREFETCHER_INFORMATION_CLASS(Enum):
     PrefetcherSpare2 = 7
     PrefetcherAppLaunchScenarioControl = 8
     PrefetcherInformationMax = 9
-make_global(PREFETCHER_INFORMATION_CLASS)
 
 class PFS_PRIVATE_PAGE_SOURCE_TYPE(Enum):
     PfsPrivateSourceKernel = 0
     PfsPrivateSourceSession = 1
     PfsPrivateSourceProcess = 2
     PfsPrivateSourceMax = 3
-make_global(PFS_PRIVATE_PAGE_SOURCE_TYPE)
 
 class PF_PHASED_SCENARIO_TYPE(Enum):
     PfScenarioTypeNone = 0
@@ -1970,7 +1847,6 @@ class PF_PHASED_SCENARIO_TYPE(Enum):
     PfScenarioTypeHibernate = 2
     PfScenarioTypeFUS = 3
     PfScenarioTypeMax = 4
-make_global(PF_PHASED_SCENARIO_TYPE)
 
 class SUPERFETCH_INFORMATION_CLASS(Enum):
     SuperfetchRetrieveTrace = 1  # q: CHAR[]
@@ -2002,7 +1878,6 @@ class SUPERFETCH_INFORMATION_CLASS(Enum):
     SuperfetchFileExtentsQuery = 27
     SuperfetchGpuUtilizationQuery = 28  # PF_GPU_UTILIZATION_INFO
     SuperfetchInformationMax = 29
-make_global(SUPERFETCH_INFORMATION_CLASS)
 
 class PLUGPLAY_EVENT_CATEGORY(Enum):
     HardwareProfileChangeEvent = 0
@@ -2016,7 +1891,6 @@ class PLUGPLAY_EVENT_CATEGORY(Enum):
     BlockedDriverEvent = 8
     InvalidIDEvent = 9
     MaxPlugEventCategory = 10
-make_global(PLUGPLAY_EVENT_CATEGORY)
 
 class PLUGPLAY_CONTROL_CLASS(Enum):
     PlugPlayControlEnumerateDevice = 0  # PLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA
@@ -2044,7 +1918,6 @@ class PLUGPLAY_CONTROL_CLASS(Enum):
     PlugPlayControlGetBlockedDriverList = 22  # PLUGPLAY_CONTROL_BLOCKED_DRIVER_DATA
     PlugPlayControlGetDeviceInterfaceEnabled = 23  # PLUGPLAY_CONTROL_DEVICE_INTERFACE_ENABLED
     MaxPlugPlayControl = 24
-make_global(PLUGPLAY_CONTROL_CLASS)
 
 class POWER_REQUEST_TYPE_INTERNAL(Enum):
     PowerRequestDisplayRequiredInternal = 0
@@ -2056,18 +1929,15 @@ class POWER_REQUEST_TYPE_INTERNAL(Enum):
     PowerRequestInternalInvalid = 6
     PowerRequestInternalUnknown = 7
     PowerRequestFullScreenVideoRequired = 8  # Windows 8 only
-make_global(POWER_REQUEST_TYPE_INTERNAL)
 
 class POWER_STATE_TYPE(Enum):
     SystemPowerState = 0
     DevicePowerState = 1
-make_global(POWER_STATE_TYPE)
 
 class REQUESTER_TYPE(Enum):
     KernelRequester = 0
     UserProcessRequester = 1
     UserSharedServiceRequester = 2
-make_global(REQUESTER_TYPE)
 
 class POWER_STATE_HANDLER_TYPE(Enum):
     PowerStateSleeping1 = 0
@@ -2078,7 +1948,6 @@ class POWER_STATE_HANDLER_TYPE(Enum):
     PowerStateShutdownReset = 5
     PowerStateSleeping4Firmware = 6
     PowerStateMaximum = 7
-make_global(POWER_STATE_HANDLER_TYPE)
 
 class POWER_INFORMATION_LEVEL_INTERNAL(Enum):
     PowerInternalAcpiInterfaceRegister = 0
@@ -2169,7 +2038,6 @@ class POWER_INFORMATION_LEVEL_INTERNAL(Enum):
     PowerInternalUnregisterShutdownNotification = 87  # since 22H1
     PowerInternalManageTransitionStateRecord = 88
     PowerInformationInternalMaximum = 89
-make_global(POWER_INFORMATION_LEVEL_INTERNAL)
 
 class POWER_S0_DISCONNECTED_REASON(Enum):
     PoS0DisconnectedReasonNone = 0
@@ -2179,7 +2047,6 @@ class POWER_S0_DISCONNECTED_REASON(Enum):
     PoS0DisconnectedReasonCsChecksFailed = 4
     PoS0DisconnectedReasonSmartStandby = 5
     PoS0DisconnectedReasonMaximum = 6
-make_global(POWER_S0_DISCONNECTED_REASON)
 
 class KEY_INFORMATION_CLASS(Enum):
     KeyBasicInformation = 0  # KEY_BASIC_INFORMATION
@@ -2193,7 +2060,6 @@ class KEY_INFORMATION_CLASS(Enum):
     KeyTrustInformation = 8  # KEY_TRUST_INFORMATION
     KeyLayerInformation = 9  # KEY_LAYER_INFORMATION
     MaxKeyInfoClass = 10
-make_global(KEY_INFORMATION_CLASS)
 
 class KEY_SET_INFORMATION_CLASS(Enum):
     KeyWriteTimeInformation = 0  # KEY_WRITE_TIME_INFORMATION
@@ -2204,7 +2070,6 @@ class KEY_SET_INFORMATION_CLASS(Enum):
     KeySetHandleTagsInformation = 5  # KEY_HANDLE_TAGS_INFORMATION
     KeySetLayerInformation = 6  # KEY_SET_LAYER_INFORMATION
     MaxKeySetInfoClass = 7
-make_global(KEY_SET_INFORMATION_CLASS)
 
 class KEY_VALUE_INFORMATION_CLASS(Enum):
     KeyValueBasicInformation = 0  # KEY_VALUE_BASIC_INFORMATION
@@ -2214,32 +2079,27 @@ class KEY_VALUE_INFORMATION_CLASS(Enum):
     KeyValuePartialInformationAlign64 = 4  # KEY_VALUE_PARTIAL_INFORMATION_ALIGN64
     KeyValueLayerInformation = 5  # KEY_VALUE_LAYER_INFORMATION
     MaxKeyValueInfoClass = 6
-make_global(KEY_VALUE_INFORMATION_CLASS)
 
 class KEY_LOAD_ENTRY_TYPE(Enum):
     KeyLoadTrustClassKey = 1
     KeyLoadEvent = 2
     KeyLoadToken = 3
-make_global(KEY_LOAD_ENTRY_TYPE)
 
 class REG_ACTION(Enum):
     KeyAdded = 0
     KeyRemoved = 1
     KeyModified = 2
-make_global(REG_ACTION)
 
 class TABLE_SEARCH_RESULT(Enum):
     TableEmptyTree = 0
     TableFoundNode = 1
     TableInsertAsLeft = 2
     TableInsertAsRight = 3
-make_global(TABLE_SEARCH_RESULT)
 
 class RTL_GENERIC_COMPARE_RESULTS(Enum):
     GenericLessThan = 0
     GenericGreaterThan = 1
     GenericEqual = 2
-make_global(RTL_GENERIC_COMPARE_RESULTS)
 
 class RTL_NORM_FORM(Enum):
     NormOther = 0
@@ -2254,14 +2114,12 @@ class RTL_NORM_FORM(Enum):
     NormKCDisallowUnassigned = 261
     NormKDDisallowUnassigned = 262
     NormIdnaDisallowUnassigned = 269
-make_global(RTL_NORM_FORM)
 
 class FUNCTION_TABLE_TYPE(Enum):
     RF_SORTED = 0
     RF_UNSORTED = 1
     RF_CALLBACK = 2
     RF_KERNEL_DYNAMIC = 3
-make_global(FUNCTION_TABLE_TYPE)
 
 class RTL_PATH_TYPE(Enum):
     RtlPathTypeUnknown = 0
@@ -2272,13 +2130,11 @@ class RTL_PATH_TYPE(Enum):
     RtlPathTypeRelative = 5
     RtlPathTypeLocalDevice = 6
     RtlPathTypeRootLocalDevice = 7
-make_global(RTL_PATH_TYPE)
 
 class HEAP_COMPATIBILITY_MODE(Enum):
     HEAP_COMPATIBILITY_STANDARD = 0
     HEAP_COMPATIBILITY_LAL = 1
     HEAP_COMPATIBILITY_LFH = 2
-make_global(HEAP_COMPATIBILITY_MODE)
 
 class IMAGE_MITIGATION_POLICY(Enum):
     ImageDepPolicy = 0  # RTL_IMAGE_MITIGATION_DEP_POLICY
@@ -2298,7 +2154,6 @@ class IMAGE_MITIGATION_POLICY(Enum):
     ImageHeapPolicy = 14  # RTL_IMAGE_MITIGATION_HEAP_POLICY
     ImageUserShadowStackPolicy = 15  # RTL_IMAGE_MITIGATION_USER_SHADOW_STACK_POLICY
     MaxImageMitigationPolicy = 16
-make_global(IMAGE_MITIGATION_POLICY)
 
 class RTL_IMAGE_MITIGATION_OPTION_STATE(Enum):
     RtlMitigationOptionStateNotConfigured = 0
@@ -2306,7 +2161,6 @@ class RTL_IMAGE_MITIGATION_OPTION_STATE(Enum):
     RtlMitigationOptionStateOff = 2
     RtlMitigationOptionStateForce = 3
     RtlMitigationOptionStateOption = 4
-make_global(RTL_IMAGE_MITIGATION_OPTION_STATE)
 
 class APPCONTAINER_SID_TYPE(Enum):
     NotAppContainerSidType = 0
@@ -2314,13 +2168,11 @@ class APPCONTAINER_SID_TYPE(Enum):
     ParentAppContainerSidType = 2
     InvalidAppContainerSidType = 3
     MaxAppContainerSidType = 4
-make_global(APPCONTAINER_SID_TYPE)
 
 class STATE_LOCATION_TYPE(Enum):
     LocationTypeRegistry = 0
     LocationTypeFileSystem = 1
     LocationTypeMaximum = 2
-make_global(STATE_LOCATION_TYPE)
 
 class RTL_BSD_ITEM_TYPE(Enum):
     RtlBsdItemVersionNumber = 0  # q; s: ULONG
@@ -2342,7 +2194,6 @@ class RTL_BSD_ITEM_TYPE(Enum):
     RtlBsdPowerTransitionExtension = 16
     RtlBsdItemFeatureConfigurationState = 17  # q; s: ULONG
     RtlBsdItemMax = 18
-make_global(RTL_BSD_ITEM_TYPE)
 
 class TOKEN_SECURITY_ATTRIBUTE_OPERATION(Enum):
     TOKEN_SECURITY_ATTRIBUTE_OPERATION_NONE = 0
@@ -2350,13 +2201,11 @@ class TOKEN_SECURITY_ATTRIBUTE_OPERATION(Enum):
     TOKEN_SECURITY_ATTRIBUTE_OPERATION_ADD = 2
     TOKEN_SECURITY_ATTRIBUTE_OPERATION_DELETE = 3
     TOKEN_SECURITY_ATTRIBUTE_OPERATION_REPLACE = 4
-make_global(TOKEN_SECURITY_ATTRIBUTE_OPERATION)
 
 class TP_TRACE_TYPE(Enum):
     TpTraceThreadPriority = 1
     TpTraceThreadAffinity = 2
     MaxTpTraceType = 3
-make_global(TP_TRACE_TYPE)
 
 class WOW64_SHARED_INFORMATION(Enum):
     SharedNtdll32LdrInitializeThunk = 0
@@ -2371,7 +2220,6 @@ class WOW64_SHARED_INFORMATION(Enum):
     SharedNtdll32BaseAddress = 9
     SharedNtdll32LdrSystemDllInitBlock = 10
     Wow64SharedPageEntriesCount = 11
-make_global(WOW64_SHARED_INFORMATION)
 
 class DOMAIN_INFORMATION_CLASS(Enum):
     DomainPasswordInformation = 1  # q; s: DOMAIN_PASSWORD_INFORMATION
@@ -2387,22 +2235,18 @@ class DOMAIN_INFORMATION_CLASS(Enum):
     DomainGeneralInformation2 = 11  # q: DOMAIN_GENERAL_INFORMATION2
     DomainLockoutInformation = 12  # q; s: DOMAIN_LOCKOUT_INFORMATION
     DomainModifiedInformation2 = 13  # q: DOMAIN_MODIFIED_INFORMATION2
-make_global(DOMAIN_INFORMATION_CLASS)
 
 class DOMAIN_SERVER_ENABLE_STATE(Enum):
     DomainServerEnabled = 1
     DomainServerDisabled = 2
-make_global(DOMAIN_SERVER_ENABLE_STATE)
 
 class DOMAIN_SERVER_ROLE(Enum):
     DomainServerRoleBackup = 2
     DomainServerRolePrimary = 3
-make_global(DOMAIN_SERVER_ROLE)
 
 class DOMAIN_PASSWORD_CONSTRUCTION(Enum):
     DomainPasswordSimple = 1
     DomainPasswordComplex = 2
-make_global(DOMAIN_PASSWORD_CONSTRUCTION)
 
 class DOMAIN_DISPLAY_INFORMATION(Enum):
     DomainDisplayUser = 1  # DOMAIN_DISPLAY_USER
@@ -2411,11 +2255,9 @@ class DOMAIN_DISPLAY_INFORMATION(Enum):
     DomainDisplayOemUser = 4  # DOMAIN_DISPLAY_OEM_USER
     DomainDisplayOemGroup = 5  # DOMAIN_DISPLAY_OEM_GROUP
     DomainDisplayServer = 6
-make_global(DOMAIN_DISPLAY_INFORMATION)
 
 class DOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION(Enum):
     DomainLocalizableAccountsBasic = 1
-make_global(DOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION)
 
 class GROUP_INFORMATION_CLASS(Enum):
     GroupGeneralInformation = 1  # q: GROUP_GENERAL_INFORMATION
@@ -2423,7 +2265,6 @@ class GROUP_INFORMATION_CLASS(Enum):
     GroupAttributeInformation = 3  # q; s: GROUP_ATTRIBUTE_INFORMATION
     GroupAdminCommentInformation = 4  # q; s: GROUP_ADM_COMMENT_INFORMATION
     GroupReplicationInformation = 5
-make_global(GROUP_INFORMATION_CLASS)
 
 class ALIAS_INFORMATION_CLASS(Enum):
     AliasGeneralInformation = 1  # q: ALIAS_GENERAL_INFORMATION
@@ -2431,7 +2272,6 @@ class ALIAS_INFORMATION_CLASS(Enum):
     AliasAdminCommentInformation = 3  # q; s: ALIAS_ADM_COMMENT_INFORMATION
     AliasReplicationInformation = 4
     AliasExtendedInformation = 5
-make_global(ALIAS_INFORMATION_CLASS)
 
 class USER_INFORMATION_CLASS(Enum):
     UserGeneralInformation = 1  # q: USER_GENERAL_INFORMATION
@@ -2466,7 +2306,6 @@ class USER_INFORMATION_CLASS(Enum):
     UserUnknownTodoInformation = 30
     UserInternal7Information = 31  # USER_INTERNAL7_INFORMATION
     UserInternal8Information = 32  # USER_INTERNAL8_INFORMATION
-make_global(USER_INFORMATION_CLASS)
 
 class SECURITY_DB_DELTA_TYPE(Enum):
     SecurityDbNew = 1
@@ -2477,7 +2316,6 @@ class SECURITY_DB_DELTA_TYPE(Enum):
     SecurityDbChangeMemberDel = 6
     SecurityDbChange = 7
     SecurityDbChangePassword = 8
-make_global(SECURITY_DB_DELTA_TYPE)
 
 class SECURITY_DB_OBJECT_TYPE(Enum):
     SecurityDbObjectSamDomain = 1
@@ -2488,19 +2326,16 @@ class SECURITY_DB_OBJECT_TYPE(Enum):
     SecurityDbObjectLsaTDomain = 6
     SecurityDbObjectLsaAccount = 7
     SecurityDbObjectLsaSecret = 8
-make_global(SECURITY_DB_OBJECT_TYPE)
 
 class SAM_ACCOUNT_TYPE(Enum):
     SamObjectUser = 1
     SamObjectGroup = 2
     SamObjectAlias = 3
-make_global(SAM_ACCOUNT_TYPE)
 
 class PASSWORD_POLICY_VALIDATION_TYPE(Enum):
     SamValidateAuthentication = 1
     SamValidatePasswordChange = 2
     SamValidatePasswordReset = 3
-make_global(PASSWORD_POLICY_VALIDATION_TYPE)
 
 class SAM_VALIDATE_VALIDATION_STATUS(Enum):
     SamValidateSuccess = 0
@@ -2514,11 +2349,9 @@ class SAM_VALIDATE_VALIDATION_STATUS(Enum):
     SamValidatePasswordNotComplexEnough = 8
     SamValidatePasswordTooRecent = 9
     SamValidatePasswordFilterError = 10
-make_global(SAM_VALIDATE_VALIDATION_STATUS)
 
 class SAM_GENERIC_OPERATION_TYPE(Enum):
     SamObjectChangeNotificationOperation = 0
-make_global(SAM_GENERIC_OPERATION_TYPE)
 
 class VDMSERVICECLASS(Enum):
     VdmStartExecution = 0
@@ -2537,7 +2370,6 @@ class VDMSERVICECLASS(Enum):
     VdmPMCliControl = 13
     VdmQueryVdmProcess = 14
     VdmPreInitialize = 15
-make_global(VDMSERVICECLASS)
 
 class TRACE_CONTROL_INFORMATION_CLASS(Enum):
     TraceControlStartLogger = 1  # inout WMI_LOGGER_INFORMATION
@@ -2582,17 +2414,14 @@ class TRACE_CONTROL_INFORMATION_CLASS(Enum):
     TraceControlMaxPmcCounter = 43  # out ULONG
     TraceControlQueryUsedProcessorCount = 44  # ULONG // since WIN11
     TraceControlGetPmcOwnership = 45
-make_global(TRACE_CONTROL_INFORMATION_CLASS)
 
 class AUDIT_EVENT_TYPE(Enum):
     AuditEventObjectAccess = 0
     AuditEventDirectoryServiceAccess = 1
-make_global(AUDIT_EVENT_TYPE)
 
 class TOKEN_TYPE(Enum):
     TokenPrimary = 1
     TokenImpersonation = 2
-make_global(TOKEN_TYPE)
 
 class KTMOBJECT_TYPE(Enum):
     KTMOBJECT_TRANSACTION = 0
@@ -2600,7 +2429,6 @@ class KTMOBJECT_TYPE(Enum):
     KTMOBJECT_RESOURCE_MANAGER = 2
     KTMOBJECT_ENLISTMENT = 3
     KTMOBJECT_INVALID = 4
-make_global(KTMOBJECT_TYPE)
 
 class DEVICE_POWER_STATE(Enum):
     PowerDeviceUnspecified = 0
@@ -2609,7 +2437,6 @@ class DEVICE_POWER_STATE(Enum):
     PowerDeviceD2 = 3
     PowerDeviceD3 = 4
     PowerDeviceMaximum = 5
-make_global(DEVICE_POWER_STATE)
 
 class SYSTEM_POWER_STATE(Enum):
     PowerSystemUnspecified = 0
@@ -2620,13 +2447,11 @@ class SYSTEM_POWER_STATE(Enum):
     PowerSystemHibernate = 5
     PowerSystemShutdown = 6
     PowerSystemMaximum = 7
-make_global(SYSTEM_POWER_STATE)
 
 class ENLISTMENT_INFORMATION_CLASS(Enum):
     EnlistmentBasicInformation = 0
     EnlistmentRecoveryInformation = 1
     EnlistmentCrmInformation = 2
-make_global(ENLISTMENT_INFORMATION_CLASS)
 
 class JOBOBJECTINFOCLASS(Enum):
     JobObjectBasicAccountingInformation = 1
@@ -2679,12 +2504,10 @@ class JOBOBJECTINFOCLASS(Enum):
     JobObjectReserved26Information = 48
     JobObjectReserved27Information = 49
     MaxJobObjectInfoClass = 50
-make_global(JOBOBJECTINFOCLASS)
 
 class RESOURCEMANAGER_INFORMATION_CLASS(Enum):
     ResourceManagerBasicInformation = 0
     ResourceManagerCompletionInformation = 1
-make_global(RESOURCEMANAGER_INFORMATION_CLASS)
 
 class TOKEN_INFORMATION_CLASS(Enum):
     TokenUser = 1
@@ -2736,7 +2559,6 @@ class TOKEN_INFORMATION_CLASS(Enum):
     TokenIsSandboxed = 47
     TokenIsAppSilo = 48
     MaxTokenInfoClass = 49  # MaxTokenInfoClass should always be the last enum
-make_global(TOKEN_INFORMATION_CLASS)
 
 class TRANSACTION_INFORMATION_CLASS(Enum):
     TransactionBasicInformation = 0
@@ -2745,7 +2567,6 @@ class TRANSACTION_INFORMATION_CLASS(Enum):
     TransactionSuperiorEnlistmentInformation = 3
     TransactionBindInformation = 4  # private and deprecated
     TransactionDTCPrivateInformation = 5  # private and deprecated
-make_global(TRANSACTION_INFORMATION_CLASS)
 
 class TRANSACTIONMANAGER_INFORMATION_CLASS(Enum):
     TransactionManagerBasicInformation = 0
@@ -2754,5 +2575,4 @@ class TRANSACTIONMANAGER_INFORMATION_CLASS(Enum):
     TransactionManagerRecoveryInformation = 4
     TransactionManagerOnlineProbeInformation = 3
     TransactionManagerOldestTransactionInformation = 5
-make_global(TRANSACTIONMANAGER_INFORMATION_CLASS)
 

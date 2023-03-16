@@ -21,7 +21,7 @@ if __name__ == "__main__":
                     if line.startswith("version = "):
                         line = f"version = {ref_name}\n"
                     f.write(line)
-        except:
+        except Exception:
             pass
     # HACK: support [options].develop_requires install development dependencies
     if "develop" in sys.argv:

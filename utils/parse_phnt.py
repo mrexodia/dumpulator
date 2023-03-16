@@ -48,7 +48,6 @@ class EnumType:
             if evalue.comment:
                 r += f"  # {evalue.comment}"
             r += "\n"
-        r += f"make_global({self.name})\n"
         return r
 
 class FunctionArgument:
@@ -386,7 +385,6 @@ def main():
             header = """
 # Automatically generated with parse_phnt.py, do not edit
 from enum import Enum
-from .ntprimitives import make_global
             """
             f.write(header.strip() + "\n\n")
 
