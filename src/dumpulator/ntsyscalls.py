@@ -2,7 +2,7 @@ import ctypes
 import struct
 import unicorn
 
-from .dumpulator import Dumpulator, syscall_functions, ExceptionInfo, ExceptionType
+from .dumpulator import Dumpulator
 from .native import *
 from .handles import *
 from .memory import *
@@ -13,6 +13,7 @@ def syscall(func):
     if name[:2] not in ["Zw", "Nt"]:
         raise Exception(f"All syscalls have to be prefixed with 'Zw' or 'Nt'")
     # Add the function with both prefixes to avoid name bugs
+    from .dumpulator import syscall_functions
     syscall_functions["Zw" + name[2:]] = func
     syscall_functions["Nt" + name[2:]] = func
     return func
@@ -779,7 +780,10 @@ def ZwContinue(dp: Dumpulator,
                ):
     # Trigger a context switch
     assert not TestAlert
-    exception = ExceptionInfo()
+
+    # TODO: move this to a dedicated helper method
+    from .dumpulator import UnicornExceptionInfo, ExceptionType
+    exception = UnicornExceptionInfo()
     exception.type = ExceptionType.ContextSwitch
     exception.final = True
     context_type = CONTEXT if dp.ptr_size() == 8 else WOW64_CONTEXT
@@ -4519,7 +4523,10 @@ def ZwTerminateProcess(dp: Dumpulator,
                        ):
     assert ProcessHandle == 0 or ProcessHandle == dp.NtCurrentProcess()
     dp.stop(ExitStatus)
-    exception = ExceptionInfo()
+
+    # TODO: move this to a dedicated helper method
+    from .dumpulator import UnicornExceptionInfo, ExceptionType
+    exception = UnicornExceptionInfo()
     exception.type = ExceptionType.Terminate
     exception.final = True
     exception.context = dp._uc.context_save()
