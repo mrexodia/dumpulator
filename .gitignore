@@ -1,7 +1,7 @@
 build/
 dist/
 *.egg-info/
-venv/
+venv*/
 .idea/
 __pycache__/
 *.pyc
@@ -10,3 +10,6 @@ __pycache__/
 /tests/*.trace64
 /tests/*.txt
 /tests/*.dmp
+.DS_Store
+.vscode/
+*.austin
