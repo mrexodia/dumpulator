@@ -83,11 +83,13 @@ The `quiet` flag suppresses the logs about DLLs loaded and memory regions set up
 
 ### Custom syscall implementation
 
-**Note**: This part of dumpulator still needs a lot of work.
+You can (re)implement syscalls by using the `@syscall` decorator:
 
 ```python
-from dumpulator import Dumpulator, syscall
+from dumpulator import *
 from dumpulator.native import *
+from dumpulator.handles import *
+from dumpulator.memory import *
 
 @syscall
 def ZwQueryVolumeInformationFile(dp: Dumpulator,
@@ -100,7 +102,90 @@ def ZwQueryVolumeInformationFile(dp: Dumpulator,
     return STATUS_NOT_IMPLEMENTED
 ```
 
-You can get the syscall parameters from [ntsyscalls.py](https://github.com/mrexodia/dumpulator/blob/main/src/dumpulator/ntsyscalls.py). There are also a lot of examples there on how to use the API.
+All the syscall function prototypes can be found in [ntsyscalls.py](https://github.com/mrexodia/dumpulator/blob/main/src/dumpulator/ntsyscalls.py). There are also a lot of examples  there on how to use the API.
+
+To hook an existing syscall implementation you can do the following:
+
+```python
+import dumpulator.ntsyscalls as ntsyscalls
+
+@syscall
+def ZwOpenProcess(dp: Dumpulator,
+                  ProcessHandle: Annotated[P[HANDLE], SAL("_Out_")],
+                  DesiredAccess: Annotated[ACCESS_MASK, SAL("_In_")],
+                  ObjectAttributes: Annotated[P[OBJECT_ATTRIBUTES], SAL("_In_")],
+                  ClientId: Annotated[P[CLIENT_ID], SAL("_In_opt_")]
+                  ):
+    process_id = ClientId.read_ptr()
+    assert process_id == dp.parent_process_id
+    ProcessHandle.write_ptr(0x1337)
+    return STATUS_SUCCESS
+
+@syscall
+def ZwQueryInformationProcess(dp: Dumpulator,
+                              ProcessHandle: Annotated[HANDLE, SAL("_In_")],
+                              ProcessInformationClass: Annotated[PROCESSINFOCLASS, SAL("_In_")],
+                              ProcessInformation: Annotated[PVOID, SAL("_Out_writes_bytes_(ProcessInformationLength)")],
+                              ProcessInformationLength: Annotated[ULONG, SAL("_In_")],
+                              ReturnLength: Annotated[P[ULONG], SAL("_Out_opt_")]
+                              ):
+    if ProcessInformationClass == PROCESSINFOCLASS.ProcessImageFileNameWin32:
+        if ProcessHandle == dp.NtCurrentProcess():
+            main_module = dp.modules[dp.modules.main]
+            image_path = main_module.path
+        elif ProcessHandle == 0x1337:
+            image_path = R"C:\Windows\explorer.exe"
+        else:
+            raise NotImplementedError()
+        buffer = UNICODE_STRING.create_buffer(image_path, ProcessInformation)
+        assert ProcessInformationLength >= len(buffer)
+        if ReturnLength.ptr:
+            dp.write_ulong(ReturnLength.ptr, len(buffer))
+        ProcessInformation.write(buffer)
+        return STATUS_SUCCESS
+    return ntsyscalls.ZwQueryInformationProcess(dp,
+                                                ProcessHandle,
+                                                ProcessInformationClass,
+                                                ProcessInformation,
+                                                ProcessInformationLength,
+                                                ReturnLength
+                                                )
+```
+
+### Custom structures
+
+Since `v0.2.0` there is support for easily declaring your own structures:
+
+```python
+from dumpulator.native import *
+
+class PROCESS_BASIC_INFORMATION(Struct):
+    ExitStatus: ULONG
+    PebBaseAddress: PVOID
+    AffinityMask: KAFFINITY
+    BasePriority: KPRIORITY
+    UniqueProcessId: ULONG_PTR
+    InheritedFromUniqueProcessId: ULONG_PTR
+```
+
+To instantiate these structures you have to use a `Dumpulator` instance:
+
+```python
+pbi = PROCESS_BASIC_INFORMATION(dp)
+assert ProcessInformationLength == Struct.sizeof(pbi)
+pbi.ExitStatus = 259  # STILL_ACTIVE
+pbi.PebBaseAddress = dp.peb
+pbi.AffinityMask = 0xFFFF
+pbi.BasePriority = 8
+pbi.UniqueProcessId = dp.process_id
+pbi.InheritedFromUniqueProcessId = dp.parent_process_id
+ProcessInformation.write(bytes(pbi))
+if ReturnLength.ptr:
+    dp.write_ulong(ReturnLength.ptr, Struct.sizeof(pbi))
+return STATUS_SUCCESS
+```
+
+If you pass a pointer value as a second argument the structure will be read from memory. You can declare pointers with `myptr: P[MY_STRUCT]` and dereferences them with `myptr[0]`.
 
 ## Collecting the dump
 
