@@ -1493,6 +1493,8 @@ def _arg_type_string(arg):
     return type(arg).__name__
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
+    if dp.trace:
+        dp.trace.flush()
     try:
         # Extract exception information
         exception = UnicornExceptionInfo()
@@ -1643,6 +1645,8 @@ def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
 
 def _hook_invalid(uc: Uc, dp: Dumpulator):
     address = dp.regs.cip
+    if dp.trace:
+        dp.trace.flush()
     # HACK: unicorn cannot gracefully exit in all contexts
     if dp.kill_me:
         dp.error(f"terminating emulation...")
