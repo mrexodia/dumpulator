@@ -100,14 +100,12 @@ jobs:
         python setup.py sdist
 
     - name: Publish to PyPI
-      # https://github.com/pypa/gh-action-pypi-publish/releases/tag/v1.6.4
-      uses: pypa/gh-action-pypi-publish@c7f29f7adef1a245bd91520e94867e5c6eedddcc
+      uses: pypa/gh-action-pypi-publish@0bf742be3ebe032c25dd15117957dc15d0cfc38d # v1.8.5
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Release
-      # https://github.com/softprops/action-gh-release/releases/tag/v0.1.14
-      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      uses: softprops/action-gh-release@c9b46fe7aad9f02afd89b12450b780f52dacfb2d # master 2023-03-26
       with:
         generate_release_notes: true
       env:
