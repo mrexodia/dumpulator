@@ -457,13 +457,6 @@ class Dumpulator(Architecture):
         self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
 
         # Handle WoW64 support
-        def patch_wow64(patch_addr):
-            # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
-            # mov edx, esp; sysenter; ret
-            KiFastSystemCall = b"\x8B\xD4\x0F\x34\x90\x90\xC3"
-            self.write(patch_addr, KiFastSystemCall)
-            self.wow64 = True
-
         ntdll = self.modules["ntdll.dll"]
         Wow64Transition = ntdll.find_export("Wow64Transition")
         ZwWow64ReadVirtualMemory64 = ntdll.find_export("ZwWow64ReadVirtualMemory64")
@@ -471,14 +464,19 @@ class Dumpulator(Architecture):
             # This exists from Windows 10 1607 (Build: 14393)
             patch_addr = self.read_ptr(Wow64Transition.address)
             self.info(f"Patching Wow64Transition: [{hex(Wow64Transition.address)}] -> {hex(patch_addr)}")
-            patch_wow64(patch_addr)
+            # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
+            # sysenter; nop; nop; ret
+            self.write(patch_addr, b"\x0F\x34\x90\x90\xC3")
+            self.wow64 = True
         elif ZwWow64ReadVirtualMemory64:
             # This function exists since Windows XP
             # TODO: Implement by finding EA ???????? 3300 in wow64cpu.dll instead
             # Reference: https://github.com/x64dbg/ScyllaHide/blob/a727ac39/InjectorCLI/RemoteHook.cpp#L354-L434
             patch_addr = self.read_ptr(self.teb + 0xC0)
             self.error(f"Unsupported WoW64 OS version detected, trampoline: {hex(patch_addr)}")
-            patch_wow64(patch_addr)
+            # sysenter; nop; nop; jmp [esp]
+            self.write(patch_addr, b"\x0F\x34\x90\x90\xFF\x24\x24")
+            self.wow64 = True
         else:
             self.wow64 = False
 
