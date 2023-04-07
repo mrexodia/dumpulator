@@ -455,8 +455,34 @@ class Dumpulator(Architecture):
 
     def _setup_pebteb(self, thread):
         self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
-        self.wow64 = self.modules["ntdll.dll"].find_export("Wow64Transition") is not None
 
+        # Handle WoW64 support
+        def patch_wow64(patch_addr):
+            # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
+            # mov edx, esp; sysenter; ret
+            KiFastSystemCall = b"\x8B\xD4\x0F\x34\x90\x90\xC3"
+            self.write(patch_addr, KiFastSystemCall)
+            self.wow64 = True
+
+        ntdll = self.modules["ntdll.dll"]
+        Wow64Transition = ntdll.find_export("Wow64Transition")
+        ZwWow64ReadVirtualMemory64 = ntdll.find_export("ZwWow64ReadVirtualMemory64")
+        if Wow64Transition:
+            # This exists from Windows 10 1607 (Build: 14393)
+            patch_addr = self.read_ptr(Wow64Transition.address)
+            self.info(f"Patching Wow64Transition: [{hex(Wow64Transition.address)}] -> {hex(patch_addr)}")
+            patch_wow64(patch_addr)
+        elif ZwWow64ReadVirtualMemory64:
+            # This function exists since Windows XP
+            # TODO: Implement by finding EA ???????? 3300 in wow64cpu.dll instead
+            # Reference: https://github.com/x64dbg/ScyllaHide/blob/a727ac39/InjectorCLI/RemoteHook.cpp#L354-L434
+            patch_addr = self.read_ptr(self.teb + 0xC0)
+            self.error(f"Unsupported WoW64 OS version detected, trampoline: {hex(patch_addr)}")
+            patch_wow64(patch_addr)
+        else:
+            self.wow64 = False
+
+        # Get thread information
         for i in range(0, len(self._minidump.threads.threads)):
             thread = self._minidump.threads.threads[i]
             teb = thread.Teb & 0xFFFFFFFFFFFFF000
@@ -800,21 +826,13 @@ class Dumpulator(Architecture):
     def _setup_syscalls(self):
         # Load the ntdll module from memory
         ntdll = self.modules["ntdll.dll"]
+        self.KiUserExceptionDispatcher = ntdll.find_export("KiUserExceptionDispatcher").address
+        self.LdrLoadDll = ntdll.find_export("LdrLoadDll").address
+
         nt_syscalls = []
         for export in ntdll.exports:
             if export.name and export.name.startswith("Zw"):
                 nt_syscalls.append((export.address, export.name))
-            elif export.name == "Wow64Transition":
-                patch_addr = self.read_ptr(export.address)
-                self.info(f"Patching Wow64Transition: {hex(export.address)} -> {hex(patch_addr)}")
-                # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
-                # mov edx, esp; sysenter; ret
-                KiFastSystemCall = b"\x8B\xD4\x0F\x34\x90\x90\xC3"
-                self.write(patch_addr, KiFastSystemCall)
-            elif export.name == "KiUserExceptionDispatcher":
-                self.KiUserExceptionDispatcher = export.address
-            elif export.name == "LdrLoadDll":
-                self.LdrLoadDll = export.address
 
         def add_syscalls(syscalls, table):
             # The index when sorting by RVA is the syscall index
@@ -1493,6 +1511,8 @@ def _arg_type_string(arg):
     return type(arg).__name__
 
 def _hook_interrupt(uc: Uc, number, dp: Dumpulator):
+    if dp.trace:
+        dp.trace.flush()
     try:
         # Extract exception information
         exception = UnicornExceptionInfo()
@@ -1643,6 +1663,8 @@ def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
 
 def _hook_invalid(uc: Uc, dp: Dumpulator):
     address = dp.regs.cip
+    if dp.trace:
+        dp.trace.flush()
     # HACK: unicorn cannot gracefully exit in all contexts
     if dp.kill_me:
         dp.error(f"terminating emulation...")
