@@ -1431,6 +1431,7 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
         instr = None  # Unsupported instruction
     except IndexError:
         instr = None  # Likely invalid memory
+
     address_name = dp.exports.get(address, "")
 
     module = ""
@@ -1456,6 +1457,10 @@ def _hook_code(uc: Uc, address, size, dp: Dumpulator):
             line += instr.op_str
         for reg in _get_regs(instr):
             line += f"|{reg}={hex(dp.regs.__getattr__(reg))}"
+        if instr.mnemonic == "call":
+            # print return address
+            ret_address = address + instr.size
+            line += f"|return_address={hex(ret_address)}"
         if instr.mnemonic in {"syscall", "sysenter"}:
             line += f"|sequence_id=[{dp.sequence_id}]"
     else:
