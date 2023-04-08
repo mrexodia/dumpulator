@@ -321,7 +321,8 @@ class Dumpulator(Architecture):
         self.handles = HandleManager()
         self._setup_handles()
         self._setup_registry()
-        self.kill_me = None
+        self.stopped = False
+        self.kill_exception = None
         self.exit_code = None
         self.exports = self._all_exports()
         self._exception = UnicornExceptionInfo()
@@ -457,13 +458,6 @@ class Dumpulator(Architecture):
         self.teb = thread.Teb & 0xFFFFFFFFFFFFF000
 
         # Handle WoW64 support
-        def patch_wow64(patch_addr):
-            # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
-            # mov edx, esp; sysenter; ret
-            KiFastSystemCall = b"\x8B\xD4\x0F\x34\x90\x90\xC3"
-            self.write(patch_addr, KiFastSystemCall)
-            self.wow64 = True
-
         ntdll = self.modules["ntdll.dll"]
         Wow64Transition = ntdll.find_export("Wow64Transition")
         ZwWow64ReadVirtualMemory64 = ntdll.find_export("ZwWow64ReadVirtualMemory64")
@@ -471,14 +465,19 @@ class Dumpulator(Architecture):
             # This exists from Windows 10 1607 (Build: 14393)
             patch_addr = self.read_ptr(Wow64Transition.address)
             self.info(f"Patching Wow64Transition: [{hex(Wow64Transition.address)}] -> {hex(patch_addr)}")
-            patch_wow64(patch_addr)
+            # See: https://opcode0x90.wordpress.com/2007/05/18/kifastsystemcall-hook/
+            # sysenter; nop; nop; ret
+            self.write(patch_addr, b"\x0F\x34\x90\x90\xC3")
+            self.wow64 = True
         elif ZwWow64ReadVirtualMemory64:
             # This function exists since Windows XP
             # TODO: Implement by finding EA ???????? 3300 in wow64cpu.dll instead
             # Reference: https://github.com/x64dbg/ScyllaHide/blob/a727ac39/InjectorCLI/RemoteHook.cpp#L354-L434
             patch_addr = self.read_ptr(self.teb + 0xC0)
             self.error(f"Unsupported WoW64 OS version detected, trampoline: {hex(patch_addr)}")
-            patch_wow64(patch_addr)
+            # sysenter; nop; nop; jmp [esp]
+            self.write(patch_addr, b"\x0F\x34\x90\x90\xFF\x24\x24")
+            self.wow64 = True
         else:
             self.wow64 = False
 
@@ -945,6 +944,8 @@ class Dumpulator(Architecture):
 
         if self._exception_hook is not None:
             hook_result = self._exception_hook(self._exception)
+            if self.stopped:
+                return None
             if hook_result is not None:
                 # Clear the pending exception
                 self._last_exception = self._exception
@@ -1075,12 +1076,16 @@ rsp in KiUserExceptionDispatcher:
         return self.KiUserExceptionDispatcher
 
     def start(self, begin, end=0xffffffffffffffff, count=0) -> None:
+        # Clear stop state
+        self.stopped = False
+        self.kill_exception = None
+        self.exit_code = None
         # Clear exceptions before starting
         self._exception = UnicornExceptionInfo()
         emu_begin = begin
         emu_until = end
         emu_count = count
-        while True:
+        while not self.stopped:
             try:
                 if self._exception.type != ExceptionType.NoException:
                     if self._exception.final:
@@ -1095,6 +1100,8 @@ rsp in KiUserExceptionDispatcher:
 
                         try:
                             emu_begin = self.handle_exception()
+                            if self.stopped:
+                                break
                         except Exception:
                             traceback.print_exc()
                             self.error(f"exception during exception handling (stack overflow?)")
@@ -1119,15 +1126,14 @@ rsp in KiUserExceptionDispatcher:
                         emu_count = self._exception.tb_icount + 1
 
                 self.info(f"emu_start({hex(emu_begin)}, {hex(emu_until)}, {emu_count})")
-                self.kill_me = None
                 self._uc.emu_start(emu_begin, until=emu_until, count=emu_count)
                 self.info(f'emulation finished, cip = {hex(self.regs.cip)}')
                 if self.exit_code is not None:
                     self.info(f"exit code: {hex(self.exit_code)}")
                 break
             except UcError as err:
-                if self.kill_me is not None and type(self.kill_me) is not UcError:
-                    raise self.kill_me
+                if self.kill_exception is not None and type(self.kill_exception) is not UcError:
+                    raise self.kill_exception from None
                 if self._exception.type != ExceptionType.NoException:
                     # Handle the exception outside of the except handler
                     continue
@@ -1144,17 +1150,17 @@ rsp in KiUserExceptionDispatcher:
         except Exception:
             traceback.print_exc()
             self.error("Invalid type passed to exit_code!")
+        self.stopped = True
         self._uc.emu_stop()
 
     def raise_kill(self, exc=None):
         # HACK: You need to use this to exit from hooks (although it might not always work)
         self.regs.cip = FORCE_KILL_ADDR
-        self.kill_me = exc
-        if exc is not None:
-            return exc
-        else:
-            self.kill_me = True
-            self._uc.emu_stop()
+        self.stop()
+        if exc is None:
+            exc = Exception()
+        self.kill_exception = exc
+        return exc
 
     def NtCurrentProcess(self):
         return 0xFFFFFFFFFFFFFFFF if self._x64 else 0xFFFFFFFF
@@ -1294,12 +1300,12 @@ def _hook_code_exception(uc: Uc, address, size, dp: Dumpulator):
 
 def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
     if dp._pages.handle_lazy_page(address, min(size, PAGE_SIZE)):
-        dp.debug(f"committed lazy page {hex(address)}[{hex(size)}]")
+        dp.debug(f"committed lazy page {hex(address)}[{hex(size)}] (cip: {hex(dp.regs.cip)})")
         return True
 
     fetch_accesses = [UC_MEM_FETCH, UC_MEM_FETCH_PROT, UC_MEM_FETCH_UNMAPPED]
-    if access == UC_MEM_FETCH_UNMAPPED and FORCE_KILL_ADDR - 0x10 <= address <= FORCE_KILL_ADDR + 0x10 and dp.kill_me is not None:
-        dp.error(f"forced exit memory operation {access} of {hex(address)}[{hex(size)}] = {hex(value)}")
+    if dp.stopped and access == UC_MEM_FETCH_UNMAPPED and FORCE_KILL_ADDR - 0x10 <= address <= FORCE_KILL_ADDR + 0x10:
+        dp.error(f"force exit fetch of {hex(address)}[{hex(size)}]")
         return False
     if dp._exception.final and access in fetch_accesses:
         dp.info(f"fetch from {hex(address)}[{size}] already reported")
@@ -1370,7 +1376,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             dp._exception.final = True
 
             # Stop emulation (we resume it on KiUserExceptionDispatcher later)
-            dp.stop()
+            dp._uc.emu_stop()
             return False
 
         # There should not be an exception active
@@ -1389,7 +1395,7 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
         dp._exception = exception
 
         # Stop emulation (we resume execution later)
-        dp.stop()
+        dp._uc.emu_stop()
         return False
     except AssertionError as err:
         traceback.print_exc()
@@ -1423,50 +1429,53 @@ def _get_regs(instr, include_write=False):
     return regs
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
-    code = b""
     try:
-        code = dp.read(address, min(size, 15))
-        instr = next(dp.cs.disasm(code, address, 1))
-    except StopIteration:
-        instr = None  # Unsupported instruction
-    except IndexError:
-        instr = None  # Likely invalid memory
+        code = b""
+        try:
+            code = dp.read(address, min(size, 15))
+            instr = next(dp.cs.disasm(code, address, 1))
+        except StopIteration:
+            instr = None  # Unsupported instruction
+        except IndexError:
+            instr = None  # Likely invalid memory
+        address_name = dp.exports.get(address, "")
 
-    address_name = dp.exports.get(address, "")
+        module = ""
+        if dp.last_module and address in dp.last_module:
+            # same module again
+            pass
+        else:
+            # new module
+            dp.last_module = dp.modules.find(address)
+            if dp.last_module:
+                module = dp.last_module.name
 
-    module = ""
-    if dp.last_module and address in dp.last_module:
-        # same module again
-        pass
-    else:
-        # new module
-        dp.last_module = dp.modules.find(address)
-        if dp.last_module:
-            module = dp.last_module.name
+        if address_name:
+            address_name = " " + address_name
+        elif module:
+            address_name = " " + module
 
-    if address_name:
-        address_name = " " + address_name
-    elif module:
-        address_name = " " + module
-
-    line = f"{hex(address)}{address_name}|"
-    if instr is not None:
-        line += instr.mnemonic
-        if instr.op_str:
-            line += " "
-            line += instr.op_str
-        for reg in _get_regs(instr):
-            line += f"|{reg}={hex(dp.regs.__getattr__(reg))}"
-        if instr.mnemonic == "call":
-            # print return address
-            ret_address = address + instr.size
-            line += f"|return_address={hex(ret_address)}"
-        if instr.mnemonic in {"syscall", "sysenter"}:
-            line += f"|sequence_id=[{dp.sequence_id}]"
-    else:
-        line += f"??? (code: {code.hex()}, size: {hex(size)})"
-    line += "\n"
-    dp.trace.write(line)
+        line = f"{hex(address)}{address_name}|"
+        if instr is not None:
+            line += instr.mnemonic
+            if instr.op_str:
+                line += " "
+                line += instr.op_str
+            for reg in _get_regs(instr):
+                line += f"|{reg}={hex(dp.regs.__getattr__(reg))}"
+            if instr.mnemonic == "call":
+                # print return address
+                ret_address = address + instr.size
+                line += f"|return_address={hex(ret_address)}"
+            elif instr.mnemonic in {"syscall", "sysenter"}:
+                line += f"|sequence_id=[{dp.sequence_id}]"
+        else:
+            line += f"??? (code: {code.hex()}, size: {hex(size)})"
+        line += "\n"
+        dp.trace.write(line)
+    except (KeyboardInterrupt, SystemExit) as e:
+        dp.stop()
+        raise e
 
 def _unicode_string_to_string(dp: Dumpulator, arg: P[UNICODE_STRING]):
     try:
@@ -1629,7 +1638,7 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
                 if isinstance(status, ExceptionInfo):
                     print("context switch, stopping emulation")
                     dp._exception = status
-                    raise dp.raise_kill(UcError(UC_ERR_EXCEPTION)) from None
+                    raise UcError(UC_ERR_EXCEPTION)
                 else:
                     dp.info(f"status = {hex(status)}")
                     dp.regs.cax = status
@@ -1671,7 +1680,7 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
     if dp.trace:
         dp.trace.flush()
     # HACK: unicorn cannot gracefully exit in all contexts
-    if dp.kill_me:
+    if dp.stopped:
         dp.error(f"terminating emulation...")
         return False
     dp.error(f"invalid instruction at {hex(address)}")
