@@ -460,7 +460,6 @@ class WOW64_CONTEXT(ctypes.Structure):
         assert regs.gs == self.SegGs & 0xFFFF
 
         # TODO: implement xmm
-
 assert ctypes.sizeof(WOW64_CONTEXT) == 0x2cc
 
 class EXCEPTION_RECORD32(ctypes.Structure):

@@ -392,6 +392,9 @@ class KAFFINITY(ULONG_PTR):
 class KPRIORITY(ULONG_PTR):
     pass
 
+class KIRQL(UCHAR):
+    pass
+
 # TODO: should probably be bool
 class BOOLEAN(BYTE):
     pass
@@ -406,6 +409,15 @@ class PSID(PVOID):
     pass
 
 class PWSTR(PVOID):
+    pass
+
+class CCHAR(CHAR):
+    pass
+
+class CSHORT(SHORT):
+    pass
+
+class CLONG(ULONG):
     pass
 
 # Some unsupported enum

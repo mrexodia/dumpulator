@@ -74,7 +74,7 @@ class Module:
         raise TypeError()
 
     def __repr__(self):
-        return f"Module({hex(self.base)}, {hex(self.size)}, {repr(self.path)})"
+        return f"Module({hex(self.base)}, {hex(self.size)}, {self.path})"
 
     def __hash__(self):
         return hash((self.base, self.size, self.path))

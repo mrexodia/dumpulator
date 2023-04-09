@@ -881,7 +881,7 @@ class Dumpulator(Architecture):
     def write(self, addr, data):
         if not isinstance(addr, int):
             addr = int(addr)
-        self._pages.write(addr, data)
+        self._pages.write(addr, bytes(data))
 
     def call(self, addr, args: List[int] = None, regs: dict = None, count=0):
         if args is None:
