@@ -1526,6 +1526,8 @@ def _arg_to_string(dp: Dumpulator, arg):
         if tstr is not None:
             str += f" /* {tstr} */"
         return str
+    elif isinstance(arg, Int):
+        return arg.__str__()
     elif isinstance(arg, int):
         return hex(arg)
     raise NotImplemented()
