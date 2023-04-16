@@ -584,6 +584,9 @@ def format_table(table: List[List[str]]):
         for index, col in enumerate(row):
             if index > 0:
                 line += " "
-            line += f"{col:>{lengths[index]}}"
+            if index + 1 == len(row):
+                line += col
+            else:
+                line += f"{col:>{lengths[index]}}"
         result += line.rstrip()
     return result
