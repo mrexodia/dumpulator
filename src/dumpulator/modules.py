@@ -137,3 +137,6 @@ class ModuleManager:
     def __iter__(self):
         for base in self._modules:
             yield self._modules[base]
+
+    def __repr__(self) -> str:
+        return f"ModuleManager(main={hex(self.main)}, modules={len(self._modules)})"
