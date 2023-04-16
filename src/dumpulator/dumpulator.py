@@ -820,6 +820,9 @@ class Dumpulator(Architecture):
                 # Potentially interesting members: Misc_PhysicalAddress, Misc_VirtualSize, SizeOfRawData
                 section.PointerToRawData = section.VirtualAddress
                 section.PointerToRawData_adj = section.VirtualAddress
+            # Do not trust these values from memory
+            pe.OPTIONAL_HEADER.ImageBase = base
+            pe.OPTIONAL_HEADER.ImageSize = size
             self.modules.add(pe, path)
 
     def _setup_syscalls(self):
