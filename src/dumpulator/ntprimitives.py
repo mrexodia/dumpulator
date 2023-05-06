@@ -117,7 +117,7 @@ class P(Generic[T]):
     def write(self, data: Union[SupportsBytes, bytes]):
         self.arch.write(self.ptr, data)
 
-    def __getitem__(self, index) -> T:
+    def __getitem__(self, index: int) -> T:
         ptype = self.type
         if ptype is None:
             raise TypeError(f"No type associated with pointer")
@@ -136,6 +136,27 @@ class P(Generic[T]):
                 data = self.arch.read(ptr, size)
                 value = ctype.from_buffer(data)
                 return ptype(value)
+
+    def __setitem__(self, index: int, value: T):
+        ptype = self.type
+        if ptype is None:
+            raise TypeError(f"No type associated with pointer")
+        if P.is_ptr(ptype):
+            ptr = self.ptr + index * self.arch.ptr_size()
+            self.arch.write_ptr(ptr, int(value))
+        else:
+            size = Struct.sizeof(ptype, self.arch)
+            ptr = self.ptr + index * size
+            if issubclass(ptype, Struct):
+                if isinstance(value, ptype):
+                    raise TypeError(f"Expected {ptype}, got {type(value)}")
+                self.arch.write(ptr, value)
+            else:
+                # TODO: support bool/enum?
+                if not isinstance(value, int):
+                    raise TypeError(f"Expected int, got {type(value)}")
+                ctype = Struct.translate_ctype(self.arch.ptr_type(), ptype)
+                self.arch.write(ptr, ctype(int(value)))
 
     def deref(self) -> T:
         return self[0]
@@ -431,4 +452,4 @@ class SAL:
     comment: str = ""
 
     def __str__(self):
-        return self.annotation
+        return self.annotation.split(" ")[0]
