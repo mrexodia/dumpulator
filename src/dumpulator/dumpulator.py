@@ -799,38 +799,47 @@ class Dumpulator(Architecture):
             size = minidump_module.size
             path = minidump_module.name
 
-            # Parse the header to dump the sections from memory
-            header = self.read(base, PAGE_SIZE)
-            pe = PE(data=header, fast_load=True)
-            image_size = pe.OPTIONAL_HEADER.SizeOfImage
-            section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
-            mapped_data = bytearray(header)
-            mapped_data += b"\0" * (image_size - len(header))
-            for section in pe.sections:
-                name = section.Name.rstrip(b"\0").decode()
-                mask = section_alignment - 1
-                rva = (section.VirtualAddress + mask) & ~mask
-                size = self.memory.align_page(section.Misc_VirtualSize)
-                va = base + rva
-                for page in range(va, va + size, PAGE_SIZE):
-                    region = self.memory.find_commit(page)
-                    if region is not None:
-                        region.info = name
-                try:
-                    data = self.read(va, size)
-                    mapped_data[rva:size] = data
-                except IndexError:
-                    self.error(f"Failed to read section {name} from module {path}")
-            # Load the PE dumped from memory
-            pe = PE(data=mapped_data, fast_load=True)
-            # Hack to adjust pefile to accept in-memory modules
-            for section in pe.sections:
-                # Potentially interesting members: Misc_PhysicalAddress, Misc_VirtualSize, SizeOfRawData
-                section.PointerToRawData = section.VirtualAddress
-                section.PointerToRawData_adj = section.VirtualAddress
+            # Read as much data from the module memory as possible
+            try:
+                mapped_data = self.read(base, size)
+            except IndexError:
+                # HACK: modules with holes between sections need to be read in chunks
+                mapped_data = bytearray(size)
+                ptr = base
+                while ptr < base + size:
+                    region = self.memory.query(ptr)
+                    if region.state == MemoryState.MEM_COMMIT:
+                        data = self.read(region.base, region.region_size)
+                        index = region.base - base
+                        mapped_data[index:index + len(data)] = data
+                    ptr += region.region_size
+                assert len(mapped_data) == size
+
+            try:
+                # Load the PE dumped from memory
+                pe = PE(data=mapped_data, fast_load=True)
+                section_alignment = pe.OPTIONAL_HEADER.SectionAlignment
+                for section in pe.sections:
+                    # Set the section in the memory region
+                    name = section.Name.rstrip(b"\0").decode(encoding="ascii", errors="backslashreplace")
+                    mask = section_alignment - 1
+                    index = (section.VirtualAddress + mask) & ~mask
+                    section_size = self.memory.align_page(section.Misc_VirtualSize)
+                    va = base + index
+                    for page in range(va, va + section_size, PAGE_SIZE):
+                        region = self.memory.find_commit(page)
+                        if region is not None:
+                            region.info = name
+                    # HACK: adjust pefile to accept in-memory modules
+                    # Potentially interesting members: Misc_PhysicalAddress, Misc_VirtualSize, SizeOfRawData
+                    section.PointerToRawData = section.VirtualAddress
+                    section.PointerToRawData_adj = section.VirtualAddress
+            except pefile.PEFormatError as e:
+                self.error(f"Failed to parse module {hex(base)}[{hex(size)}]: {path}")
+
             # Do not trust these values from memory
             pe.OPTIONAL_HEADER.ImageBase = base
-            pe.OPTIONAL_HEADER.ImageSize = size
+            pe.OPTIONAL_HEADER.SizeOfImage = size
             self.modules.add(pe, path)
 
     def _setup_syscalls(self):
