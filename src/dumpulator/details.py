@@ -1,6 +1,6 @@
 import struct
 from collections import namedtuple
-from typing import List
+from typing import List, Dict, Optional, Iterable
 
 from unicorn import *
 from unicorn.x86_const import *
@@ -382,6 +382,67 @@ class Registers:
             return True
         except Exception:
             return False
+
+    @property
+    def volatile(self):
+        if self._x64:
+            return ["rax", "rcx", "rdx", "r8", "r9", "r10", "r11"]
+        else:
+            return ["eax", "ecx", "edx"]
+
+    @property
+    def nonvolatile(self):
+        if self._x64:
+            return ["rbx", "rbp", "rsp", "rsi", "rdi",
+                    "r12", "r13", "r14", "r15"]
+        else:
+            return ["ebx", "ebp", "esp", "esi", "edi"]
+
+    @property
+    def gp(self):
+        if self._x64:
+            return ["rax", "rbx", "rcx", "rdx", "rbp", "rsp", "rsi", "rdi",
+                    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
+        else:
+            return ["eax", "ebx", "ecx", "edx", "ebp", "esp", "esi", "edi"]
+
+    @property
+    def integer(self):
+        if self._x64:
+            return ["rax", "rbx", "rcx", "rdx", "rbp", "rsi", "rdi",
+                    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
+        else:
+            return ["eax", "ebx", "ecx", "edx", "ebp", "esi", "edi"]
+
+    @property
+    def control(self):
+        if self._x64:
+            return ["rip", "rsp", "rflags"]
+        else:
+            return ["eip", "esp", "eflags"]
+
+    @property
+    def debug(self):
+        return ["dr0", "dr1", "dr2", "dr6", "dr7"]
+
+    @property
+    def fpu(self):
+        if self._x64:
+            return [f"ymm{i}" for i in range(16)]
+        else:
+            return [f"ymm{i}" for i in range(8)]
+
+    def save(self, regs: Optional[Iterable[str]] = None):
+        if regs is None:
+            if self._x64:
+                regs = self.gp + ["rip", "rflags"]
+            else:
+                regs = self.gp + ["eip", "eflags"]
+        return { reg: self[reg] for reg in regs}
+
+    def load(self, regs: Dict[str, int]):
+        for reg, value in regs.items():
+            self[reg] = value
 
 
 class Arguments:
