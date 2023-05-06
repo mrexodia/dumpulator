@@ -1664,17 +1664,92 @@ def _hook_syscall(uc: Uc, dp: Dumpulator):
         raise dp.raise_kill(IndexError(f"{table_prefix}syscall {hex(service_number)} (index: {hex(function_index)}) out of range")) from None
 
 def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
-    if instr.id == X86_INS_RDRAND:
-        op: X86Op = instr.operands[0]
-        regname = instr.reg_name(op.reg)
-        if dp.x64 and op.size * 8 == 32:
-            regname = "r" + regname[1:]
-        print(f"emulated rdrand {regname}:{op.size * 8}, cip = {hex(instr.address)}+{instr.size}")
-        dp.regs[regname] = 42  # TODO: PRNG based on dmp hash
-        dp.regs.cip += instr.size
+    # Get address mask
+    if dp.regs.cs == windows_user_segment.cs:
+        address_mask = 0xFFFFFFFFFFFFFFFF
     else:
+        address_mask = 0xFFFFFFFF
+
+    def op_mem(op: X86Op, *, aligned: bool):
+        mem_address = 0
+        if op.mem.base == X86_REG_RIP:
+            mem_address += instr.address + instr.size
+            raise NotImplementedError("TODO: check if the disp is already adjusted")
+        else:
+            base = op.mem.base
+            if base != X86_REG_INVALID:
+                name = instr.reg_name(base)
+                value = dp.regs[name]
+                mem_address += value
+
+            index = op.mem.index
+            if index != X86_REG_INVALID:
+                name = instr.reg_name(index)
+                value = dp.regs[name]
+                mem_address += value * op.mem.scale
+
+        disp = op.mem.disp # TODO: negative value handling?
+        mem_address += disp
+        mem_address &= address_mask
+        if aligned:
+            alignment = op.size
+            if mem_address & (alignment - 1) != 0:
+                assert False, f"Address {hex(mem_address)} not aligned to {alignment}"
+        return mem_address
+
+    def op_read(index: int, *, aligned=False):
+        op: X86Op = instr.operands[index]
+        if op.type == CS_OP_REG:
+            name = instr.reg_name(op.value.reg)
+            return dp.regs[name]
+        elif op.type == CS_OP_MEM:
+            mem_address = op_mem(op, aligned=aligned)
+            data = dp.read(mem_address, op.size)
+            return int.from_bytes(data, "little")
+        elif op.type == CS_OP_IMM:
+            # TODO: sign extend?
+            return op.value.imm
+        else:
+            raise NotImplementedError()
+
+    def op_write(index: int, value: int, *, aligned=False):
+        op: X86Op = instr.operands[index]
+        size = op.size
+        if op.type == CS_OP_REG:
+            name = instr.reg_name(op.value.reg)
+            if size == 4 and address_mask == 0xFFFFFFFFFFFFFFFF:
+                # Extend the register
+                assert name[0] == "e"
+                name = "r" + name[1:]
+            dp.regs[name] = value
+        elif op.type == CS_OP_MEM:
+            mem_address = op_mem(op, aligned=aligned)
+            data = value.to_bytes(size, "little")
+            # TODO: handle invalid memory access
+            dp.write(mem_address, data)
+        else:
+            raise NotImplementedError()
+
+    def cip_next():
+        dp.regs.cip += instr.size
+
+    if instr.id == X86_INS_RDRAND:
+        # TODO: PRNG based on dmp hash
+        op_write(0, 42)
+        cip_next()
+    elif instr.id == X86_INS_VMOVDQU:
+        src = op_read(1)
+        op_write(0, src)
+        cip_next()
+    elif instr.id in [X86_INS_VMOVDQA, X86_INS_MOVNTDQ]:
+        src = op_read(1, aligned=True)
+        op_write(0, src, aligned=True)
+        cip_next()
+    else:
+        dp.error(f"unsupported: {instr.mnemonic} {instr.op_str}")
         # Unsupported instruction
         return False
+    dp.debug(f"emulated: {hex(instr.address)}|{instr.bytes.hex()}|{instr.mnemonic} {instr.op_str}")
     # Resume execution
     return True
 
@@ -1686,10 +1761,10 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
     if dp.stopped:
         dp.error(f"terminating emulation...")
         return False
-    dp.error(f"invalid instruction at {hex(address)}")
     try:
         code = dp.read(address, 15)
         instr = next(dp.cs.disasm(code, address, 1))
+        # TODO: add a hook
         if _emulate_unsupported_instruction(dp, instr):
             # Resume execution with a context switch
             assert dp._exception.type == ExceptionType.NoException
@@ -1702,4 +1777,5 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
         pass  # Unsupported instruction
     except IndexError:
         pass  # Invalid memory access (NOTE: this should not be possible actually)
+    dp.error(f"invalid instruction at {hex(address)}")
     raise NotImplementedError("TODO: throw invalid instruction exception")
