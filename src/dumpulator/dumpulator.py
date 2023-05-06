@@ -303,6 +303,14 @@ class Dumpulator(Architecture):
         self.cs = Cs(CS_ARCH_X86, mode)
         self.cs.detail = True
 
+        # Workaround for buggy implementation of https://github.com/unicorn-engine/unicorn/pull/1746
+        def __ctl_w(ctl, nr):
+            return ctl | (nr << 26) | (UC_CTL_IO_WRITE << 30)
+        try:
+            self._uc.ctl(__ctl_w(12, 1), 1)
+        except UcError:
+            pass
+
         self.regs = Registers(self._uc, self._x64)
         self._pages = LazyPageManager(UnicornPageManager(self._uc))
         self.memory = MemoryManager(self._pages)
