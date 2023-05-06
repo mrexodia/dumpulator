@@ -1156,6 +1156,8 @@ rsp in KiUserExceptionDispatcher:
             record_type = EXCEPTION_RECORD32
             context_type = WOW64_CONTEXT
 
+        # TODO: support guard pages
+        # TODO: support stack overflow
         csp = self.regs.csp - allocation_size
         self.write(csp, allocation_size * b"\x69")  # fill stuff with 0x69 for debugging
         self.info(f"old csp: {hex(self.regs.csp)}, new csp: {hex(csp)}")
@@ -1498,13 +1500,131 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             exception.tb_size = tb.size
             exception.tb_icount = tb.icount
 
+        def resolve_exception_cip(is_read: bool):
+            # Instantiate capstone
+            if dp.regs.cs == windows_user_segment.cs:
+                mode = CS_MODE_64
+                address_mask = 0xFFFFFFFFFFFFFFFF
+            else:
+                mode = CS_MODE_32
+                address_mask = 0xFFFFFFFF
+            cs = Cs(CS_ARCH_X86, mode)
+            cs.detail = True
+            access_mask = CS_AC_READ if is_read else CS_AC_WRITE
+
+            # Use some ugly-ass heuristics to determine the correct CIP
+            dp.info(f"disassembling basic block to find address {hex(exception.memory_address)}:")
+            address = dp.regs.cip
+            while True:
+                try:
+                    code = dp.read(address, 15)
+                    instr = next(cs.disasm(code, address, 1))
+                except StopIteration as x:
+                    dp.error(f"Unsupported instruction: {code.hex()}")
+                    return False
+                except IndexError as x:
+                    dp.error(f"Failed to read {address}: {x.args}")
+                    return False
+
+                info = f"=>{hex(instr.address)}|{instr.mnemonic}"
+                if instr.op_str:
+                    info += f" {instr.op_str}"
+
+                op_info = {}
+                found = False
+                for op in instr.operands:
+                    if op.type == CS_OP_REG:
+                        name = instr.reg_name(op.reg)
+                        value = dp.regs[name]
+
+                        if name not in op_info:
+                            op_info[name] = value
+                    elif op.type == CS_OP_MEM:
+                        mem_info = ""
+                        mem_address = 0
+                        if op.mem.base == X86_REG_RIP:
+                            mem_address += instr.address + instr.size
+                            raise NotImplementedError("TODO: check if the disp is already adjusted")
+                        else:
+                            base = op.mem.base
+                            if base != X86_REG_INVALID:
+                                name = instr.reg_name(base)
+                                value = dp.regs[name]
+                                mem_address += value
+
+                                if name not in op_info:
+                                    op_info[name] = value
+                                mem_info += name
+
+                            index = op.mem.index
+                            if index != X86_REG_INVALID:
+                                name = instr.reg_name(index)
+                                value = dp.regs[name]
+                                mem_address += value * op.mem.scale
+
+                                if name not in op_info:
+                                    op_info[name] = value
+                                if mem_info:
+                                    mem_info += "+"
+                                mem_info += name
+
+                        disp = op.mem.disp # TODO: negative value handling?
+                        mem_address += disp
+                        mem_address &= address_mask
+
+                        if mem_info:
+                            mem_info += "+"
+                        mem_info += hex(disp)
+                        mem_info += "("
+                        if op.access & CS_AC_READ:
+                            mem_info += "r"
+                        if op.access & CS_AC_WRITE:
+                            mem_info += "w"
+                        mem_info += ")"
+
+                        if mem_info not in op_info:
+                            op_info[mem_info] = mem_address
+                        if op.access & access_mask and mem_address == exception.memory_address:
+                            found = True
+
+                # TODO: support push, pop, ret, movsb and friends, enter, leave
+                for name, value in op_info.items():
+                    info += f"|{name}={hex(value)}"
+                dp.info(info)
+
+                if found:
+                    dp.info(f"found memory access to {hex(exception.memory_address)} at cip = {hex(address)}")
+                    dp.regs.cip = address
+                    exception.context = uc.context_save()
+                    return True
+
+                control_flow_groups = {
+                    CS_GRP_JUMP,
+                    CS_GRP_CALL,
+                    CS_GRP_RET,
+                    CS_GRP_INT,
+                    CS_GRP_IRET
+                }
+                if control_flow_groups.intersection(instr.groups):
+                    dp.error("Reached end of basic block without finding address")
+                    return False
+
+                address += instr.size
+
         # Print exception info
         final = is_tracing_range or dp._exception.code_hook_h is not None
+        resolved_cip = False
         info = "final" if final else "initial"
         if access == UC_MEM_READ_UNMAPPED:
             dp.error(f"{info} unmapped read from {hex(address)}[{hex(size)}], cip = {hex(dp.regs.cip)}, exception: {exception}")
+            if not final and resolve_exception_cip(True):
+                resolved_cip = True
+                final = True
         elif access == UC_MEM_WRITE_UNMAPPED:
             dp.error(f"{info} unmapped write to {hex(address)}[{hex(size)}] = {hex(value)}, cip = {hex(dp.regs.cip)}")
+            if not final and resolve_exception_cip(False):
+                resolved_cip = True
+                final = True
         elif access == UC_MEM_FETCH_UNMAPPED:
             dp.error(f"{info} unmapped fetch of {hex(address)}[{hex(size)}], cip = {hex(dp.regs.rip)}, cs = {hex(dp.regs.cs)}")
         else:
@@ -1523,8 +1643,8 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             dp.error(f"{info} unsupported access {names.get(access, str(access))} of {hex(address)}[{hex(size)}] = {hex(value)}, cip = {hex(dp.regs.cip)}")
 
         if final:
-            # Make sure this is the same exception we expect
-            if not is_tracing_range:
+            if not is_tracing_range and not resolved_cip:
+                # Make sure this is the same exception we expect
                 assert violation == dp._exception.memory_violation
                 assert address == dp._exception.memory_address
                 assert size == dp._exception.memory_size
@@ -1541,6 +1661,8 @@ def _hook_mem(uc: Uc, access, address, size, value, dp: Dumpulator):
             # Stop emulation (we resume it on KiUserExceptionDispatcher later)
             dp._uc.emu_stop()
             return False
+
+        # Trace until we hit the hook again
 
         # There should not be an exception active
         assert dp._exception.type == ExceptionType.NoException
