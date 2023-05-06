@@ -5,9 +5,9 @@
 #
 import io
 import enum
-from minidump.common_structs import * 
+from minidump.common_structs import *
 
-class AllocationProtect(enum.Enum):
+class AllocationProtect(enum.Flag):
 	NONE = 0
 	PAGE_EXECUTE = 0x10 #Enables execute access to the committed region of pages. An attempt to write to the committed region results in an access violation.
 						#This flag is not supported by the CreateFileMapping function.
@@ -51,7 +51,7 @@ class AllocationProtect(enum.Enum):
 	#The PAGE_WRITECOMBINE flag cannot be specified with the PAGE_NOACCESS, PAGE_GUARD, and PAGE_NOCACHE flags.
 	#The PAGE_WRITECOMBINE flag can be used only when allocating private memory with the VirtualAlloc, VirtualAllocEx, or VirtualAllocExNuma functions. To enable write-combined memory access for shared memory, specify the SEC_WRITECOMBINE flag when calling the CreateFileMapping function.
 	#Windows Server 2003 and Windows XP:  This flag is not supported until Windows Server 2003 with SP1.
-	
+
 class MemoryType(enum.Enum):
 	MEM_IMAGE = 0x1000000 #Indicates that the memory pages within the region are mapped into the view of an image section.
 	MEM_MAPPED = 0x40000 #Indicates that the memory pages within the region are mapped into the view of a section.
@@ -78,17 +78,17 @@ class MINIDUMP_MEMORY_INFO_LIST:
 		t += self.SizeOfEntry.to_bytes(4, byteorder = 'little', signed = False)
 		t += len(self.entries).to_bytes(8, byteorder = 'little', signed = False)
 		return t
-	
+
 	@staticmethod
 	def parse(buff):
 		mhds = MINIDUMP_MEMORY_INFO_LIST()
 		mhds.SizeOfHeader = int.from_bytes(buff.read(4), byteorder = 'little', signed = False)
 		mhds.SizeOfEntry = int.from_bytes(buff.read(4), byteorder = 'little', signed = False)
 		mhds.NumberOfEntries = int.from_bytes(buff.read(8), byteorder = 'little', signed = False)
-			
+
 		return mhds
-		
-# https://msdn.microsoft.com/en-us/library/windows/desktop/ms680386(v=vs.85).aspx	
+
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms680386(v=vs.85).aspx
 class MINIDUMP_MEMORY_INFO:
 	def __init__(self):
 		self.BaseAddress = None
@@ -121,7 +121,7 @@ class MINIDUMP_MEMORY_INFO:
 		t += self.Type.value.to_bytes(4, byteorder = 'little', signed = False)
 		t += self.__alignment2.to_bytes(4, byteorder = 'little', signed = False)
 		return t
-	
+
 	@staticmethod
 	def parse(buff):
 		mmi = MINIDUMP_MEMORY_INFO()
@@ -143,9 +143,9 @@ class MINIDUMP_MEMORY_INFO:
 		except:
 			pass
 		mmi.__alignment2 = int.from_bytes(buff.read(4), byteorder = 'little', signed = False)
-			
+
 		return mmi
-		
+
 class MinidumpMemoryInfo:
 	def __init__(self):
 		self.BaseAddress = None
@@ -155,7 +155,7 @@ class MinidumpMemoryInfo:
 		self.State = None
 		self.Protect = None
 		self.Type = None
-	
+
 	@staticmethod
 	def parse(t, buff):
 		mmi = MinidumpMemoryInfo()
@@ -167,7 +167,7 @@ class MinidumpMemoryInfo:
 		mmi.Protect = t.Protect
 		mmi.Type = t.Type
 		return mmi
-	
+
 	@staticmethod
 	def get_header():
 		t = [
@@ -192,13 +192,13 @@ class MinidumpMemoryInfo:
 			self.Type.name if self.Type else 'N/A',
 		]
 		return t
-		
-		
+
+
 class MinidumpMemoryInfoList:
 	def __init__(self):
 		self.header = None
 		self.infos = []
-	
+
 	@staticmethod
 	def parse(dir, buff):
 		t = MinidumpMemoryInfoList()
@@ -209,7 +209,7 @@ class MinidumpMemoryInfoList:
 		for _ in range(t.header.NumberOfEntries):
 			mi = MINIDUMP_MEMORY_INFO.parse(chunk)
 			t.infos.append(MinidumpMemoryInfo.parse(mi, buff))
-		
+
 		return t
 
 	@staticmethod
@@ -222,15 +222,15 @@ class MinidumpMemoryInfoList:
 		for _ in range(t.header.NumberOfEntries):
 			mi = MINIDUMP_MEMORY_INFO.parse(chunk)
 			t.infos.append(MinidumpMemoryInfo.parse(mi, None))
-		
+
 		return t
-		
+
 	def to_table(self):
 		t = []
 		t.append(MinidumpMemoryInfo.get_header())
 		for info in self.infos:
 			t.append(info.to_row())
 		return t
-	
+
 	def __str__(self):
 		return '== MinidumpMemoryInfoList ==\n' + construct_table(self.to_table())
