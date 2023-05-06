@@ -412,3 +412,6 @@ class MemoryManager:
                 return False
             region.info = info
         return True
+
+    def __repr__(self):
+        return f"MemoryManager(regions={len(self._regions)}, committed={len(self._committed)})"
