@@ -1820,11 +1820,10 @@ def ZwFreeVirtualMemory(dp: Dumpulator,
     size = RegionSize.read_ptr()
     if FreeType == MEM_RELEASE:
         print(f"release {hex(base)}[{hex(size)}]")
-        assert size == 0
         region = dp.memory.find_region(base)
         if region is None:
             return STATUS_MEMORY_NOT_ALLOCATED
-        dp.memory.release(base)
+        dp.memory.release(base, size)
         return STATUS_SUCCESS
     elif FreeType == MEM_DECOMMIT:
         print(f"decommit {hex(base)}[{hex(size)}]")

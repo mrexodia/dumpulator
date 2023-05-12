@@ -181,7 +181,7 @@ class MemoryManager:
                     return info.base
         return None
 
-    def reserve(self, start: int, size: int, protect: MemoryProtect, memory_type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None) -> None:
+    def reserve(self, start: int, size: int, protect: MemoryProtect, memory_type: MemoryType = MemoryType.MEM_PRIVATE, info: Any = None) -> MemoryRegion:
         assert isinstance(protect, MemoryProtect)
         assert isinstance(memory_type, MemoryType)
         assert size > 0 and self.align_page(size) == size
@@ -203,6 +203,7 @@ class MemoryManager:
             check_overlaps(index - 1)
             check_overlaps(index)
         self._regions.insert(index, region)
+        return region
 
     def _decommit_region(self, parent_region: MemoryRegion, decommit_region: MemoryRegion):
         assert decommit_region in parent_region
@@ -227,19 +228,42 @@ class MemoryManager:
                 del self._committed[release_start + i * PAGE_SIZE]
                 parent_region.commit_count -= 1
 
-    def release(self, start: int) -> None:
+    def release(self, start: int, size: int = 0) -> None:
         assert self.align_allocation(start) == start
+        assert self.align_allocation(size) == size
 
-        parent_region = self.find_region(start)
-        if parent_region is None:
+        parent = self.find_region(start)
+        if parent is None:
             raise KeyError(f"Could not find parent for {hex(start)}")
-        if parent_region.start != start:
-            raise KeyError(f"You can only release the whole parent region")
 
-        self._decommit_region(parent_region, parent_region)
+        if size == 0:
+            size = parent.size
+        if start + size > parent.start + parent.size:
+            raise KeyError(f"You can only release part of the parent region")
 
-        assert parent_region.commit_count == 0
-        self._regions.remove(parent_region)
+        decommit = MemoryRegion(start, size)
+        self._decommit_region(parent, decommit)
+        self._regions.remove(parent)
+
+        before = MemoryRegion(parent.start, decommit.start - parent.start)
+        after = MemoryRegion(decommit.end, parent.end - decommit.end)
+
+        if parent.size == decommit.size:
+            # Make sure the whole region was freed
+            assert parent.commit_count == 0
+
+        if before.size > 0:
+            before = self.reserve(before.start, before.size, parent.protect, parent.type, parent.info)
+            for page in before.pages():
+                if page in self._committed:
+                    before.commit_count += 1
+        if after.size > 0:
+            after = self.reserve(after.start, after.size, parent.protect, parent.type, parent.info)
+            for page in after.pages():
+                if page in self._committed:
+                    after.commit_count += 1
+
+        assert before.commit_count + after.commit_count == parent.commit_count
 
     def commit(self, start: int, size: int, protect: MemoryProtect = MemoryProtect.UNDEFINED) -> None:
         assert isinstance(protect, MemoryProtect)

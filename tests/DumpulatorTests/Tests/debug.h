@@ -1,22 +1,11 @@
 #pragma once
 
-#include <Windows.h>
-#include <winternl.h>
-
-#ifdef __cplusplus
-extern "C"
-#endif // __cplusplus
-NTSYSCALLAPI
-NTSTATUS
-NTAPI
-NtDisplayString(
-	PUNICODE_STRING String
-);
+#include "phnt.h"
 
 #define WIDEN_EXPAND(str) L ## str
 #define WIDEN(str) WIDEN_EXPAND(str)
 
-#ifdef __c1plusplus
+#ifdef __cplusplus
 // Helper function to directly call NtDisplayString with a string
 // This simplifies the trace output of Dumpulator
 template<size_t Count>
@@ -38,3 +27,5 @@ static void DebugPrint(const wchar_t* str)
 	NtDisplayString(&ustr);
 }
 #endif // __cplusplus
+
+extern "C" decltype(&DbgPrint) DebugPrintf;

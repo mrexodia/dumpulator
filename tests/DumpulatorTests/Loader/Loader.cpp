@@ -1,5 +1,6 @@
-#include <Windows.h>
+#include "../Tests/debug.h"
 #include <cstdio>
+#include <cstdlib>
 
 int main(int argc, char** argv)
 {
@@ -9,6 +10,9 @@ int main(int argc, char** argv)
     auto dll = "Tests_x86.dll";
 #endif // _WIN64
     auto hLib = LoadLibraryA(dll);
+    auto p_DebugPrintf = (void**)GetProcAddress(hLib, "DebugPrintf");
+    if (p_DebugPrintf != nullptr)
+        *p_DebugPrintf = printf;
     if (argc < 2)
     {
         // TODO: implement enumerating all exports and running them

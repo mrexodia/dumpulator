@@ -18,7 +18,7 @@ extern "C" __declspec(dllexport) bool Handle_WriteAndCreateFileTest()
 		FILE_ATTRIBUTE_NORMAL,
 		NULL
 	);
-
+	
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
 		DebugPrint(L"Failed to create file");
