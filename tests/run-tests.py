@@ -37,7 +37,8 @@ def collect_tests(dll_data) -> Tuple[Dict[str, List[str]], int]:
     module = Module(pe, "tests.dll")
     tests: Dict[str, List[str]] = {}
     for export in module.exports:
-        assert "_" in export.name, f"Invalid test export '{export.name}'"
+        if "_" not in export.name:
+            continue
         prefix = export.name.split("_")[0]
         if prefix not in tests:
             tests[prefix] = []
@@ -66,7 +67,7 @@ def run_tests(dll_path: str, harness_dump: str, filter: Callable[[str, str], boo
             test = module.find_export(export)
             assert test is not None
             print(f"--- Executing {test.name} at {hex(test.address)} ---")
-            success = dp.call(test.address)
+            success = dp.call(test.address) & 0xFF
             results[export] = success != 0
             print(f"{export} -> {success}")
     return results
@@ -166,8 +167,10 @@ def main():
     parser.add_argument("--arch", choices=["x86", "x64"], help="Architecture to use (omit for both)", required=False)
     parser.add_argument("--tests", nargs="+", help="List of specific tests to run", required=False)
     parser.add_argument("--list", action="store_true", help="List all tests")
-    parser.add_argument("--prefix", nargs="+", help="Only run tests from this prefix", required=False)
+    parser.add_argument("--prefix", help="Only run tests from this prefix", required=False)
     args = parser.parse_args()
+    #if isinstance(args.tests, str):
+    #    args.tests = [args.tests]
 
     # List all tests
     if args.list:
@@ -178,7 +181,7 @@ def main():
             tests, _ = collect_tests(dll_data)
             for prefix, exports in tests.items():
                 for export in exports:
-                    print(f"--arch {arch} --prefix {prefix.lower()} --tests {export}")
+                    print(f"python run-tests.py --arch {arch} --prefix {prefix.lower()} --tests {export}")
         return
 
     if args.arch:
