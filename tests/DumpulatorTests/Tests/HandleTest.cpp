@@ -59,7 +59,7 @@ extern "C" __declspec(dllexport) bool Handle_ReadFileTest()
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
 		DebugPrint(L"Failed to open file");
-		return ret_value;
+		return false;
 	}
 
 	ret_value = ReadFile(
@@ -70,7 +70,8 @@ extern "C" __declspec(dllexport) bool Handle_ReadFileTest()
 		FALSE
 	);
 
+
 	CloseHandle(file_handle);
 
-	return ret_value;
+	return ret_value && memcmp(read_buffer, "Lorem ipsum", 11) == 0;
 }

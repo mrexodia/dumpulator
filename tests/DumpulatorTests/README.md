@@ -14,7 +14,7 @@ The harness dumps were created as follows:
 
 ## Adding a new test
 
-Add a new `mytest.cpp` file to the `Tests` project. The tests are exported as `bool <Prefix>_<description>Test();` and the result indicates whether the test was successful or not. If you need a custom environment add the following in `tests/harness-tests.py`:
+Add a new `mytest.cpp` file to the `Tests` project. The tests are exported as `bool <Prefix>_<description>Test();` and the result indicates whether the test was successful or not. If you need a custom environment add the following in `tests/run-tests.py`:
 
 ```python
 class <Prefix>Environment(TestEnvironment):

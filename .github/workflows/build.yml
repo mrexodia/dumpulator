@@ -70,7 +70,7 @@ jobs:
     - name: 'Test: DumpulatorTests'
       run: |
         cd tests
-        python harness-tests.py
+        python run-tests.py
 
     - name: 'Test: ExceptionTest_x64'
       run: |

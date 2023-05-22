@@ -1,7 +1,5 @@
-#include <Windows.h>
-#include <cstdio>
-
 #include "../Tests/debug.h"
+#include <cstdlib>
 
 static LONG WINAPI VectoredHandler(struct _EXCEPTION_POINTERS* ExceptionInfo)
 {

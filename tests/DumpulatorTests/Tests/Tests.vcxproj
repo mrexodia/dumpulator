@@ -13,9 +13,13 @@
   <ItemGroup>
     <ClCompile Include="DllMain.cpp" />
     <ClCompile Include="HandleTest.cpp" />
+    <ClCompile Include="MemoryTest.cpp" />
+    <ClCompile Include="ntstatusdb.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
+    <ClInclude Include="ntstatusdb.h" />
+    <ClInclude Include="phnt.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

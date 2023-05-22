@@ -3,7 +3,8 @@ import re
 import subprocess
 import sys
 import inspect
-from typing import Dict, List, Type, Tuple
+import argparse
+from typing import Dict, List, Type, Tuple, Callable
 from pathlib import Path
 
 from dumpulator import Dumpulator
@@ -36,14 +37,15 @@ def collect_tests(dll_data) -> Tuple[Dict[str, List[str]], int]:
     module = Module(pe, "tests.dll")
     tests: Dict[str, List[str]] = {}
     for export in module.exports:
-        assert "_" in export.name, f"Invalid test export '{export.name}'"
+        if "_" not in export.name:
+            continue
         prefix = export.name.split("_")[0]
         if prefix not in tests:
             tests[prefix] = []
         tests[prefix].append(export.name)
     return tests, module.base
 
-def run_tests(dll_path: str, harness_dump: str) -> Dict[str, bool]:
+def run_tests(dll_path: str, harness_dump: str, filter: Callable[[str, str], bool]) -> Dict[str, bool]:
     print(f"--- {dll_path} ---")
     with open(dll_path, "rb") as dll:
         dll_data = dll.read()
@@ -51,16 +53,21 @@ def run_tests(dll_path: str, harness_dump: str) -> Dict[str, bool]:
     tests, base = collect_tests(dll_data)
     results: Dict[str, bool] = {}
     for prefix, exports in tests.items():
-        print(f"\nRunning {prefix.lower()} tests:")
+        printed_prefix = False
         environment = environments.get(prefix, TestEnvironment)
         for export in exports:
+            if not filter(prefix, export):
+                continue
+            if not printed_prefix:
+                print(f"\nRunning {prefix.lower()} tests:")
+                printed_prefix = True
             dp = Dumpulator(harness_dump, trace=True)
             module = dp.map_module(dll_data, dll_path, base)
             environment().setup(dp)
             test = module.find_export(export)
             assert test is not None
             print(f"--- Executing {test.name} at {hex(test.address)} ---")
-            success = dp.call(test.address)
+            success = dp.call(test.address) & 0xFF
             results[export] = success != 0
             print(f"{export} -> {success}")
     return results
@@ -128,6 +135,7 @@ def build_tests():
     build("x64")
 
 def main():
+    # Make sure all the required artifacts are there
     dll_x64 = "DumpulatorTests/bin/Tests_x64.dll"
     dll_x86 = "DumpulatorTests/bin/Tests_x86.dll"
     if not os.path.exists(dll_x64) or not os.path.exists(dll_x86):
@@ -149,15 +157,54 @@ def main():
         if not download_main(dmp_x64, dmp_x86):
             sys.exit(1)
 
-    results_x64 = run_tests(dll_x64, dmp_x64)
-    print("")
-    results_x86 = run_tests(dll_x86, dmp_x86)
+    archs = {
+        "x64": (dll_x64, dmp_x64),
+        "x86": (dll_x86, dmp_x86),
+    }
 
-    print("")
-    success_x64 = print_results("x64", results_x64)
-    print("")
-    success_x86 = print_results("x86", results_x86)
-    if not success_x64 or not success_x86:
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Dumpulator test harness")
+    parser.add_argument("--arch", choices=["x86", "x64"], help="Architecture to use (omit for both)", required=False)
+    parser.add_argument("--tests", nargs="+", help="List of specific tests to run", required=False)
+    parser.add_argument("--list", action="store_true", help="List all tests")
+    parser.add_argument("--prefix", help="Only run tests from this prefix", required=False)
+    args = parser.parse_args()
+    #if isinstance(args.tests, str):
+    #    args.tests = [args.tests]
+
+    # List all tests
+    if args.list:
+        for arch, (dll, _) in archs.items():
+            with open(dll, "rb") as f:
+                dll_data = f.read()
+            print(f"--- {dll} ---")
+            tests, _ = collect_tests(dll_data)
+            for prefix, exports in tests.items():
+                for export in exports:
+                    print(f"python run-tests.py --arch {arch} --prefix {prefix.lower()} --tests {export}")
+        return
+
+    if args.arch:
+        archs = { args.arch: archs[args.arch] }
+
+    def filter(prefix, export) -> bool:
+        prefix_ok = not args.prefix or args.prefix.lower() == prefix.lower()
+        export_ok = not args.tests or export in args.tests
+        return prefix_ok and export_ok
+
+    # Run the tests
+    results = {}
+    for arch, (dll, dmp) in archs.items():
+        results[arch] = run_tests(dll, dmp, filter)
+        print("")
+
+    # Print the results
+    success = True
+    for arch, result in results.items():
+        if not print_results(arch, result):
+            success = False
+
+    if not success:
         sys.exit(1)
 
 if __name__ == "__main__":
