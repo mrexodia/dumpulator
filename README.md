@@ -6,9 +6,14 @@ An easy-to-use library for emulating code in minidump files. Here are some links
 
 - Introduction video with [OALabs](https://oalabs.openanalysis.net): [Dumpulator - Using Binary Emulation To Automate Reverse Engineering](https://youtu.be/4Pfu98Xx9Yo)
 - [Emulating malware with Dumpulator](https://rioasmara.com/2022/07/23/emulating-malware-with-dumpulator/)
-- [Emotet x64 Stack Strings Config Emulation | OALABS Research](https://research.openanalysis.net/emotet/emulation/config/dumpulator/malware/2022/05/19/emotet_x64_emulation.html)
+- [Emotet x64 Stack Strings Config Emulation | OALabs Research](https://research.openanalysis.net/emotet/emulation/config/dumpulator/malware/2022/05/19/emotet_x64_emulation.html)
 - [Native function and Assembly Code Invocation](https://research.checkpoint.com/2022/native-function-and-assembly-code-invocation/)
 - [Guloader string decryption (VEH)](https://research.openanalysis.net/guloader/emulation/dumpulator/veh/exceptions/2023/01/15/dumpulator-veh.html)
+- [Rhadamanthys | OALabs Research](https://research.openanalysis.net/rhadamanthys/config/ida/shifted%20pointers/peb/_list_entry/_ldr_data_table_entry/2023/01/19/rhadamanthys.html)
+- [\[Case study\] Decrypt strings using Dumpulator](https://kienmanowar.wordpress.com/2023/05/22/case-study-decrypt-strings-using-dumpulator/)
+
+<sub>Feel free to send a pull request to add your article here!</sub>
+
 
 ## Examples
 
