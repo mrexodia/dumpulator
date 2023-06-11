@@ -80,7 +80,7 @@ prolog_end = 0x00007FFFC81C06D6 + 7
 
 dp = Dumpulator("my.dmp", quiet=True)
 dp.regs.rcx = 0x1337
-dp.start(start=prolog_start, end=prolog_end)
+dp.start(begin=prolog_start, end=prolog_end)
 print(f"rsp: {hex(dp.regs.rsp)}")
 ```
 
