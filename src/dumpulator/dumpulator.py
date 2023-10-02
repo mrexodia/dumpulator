@@ -1756,14 +1756,25 @@ def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
         # TODO: PRNG based on dmp hash
         op_write(0, 42)
         cip_next()
-    elif instr.id == X86_INS_VMOVDQU:
+    elif instr.id in [X86_INS_VMOVDQU, X86_INS_VMOVUPS]:
         src = op_read(1)
         op_write(0, src)
         cip_next()
-    elif instr.id in [X86_INS_VMOVDQA, X86_INS_MOVNTDQ]:
+    elif instr.id in [X86_INS_VMOVDQA, X86_INS_MOVNTDQ, X86_INS_VMOVAPS]:
         src = op_read(1, aligned=True)
         op_write(0, src, aligned=True)
         cip_next()
+    elif instr.id == X86_INS_VINSERTF128:
+        src = op_read(1)
+        xmm1 = op_read(2)
+        imm8 = op_read(3)
+        if imm8 == 0:
+            src = (src & 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000) | xmm1
+        elif imm8 == 1:
+            src = (src & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff) | (xmm1 << 128)
+        op_write(0, src)
+        cip_next()
+
     else:
         dp.error(f"unsupported: {instr.mnemonic} {instr.op_str}")
         # Unsupported instruction
