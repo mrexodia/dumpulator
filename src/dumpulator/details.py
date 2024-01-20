@@ -265,6 +265,10 @@ class Registers:
             "fs_base": UC_X86_REG_FS_BASE,
             "gs_base": UC_X86_REG_GS_BASE,
         }
+        for i in range(8):
+            reg = UC_X86_REG_ST0 + i
+            self._regmap[f"st{i}"] = reg
+            self._regmap[f"st({i})"] = reg
         if unicorn.__version__[0] < '2':
             self._regmap.update({
                 "riz": UC_X86_REG_RIZ,
@@ -340,7 +344,7 @@ class Registers:
     def _resolve_reg(self, regname):
         uc_reg = self._regmap.get(regname, None)
         if uc_reg is None:
-            raise Exception(f"Unknown register '{regname}'")
+            raise KeyError(f"Unknown register '{regname}'")
         #if not self._x64 and regname.startswith("r"):
         #    raise Exception(f"Register {regname} is not available in 32-bit mode")
         return uc_reg
