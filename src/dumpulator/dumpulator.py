@@ -1450,6 +1450,7 @@ def _get_regs(instr, include_write=False):
 
 def _hook_code(uc: Uc, address, size, dp: Dumpulator):
     try:
+        uc.ctl_remove_cache(address, address + 16)
         code = b""
         try:
             code = dp.read(address, min(size, 15))
@@ -1693,7 +1694,6 @@ def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
         mem_address = 0
         if op.mem.base == X86_REG_RIP:
             mem_address += instr.address + instr.size
-            raise NotImplementedError("TODO: check if the disp is already adjusted")
         else:
             base = op.mem.base
             if base != X86_REG_INVALID:
@@ -1749,12 +1749,24 @@ def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
         else:
             raise NotImplementedError()
 
+    def op_bits(index: int):
+        return instr.operands[index].size * 8
+
     def cip_next():
         dp.regs.cip += instr.size
 
     if instr.id == X86_INS_RDRAND:
         # TODO: PRNG based on dmp hash
         op_write(0, 42)
+        cip_next()
+    elif instr.id == X86_INS_RDTSCP:
+        # TODO: properly implement
+        dp.regs.rdx = 0
+        dp.regs.rax = 0
+        dp.regs.rcx = 0
+        cip_next()
+    elif instr.id == X86_INS_RDGSBASE:
+        op_write(0, dp.regs.gs_base)
         cip_next()
     elif instr.id in [X86_INS_VMOVDQU, X86_INS_VMOVUPS]:
         src = op_read(1)
@@ -1774,9 +1786,16 @@ def _emulate_unsupported_instruction(dp: Dumpulator, instr: CsInsn):
             src = (src & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff) | (xmm1 << 128)
         op_write(0, src)
         cip_next()
-
+    elif instr.id == X86_INS_VPBROADCASTQ:
+        src = op_read(1) & 0xFFFFFFFFFFFFFFFF
+        result = 0
+        for _ in range(op_bits(0) // 64):
+            result <<= 64
+            result |= src
+        op_write(0, result)
+        cip_next()
     else:
-        dp.error(f"unsupported: {instr.mnemonic} {instr.op_str}")
+        dp.error(f"unsupported: {hex(instr.address)}|{instr.mnemonic} {instr.op_str}")
         # Unsupported instruction
         return False
     dp.debug(f"emulated: {hex(instr.address)}|{instr.bytes.hex()}|{instr.mnemonic} {instr.op_str}")
@@ -1794,6 +1813,7 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
     try:
         code = dp.read(address, 15)
         instr = next(dp.cs.disasm(code, address, 1))
+        dp.debug(f"invalid hook {hex(address)}|{code.hex()}|{instr.mnemonic} {instr.op_str}")
         # TODO: add a hook
         if _emulate_unsupported_instruction(dp, instr):
             # Resume execution with a context switch
@@ -1807,5 +1827,8 @@ def _hook_invalid(uc: Uc, dp: Dumpulator):
         pass  # Unsupported instruction
     except IndexError:
         pass  # Invalid memory access (NOTE: this should not be possible actually)
+    except Exception as err:
+        print(f"Unexpected exception {type(err)}")
+        traceback.print_exc()
     dp.error(f"invalid instruction at {hex(address)}")
     raise NotImplementedError("TODO: throw invalid instruction exception")
